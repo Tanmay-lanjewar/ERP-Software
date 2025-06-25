@@ -15,6 +15,11 @@ app.use('/api/units', productUnitRoutes);
 const authRoutes = require('./routes/auth');
 app.use('/api', authRoutes);
 
+// Tax routes: for /api/taxes
+const taxRoutes = require('./routes/taxes');
+app.use('/api/taxes', taxRoutes);
+
+
 
 app.get('/', (req, res) => {
   res.send('✅ Server is running and MySQL should be connected');
