@@ -23,6 +23,9 @@ app.use('/api/taxes', taxRoutes);
 const categoryRoutes = require('./routes/categories');
 app.use('/api/categories', categoryRoutes);
 
+// Product routes: for /api/vendors
+const vendorRoutes = require('./routes/vendors');
+app.use('/api/vendors', vendorRoutes);
 
 
 
