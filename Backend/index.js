@@ -31,6 +31,9 @@ app.use('/api/vendors', vendorRoutes);
 const customerRoutes = require('./routes/customers');
 app.use('/api/customers', customerRoutes);
 
+// Product routes: for /api/products
+const productRoutes = require('./routes/products');
+app.use('/api/products', productRoutes);
 
 
 app.get('/', (req, res) => {
