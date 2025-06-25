@@ -15,6 +15,26 @@ app.use('/api/units', productUnitRoutes);
 const authRoutes = require('./routes/auth');
 app.use('/api', authRoutes);
 
+// Tax routes: for /api/taxes
+const taxRoutes = require('./routes/taxes');
+app.use('/api/taxes', taxRoutes);
+
+// Product routes: for /api/categories
+const categoryRoutes = require('./routes/categories');
+app.use('/api/categories', categoryRoutes);
+
+// Product routes: for /api/vendors
+const vendorRoutes = require('./routes/vendors');
+app.use('/api/vendors', vendorRoutes);
+
+// Product routes: for /api/customers
+const customerRoutes = require('./routes/customers');
+app.use('/api/customers', customerRoutes);
+
+// Product routes: for /api/products
+const productRoutes = require('./routes/products');
+app.use('/api/products', productRoutes);
+
 
 app.get('/', (req, res) => {
   res.send('✅ Server is running and MySQL should be connected');
