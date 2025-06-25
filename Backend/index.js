@@ -19,6 +19,11 @@ app.use('/api', authRoutes);
 const taxRoutes = require('./routes/taxes');
 app.use('/api/taxes', taxRoutes);
 
+// Product routes: for /api/categories
+const categoryRoutes = require('./routes/categories');
+app.use('/api/categories', categoryRoutes);
+
+
 
 
 app.get('/', (req, res) => {
