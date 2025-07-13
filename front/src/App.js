@@ -33,13 +33,19 @@ import FinancialYearSettings from './Component/Financialyearsetting';
 import PaymentsSettings from './Component/Paymentsetting';
 import AddPaymentsEntry from './Component/Addpaymententry';
 import ReportsAndAnalytics from './Component/ReportandAnalytics';
+import FinancialYearGuard from './Component/financial_year_check';
+import AddFinancialYear from './Component/add_financial_year';
+import FinancialYearMain from './Component/financial-year-home';
+import Dashboard from './Component/Dashboard';
 
 function App() {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
+      
       <Router>
+           <FinancialYearGuard /> 
         <Routes>
-
+          <Route path="dashboard" element={<Dashboard></Dashboard>} />
           <Route path="/invoice" element={<InvoicePage />} />
           <Route path="/new-invoice" element={<NewInvoicePage />} />
           <Route path="/invoice-list" element={<Invoicelist />} />
@@ -67,10 +73,11 @@ function App() {
           <Route path="/pro-forma-invoice" element={<ProFormaInvoice />} />
           <Route path="/add-pro-forma-invoice" element={<NewProFormaInvoice />} />
           <Route path="/pro-forma-invoice-list" element={<ProformaInvoicelist />} />
-          <Route path="/add-Financial-year-settings" element={<FinancialYearSettings />} />
+          <Route path="/add-financial-year-settings" element={<FinancialYearMain></FinancialYearMain>} />
           <Route path="/Payment-settings" element={<PaymentsSettings />} />
           <Route path="/Add-Payment-settings" element={<AddPaymentsEntry />} />
           <Route path="/Report-and-analytics" element={<ReportsAndAnalytics />} />
+          <Route path='/add/financial_year' element={<AddFinancialYear></AddFinancialYear>}/>
         </Routes>
       </Router>
     </LocalizationProvider>

@@ -5,6 +5,11 @@ require('./config/db');
 const productUnitRoutes = require('./routes/product_units');
 const app = express();
 const PORT = process.env.PORT || 5000;
+const cors = require('cors');
+
+
+app.use(cors()); // ✅ This allows all origins (like localhost:3000)
+
 
 app.use(bodyParser.json());
 
@@ -35,6 +40,10 @@ app.use('/api/customers', customerRoutes);
 const productRoutes = require('./routes/products');
 app.use('/api/products', productRoutes);
 
+
+// Financial Year routes: for /api/financial-year
+const financialYearRoutes = require('./routes/financialYear');
+app.use('/api/financialYear', financialYearRoutes);
 
 app.get('/', (req, res) => {
   res.send('✅ Server is running and MySQL should be connected');
