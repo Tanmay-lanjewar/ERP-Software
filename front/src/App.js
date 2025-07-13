@@ -37,22 +37,29 @@ import FinancialYearGuard from './Component/financial_year_check';
 import AddFinancialYear from './Component/add_financial_year';
 import FinancialYearMain from './Component/financial-year-home';
 import Dashboard from './Component/Dashboard';
+import { useState } from 'react';
+
+
+
+
 
 function App() {
+ 
+  
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       
       <Router>
            <FinancialYearGuard /> 
         <Routes>
-          <Route path="dashboard" element={<Dashboard></Dashboard>} />
+          <Route path="/dashboard" element={<Dashboard></Dashboard>} />
           <Route path="/invoice" element={<InvoicePage />} />
           <Route path="/new-invoice" element={<NewInvoicePage />} />
           <Route path="/invoice-list" element={<Invoicelist />} />
           <Route path="/customer" element={<CustomerPage />} />
           <Route path="/add-customer" element={<AddCustomerForm />} />
           <Route path="/customer-list" element={<CustomerList />} />
-          <Route path="/items" element={<ItemsPage />} />
+          <Route path="/items" element={  <ItemsPage />} />
           <Route path="/add-items" element={<AddItem />} />
           <Route path="/item-list" element={<ItemList />} />
           <Route path="/purchase-order" element={<FirstTimePurchaseOrder />} />
