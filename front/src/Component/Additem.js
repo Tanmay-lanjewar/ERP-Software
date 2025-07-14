@@ -15,14 +15,30 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Sidebar from './Sidebar';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const units = ['cm', 'mm', 'kg', 'pcs'];
 const vendors = ['Laxmi Motors', 'ABC Traders'];
-const taxes = ['GST 5%', 'GST 12%', 'None'];
+
+
+
+
+
 
 export default function AddItems() {
+
+
+
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/taxes')
+      .then(res => {
+        const activeTaxes = res.data.filter(tax => tax.status === 'Active');
+        setTaxList(activeTaxes);
+      })
+      .catch(err => console.error("Error fetching taxes:", err));
+  }, []);
+
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     type: 'Product',
@@ -43,30 +59,33 @@ export default function AddItems() {
     preferred_vendor: '',
   });
 
+  const [taxList, setTaxList] = useState([]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const generateSKU = () => {
-  const prefix = formData.product_name?.substring(0, 3).toUpperCase() || "SKU";
-  const uniqueNumber = Date.now().toString().slice(-5); // e.g., last 5 digits of timestamp
-  return `${prefix}${uniqueNumber}`;
-};
-
-const handleSubmit = async () => {
-  const dataToSend = {
-    ...formData,
-    sku: generateSKU(), // auto-generated
+    const prefix = formData.product_name?.substring(0, 3).toUpperCase() || "SKU";
+    const uniqueNumber = Date.now().toString().slice(-5); // e.g., last 5 digits of timestamp
+    return `${prefix}${uniqueNumber}`;
   };
 
-  try {
-    await axios.post('http://localhost:5000/api/products', dataToSend);
-    navigate('/item-list');
-  } catch (error) {
-    console.error('Error saving item:', error);
-  }
-};
+  const handleSubmit = async () => {
+    const dataToSend = {
+      ...formData,
+      sku: generateSKU(), // auto-generated
+    };
+
+    try {
+      await axios.post('http://localhost:5000/api/products', dataToSend);
+      navigate('/item-list');
+    } catch (error) {
+      console.error('Error saving item:', error);
+    }
+  };
+
 
 
   return (
@@ -108,27 +127,40 @@ const handleSubmit = async () => {
               <Grid item xs={12} md={4}>
                 <TextField fullWidth size="small" name="product_name" label="Product Name" value={formData.product_name} onChange={handleChange} />
               </Grid>
-              
+
               <Grid item xs={12} md={4}>
-                <TextField select fullWidth size="small" name="tax_applicable" label="Tax Applicable" value={formData.tax_applicable} onChange={handleChange}
-                  sx={{
-    width: { xs: '100%', sm: '100%', md: 200 },
-    '& .MuiOutlinedInput-root': {
-      borderRadius: '10px',
-      backgroundColor: '#f9fafb',
-      height: 40,
-    },
-    '& .MuiSelect-select': {
-      fontSize: '14px',
-      padding: '10px 14px',
-    },
-  }}
+
+                <TextField
+                  select
+                  fullWidth
+                  size="small"
+                  name="tax_applicable"
+                  label="Tax Applicable"
+                  value={formData.tax_applicable}
+                  style={{width:"200px"}}
+                  onChange={(e) => {
+                    if (e.target.value === 'add_new_tax') {
+                      navigate('/add-tax'); // ⬅️ Redirect to tax form
+                    } else {
+                      handleChange(e);
+                    }
+                  }}
                 >
-                  {taxes.map((tax) => <MenuItem key={tax} value={tax}>{tax}</MenuItem>)}
+                  <MenuItem value="None">None</MenuItem>
+                  {taxList.map((tax) => (
+                    <MenuItem key={tax.id} value={tax.id}>
+                      {tax.tax_name} {tax.tax_rate}%
+                    </MenuItem>
+                  ))}
+                  <MenuItem value="add_new_tax" style={{ fontStyle: 'italic', color: '#004085' }}>
+                    + Add New Tax
+                  </MenuItem>
                 </TextField>
+
+
               </Grid>
               <Grid item xs={12} md={4}>
-                <TextField select fullWidth size="small" name="status" label="Status" value={formData.status} onChange={handleChange}>
+                <TextField select fullWidth size="small" name="status" label="Status" value={formData.status}  onChange={handleChange}>
                   <MenuItem value="Active">Active</MenuItem>
                   <MenuItem value="Inactive">Inactive</MenuItem>
                 </TextField>
@@ -139,17 +171,17 @@ const handleSubmit = async () => {
               <Grid item xs={12} md={4}>
                 <TextField select fullWidth size="small" name="unit" label="Unit" value={formData.unit} onChange={handleChange}
                   sx={{
-    width: { xs: '100%', sm: '100%', md: 70 },
-    '& .MuiOutlinedInput-root': {
-      borderRadius: '10px',
-      backgroundColor: '#f9fafb',
-      height: 40,
-    },
-    '& .MuiSelect-select': {
-      fontSize: '14px',
-      padding: '10px 14px',
-    },
-  }}
+                    width: { xs: '100%', sm: '100%', md: 70 },
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '10px',
+                      backgroundColor: '#f9fafb',
+                      height: 40,
+                    },
+                    '& .MuiSelect-select': {
+                      fontSize: '14px',
+                      padding: '10px 14px',
+                    },
+                  }}
                 >
                   {units.map((unit) => <MenuItem key={unit} value={unit}>{unit}</MenuItem>)}
                 </TextField>
@@ -171,7 +203,7 @@ const handleSubmit = async () => {
                 <TextField fullWidth size="small" label="Purchase Price" name="purchase_price" value={formData.purchase_price} onChange={handleChange} />
                 <TextField fullWidth size="small" label="Purchase Discount" name="purchase_discount" value={formData.purchase_discount} onChange={handleChange} sx={{ mt: 2 }} />
                 <TextField select fullWidth size="small" label="Purchase Discount Type" name="purchase_discount_type" value={formData.purchase_discount_type} onChange={handleChange} sx={{ mt: 2 }}>
-                  <MenuItem  value="%">%</MenuItem>
+                  <MenuItem value="%">%</MenuItem>
                   <MenuItem value="Flat">Flat</MenuItem>
                 </TextField>
                 <TextField fullWidth size="small" multiline rows={2} label="Purchase Description" name="purchase_description" value={formData.purchase_description} onChange={handleChange} sx={{ mt: 2 }} />

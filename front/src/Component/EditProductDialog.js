@@ -3,6 +3,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Button, Grid, MenuItem
 } from '@mui/material';
+import axios from 'axios';
 
 const statusOptions = ['Active', 'Inactive'];
 const unitOptions = ['kg', 'cm', 'pcs', 'litre'];
@@ -11,10 +12,19 @@ const discountTypes = ['%', 'Flat'];
 
 export default function EditProductDialog({ open, onClose, product, onSave }) {
   const [formData, setFormData] = useState({});
+  const [taxList, setTaxList] = useState([]);
 
   useEffect(() => {
-    setFormData(product || {});
-  }, [product]);
+    if (open) {
+      setFormData(product || {});
+      axios.get('http://localhost:5000/api/taxes')
+        .then(res => {
+          const activeTaxes = res.data.filter(tax => tax.status === 'Active');
+          setTaxList(activeTaxes);
+        })
+        .catch(err => console.error("Error fetching taxes:", err));
+    }
+  }, [open, product]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -80,6 +90,27 @@ export default function EditProductDialog({ open, onClose, product, onSave }) {
             >
               {statusOptions.map(opt => (
                 <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          {/* ✅ Tax Applicable */}
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              select
+              label="Tax Applicable"
+              name="tax_applicable"
+              value={formData.tax_applicable || ''}
+              onChange={handleChange}
+              style={{width: "200px"
+              }}
+            >
+              <MenuItem  value="None">None</MenuItem>
+              {taxList.map((tax) => (
+                <MenuItem key={tax.id} value={tax.id}>
+                  {tax.tax_name} {tax.tax_rate}%
+                </MenuItem>
               ))}
             </TextField>
           </Grid>
