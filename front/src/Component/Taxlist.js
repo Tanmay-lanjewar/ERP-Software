@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Box, Typography, Button, InputBase, IconButton, Avatar, MenuItem, TextField,
-  Chip, Menu, Table, TableHead, TableBody, TableRow, TableCell, TablePagination
+  Box, Typography, Button, InputBase, IconButton, Avatar, Chip, Menu,
+  Table, TableHead, TableBody, TableRow, TableCell, TablePagination, MenuItem
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
@@ -10,36 +10,72 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Sidebar from './Sidebar';
-
-const rows = Array.from({ length: 15 }, (_, i) => ({
-  taxType: 'GST',
-  rate: '9%',
-  label: 'Electronics',
-  status: i % 3 === 0 ? 'Inactive' : i % 4 === 0 ? 'Inactive' : 'Active',
-  date: '01/04/2025',
-}));
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Taxlist = () => {
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [selectedRow, setSelectedRow] = React.useState(null);
+  const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [selectedRowData, setSelectedRowData] = useState(null);
+  const [taxes, setTaxes] = useState([]);
+  const [filter, setFilter] = useState('All');
+
   const open = Boolean(anchorEl);
 
   const handleClick = (event, rowIndex) => {
     setAnchorEl(event.currentTarget);
     setSelectedRow(rowIndex);
+    setSelectedRowData(filteredTaxes[rowIndex]);
   };
 
   const handleClose = () => {
     setAnchorEl(null);
     setSelectedRow(null);
+    setSelectedRowData(null);
   };
+
+  const fetchTaxes = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/taxes');
+      setTaxes(res.data);
+    } catch (err) {
+      console.error("Error fetching taxes:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchTaxes();
+  }, []);
+
+  const handleToggleStatus = async () => {
+    if (!selectedRowData) return;
+
+    const newStatus = selectedRowData.status === 'Active' ? 'Inactive' : 'Active';
+
+    try {
+      await axios.patch(`http://localhost:5000/api/taxes/${selectedRowData.id}/status`, {
+        status: newStatus
+      });
+      fetchTaxes();
+    } catch (err) {
+      console.error("Error updating status:", err);
+      alert("Failed to update status.");
+    } finally {
+      handleClose();
+    }
+  };
+
+  const filteredTaxes = taxes.filter(tax => {
+    if (filter === 'All') return true;
+    return tax.status?.toLowerCase() === filter.toLowerCase();
+  });
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#F9FAFB' }}>
       <Sidebar />
-
       <Box sx={{ flexGrow: 1 }}>
-      
+        {/* Header */}
         <Box
           sx={{
             height: 60,
@@ -72,9 +108,7 @@ const Taxlist = () => {
               />
             </Box>
 
-            <IconButton>
-              <NotificationsNoneIcon />
-            </IconButton>
+            <IconButton><NotificationsNoneIcon /></IconButton>
 
             <Box display="flex" alignItems="center" gap={1}>
               <Avatar src="https://i.pravatar.cc/40?img=1" />
@@ -84,13 +118,9 @@ const Taxlist = () => {
           </Box>
         </Box>
 
+        {/* Body */}
         <Box sx={{ p: 3 }}>
-          <Box sx={{
-            backgroundColor: '#fff',
-            p: 3,
-            borderRadius: 2,
-          }}>
-            
+          <Box sx={{ backgroundColor: '#fff', p: 3, borderRadius: 2 }}>
             <Box display="flex" justifyContent="space-between" mb={2}>
               <Typography variant="h6" fontWeight="bold">Tax</Typography>
               <Button
@@ -100,25 +130,31 @@ const Taxlist = () => {
                   textTransform: 'none',
                   '&:hover': { backgroundColor: '#003060' },
                 }}
+                onClick={() => navigate('/add-tax')}
               >
                 + Add Tax
               </Button>
             </Box>
 
+            {/* Filter Buttons */}
             <Box display="flex" gap={1} mb={2}>
-              {['All', 'Active', 'Inactive'].map((label, i) => (
-                <Button key={i} variant="outlined" sx={{ textTransform: 'none' }}>
+              {['All', 'Active', 'Inactive'].map(label => (
+                <Button
+                  key={label}
+                  variant={filter === label ? 'contained' : 'outlined'}
+                  sx={{ textTransform: 'none' }}
+                  onClick={() => setFilter(label)}
+                >
                   {label}
                 </Button>
               ))}
             </Box>
 
+            {/* Table */}
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell padding="checkbox">
-                    <input type="checkbox" />
-                  </TableCell>
+                  <TableCell padding="checkbox"><input type="checkbox" /></TableCell>
                   <TableCell>Tax Type</TableCell>
                   <TableCell>Rate (%)</TableCell>
                   <TableCell>Label/Category</TableCell>
@@ -128,14 +164,12 @@ const Taxlist = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows.map((row, i) => (
-                  <TableRow key={i}>
-                    <TableCell padding="checkbox">
-                      <input type="checkbox" />
-                    </TableCell>
-                    <TableCell>{row.taxType}</TableCell>
-                    <TableCell>{row.rate}</TableCell>
-                    <TableCell>{row.label}</TableCell>
+                {filteredTaxes.map((row, i) => (
+                  <TableRow key={row.id || i}>
+                    <TableCell padding="checkbox"><input type="checkbox" /></TableCell>
+                    <TableCell>{row.tax_name}</TableCell>
+                    <TableCell>{row.tax_rate}%</TableCell>
+                    <TableCell>{row.tax_code}</TableCell>
                     <TableCell>
                       <Chip
                         label={row.status}
@@ -146,7 +180,11 @@ const Taxlist = () => {
                         }}
                       />
                     </TableCell>
-                    <TableCell>{row.date}</TableCell>
+                    <TableCell>
+                      {row.effective_date
+                        ? new Date(row.effective_date).toLocaleDateString('en-IN')
+                        : '-'}
+                    </TableCell>
                     <TableCell>
                       <IconButton onClick={(e) => handleClick(e, i)}>
                         <MoreVertIcon />
@@ -157,22 +195,21 @@ const Taxlist = () => {
               </TableBody>
             </Table>
 
-          
             <Box display="flex" justifyContent="flex-end" mt={2}>
               <TablePagination
                 component="div"
-                count={100}
+                count={filteredTaxes.length}
                 page={0}
                 rowsPerPage={15}
                 rowsPerPageOptions={[]}
-                onPageChange={() => {}}
+                onPageChange={() => { }}
               />
             </Box>
           </Box>
         </Box>
       </Box>
 
-  
+      {/* Action Menu */}
       <Menu
         anchorEl={anchorEl}
         open={open}
@@ -180,17 +217,22 @@ const Taxlist = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <MenuItem onClick={handleClose}>
+        <MenuItem
+          onClick={() => {
+            navigate(`/edit-tax/${selectedRowData?.id}`);
+            handleClose();
+          }}
+        >
           <EditIcon sx={{ fontSize: 16, mr: 1 }} />
           Edit
         </MenuItem>
-        <MenuItem onClick={handleClose}>
-          Mark as Inactive
+
+        <MenuItem onClick={handleToggleStatus}>
+          {selectedRowData?.status === 'Active' ? 'Mark as Inactive' : 'Mark as Active'}
         </MenuItem>
-        <MenuItem onClick={handleClose} sx={{ color: 'red' }}>
-          <DeleteIcon sx={{ fontSize: 16, mr: 1 }} />
-          Delete
-        </MenuItem>
+        {/* <MenuItem onClick={handleClose} sx={{ color: 'red' }}>
+          <DeleteIcon sx={{ fontSize: 16, mr: 1 }} /> Delete
+        </MenuItem> */}
       </Menu>
     </Box>
   );

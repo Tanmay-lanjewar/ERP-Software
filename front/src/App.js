@@ -38,6 +38,7 @@ import AddFinancialYear from './Component/add_financial_year';
 import FinancialYearMain from './Component/financial-year-home';
 import Dashboard from './Component/Dashboard';
 import { useState } from 'react';
+import EditTax from './Component/EditTax';
 
 
 
@@ -85,6 +86,8 @@ function App() {
           <Route path="/Add-Payment-settings" element={<AddPaymentsEntry />} />
           <Route path="/Report-and-analytics" element={<ReportsAndAnalytics />} />
           <Route path='/add/financial_year' element={<AddFinancialYear></AddFinancialYear>}/>
+          <Route path="/edit-tax/:id" element={<EditTax />} />
+
         </Routes>
       </Router>
     </LocalizationProvider>
