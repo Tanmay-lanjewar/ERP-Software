@@ -47,3 +47,54 @@ CREATE TABLE IF NOT EXISTS taxes (
   effective_date DATE,
   PRIMARY KEY (id)
 );
+
+
+
+--costumer:
+CREATE DATABASE IF NOT EXISTS erp_db;
+USE erp_db;
+
+CREATE TABLE customers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  customer_type ENUM('Domestic', 'International') NOT NULL DEFAULT 'Domestic',
+  title ENUM('MR', 'MS', 'MRS', 'DR') DEFAULT 'MR',
+  customer_name VARCHAR(100) NOT NULL,
+  company_name VARCHAR(100),
+  display_name VARCHAR(100),
+  email VARCHAR(100),
+  mobile VARCHAR(15),
+  office_no VARCHAR(15),
+  pan VARCHAR(20),
+  gst VARCHAR(30),
+  currency VARCHAR(10) DEFAULT 'INR',
+  document_path VARCHAR(255),
+
+  -- Billing Address
+  billing_recipient_name VARCHAR(100),
+  billing_country VARCHAR(50),
+  billing_address1 TEXT,
+  billing_address2 TEXT,
+  billing_city VARCHAR(50),
+  billing_state VARCHAR(50),
+  billing_pincode VARCHAR(10),
+  billing_fax VARCHAR(20),
+  billing_phone VARCHAR(20),
+
+  -- Shipping Address
+  shipping_recipient_name VARCHAR(100),
+  shipping_country VARCHAR(50),
+  shipping_address1 TEXT,
+  shipping_address2 TEXT,
+  shipping_city VARCHAR(50),
+  shipping_state VARCHAR(50),
+  shipping_pincode VARCHAR(10),
+  shipping_fax VARCHAR(20),
+  shipping_phone VARCHAR(20),
+
+  remark TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE customers
+ADD COLUMN status ENUM('Active', 'Inactive') DEFAULT 'Active';
+

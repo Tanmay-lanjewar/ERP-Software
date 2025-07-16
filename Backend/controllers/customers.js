@@ -27,3 +27,15 @@ exports.remove = (req, res) => {
     res.json({ message: 'Customer deleted' });
   });
 };
+
+exports.updateStatus = (req, res) => {
+  const { status } = req.body;
+  if (!status) {
+    return res.status(400).json({ error: 'Status is required' });
+  }
+
+  Customer.updateStatus(req.params.id, status, (err) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json({ message: 'Customer status updated' });
+  });
+};
