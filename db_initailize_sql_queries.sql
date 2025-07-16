@@ -14,26 +14,25 @@ CREATE TABLE IF NOT EXISTS financial_years (
 
 
 -- product_services
-CREATE TABLE IF NOT EXISTS product_services (
-  id INT(11) NOT NULL AUTO_INCREMENT,
-  type ENUM('Product', 'Service') NOT NULL,
-  product_name VARCHAR(100) NOT NULL,
-  sku VARCHAR(50),
-  tax_applicable VARCHAR(100),
-  status ENUM('Active', 'Inactive') DEFAULT 'Active',
-  category VARCHAR(100),
-  unit VARCHAR(50),
-  sale_price DECIMAL(10,2),
-  sale_discount DECIMAL(5,2),
-  sale_discount_type ENUM('%', 'Flat') DEFAULT '%',
-  sale_description TEXT,
-  purchase_price DECIMAL(10,2),
-  purchase_discount DECIMAL(5,2),
-  purchase_discount_type ENUM('%', 'Flat') DEFAULT '%',
-  purchase_description TEXT,
-  preferred_vendor VARCHAR(100),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id)
+CREATE TABLE products_services (
+    id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    type ENUM('Product', 'Service') NOT NULL,
+    product_name VARCHAR(100) NOT NULL,
+    sku VARCHAR(50),
+    tax_applicable VARCHAR(100),
+    status ENUM('Active', 'Inactive') DEFAULT 'Active',
+    category VARCHAR(100),
+    unit VARCHAR(50),
+    sale_price DECIMAL(10,2),
+    sale_discount DECIMAL(5,2),
+    sale_discount_type ENUM('%', 'Flat') DEFAULT '%',
+    sale_description TEXT,
+    purchase_price DECIMAL(10,2),
+    purchase_discount DECIMAL(5,2),
+    purchase_discount_type ENUM('%', 'Flat') DEFAULT '%',
+    purchase_description TEXT,
+    preferred_vendor VARCHAR(100),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Taxes
