@@ -3,29 +3,29 @@
 A full-stack business management web application designed to simplify and streamline sales, purchases, and inventory processes. This system supports essential business operations, including managing customers, products, vendors, purchase orders, quotations, invoices, taxes, and more.
 
 ## 🚀 Features
-🔹 Sales Module
-👤 Customer Management – Add, edit, delete, and filter customers
-📄 Quotations – Generate quotations for customers
-🧾 Invoices – Create and manage sales invoices
-📃 Pro Forma Invoices – Issue pre-invoice documents
+🔹 Sales Module <br/> 
+👤 Customer Management – Add, edit, delete, and filter customers  <br/> 
+📄 Quotations – Generate quotations for customers <br/> 
+🧾 Invoices – Create and manage sales invoices <br/> 
+📃 Pro Forma Invoices – Issue pre-invoice documents <br/> 
+ <br/> 
+🔹 Purchase Module  <br/> 
+📑 Purchase Orders – Create and track purchase orders  <br/> 
+🏢 Vendors – Manage vendor information  <br/> 
+🛠️ Work Orders – Track production/repair jobs (if applicable)  <br/> 
+ <br/> 
+🔹 Inventory Module  <br/> 
+📦 Products & Services – Add items, prices, units, and status (active/inactive)  <br/> 
+🔎 Search & Filter – Filter by status and name  <br/> 
+🔹 Finance Settings  <br/> 
+💸 Tax Configuration – Setup tax slabs  <br/> 
+📆 Financial Year Settings – Set accounting periods  <br/> 
+ <br/> 
+🔹 Admin Tools  <br/> 
+📊 Reports & Analytics – Placeholder for future analytics  <br/> 
+⚙️ Settings – Customize business configuration  <br/> 
 
-🔹 Purchase Module
-📑 Purchase Orders – Create and track purchase orders
-🏢 Vendors – Manage vendor information
-🛠️ Work Orders – Track production/repair jobs (if applicable)
-
-🔹 Inventory Module
-📦 Products & Services – Add items, prices, units, and status (active/inactive)
-🔎 Search & Filter – Filter by status and name
-🔹 Finance Settings
-💸 Tax Configuration – Setup tax slabs
-📆 Financial Year Settings – Set accounting periods
-
-🔹 Admin Tools
-📊 Reports & Analytics – Placeholder for future analytics
-⚙️ Settings – Customize business configuration
-
-##🧑‍💻 Tech Stack
+##  🧑‍💻 Tech Stack
 | Layer    | Technology                   |
 | -------- | ---------------------------- |
 | Frontend | React.js, Axios, Bootstrap   |
@@ -34,7 +34,8 @@ A full-stack business management web application designed to simplify and stream
 | Others   | Postman (API testing), XAMPP |
 
 
-📂 Project Structure
+## 📂 Project Structure
+  ```bash
 root/
 │
 ├── backend/
@@ -44,11 +45,12 @@ root/
 │   ├── config/db.js
 │   └── server.js
 │
-├── front/
+├── frontend/
 │   ├── src/components/
 │   ├── src/pages/
 │   ├── src/services/
 │   └── App.js, index.js
+```
 
 
 
