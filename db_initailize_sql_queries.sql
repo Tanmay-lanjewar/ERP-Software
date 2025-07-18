@@ -97,3 +97,6 @@ CREATE TABLE customers (
 ALTER TABLE customers
 ADD COLUMN status ENUM('Active', 'Inactive') DEFAULT 'Active';
 
+
+
+

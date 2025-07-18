@@ -39,6 +39,7 @@ import FinancialYearMain from './Component/financial-year-home';
 import Dashboard from './Component/Dashboard';
 import { useState } from 'react';
 import EditTax from './Component/EditTax';
+import EditQuotationPage from './Component/EditQuotationPage';
 
 
 
@@ -54,7 +55,8 @@ function App() {
            <FinancialYearGuard /> 
         <Routes>
           <Route path="/dashboard" element={<Dashboard></Dashboard>} />
-          <Route path="/invoice" element={<InvoicePage />} />
+          {/* <Route path="/invoice" element={<InvoicePage />} /> */}
+          <Route path="/invoice" element={<Invoicelist></Invoicelist>} />
           <Route path="/new-invoice" element={<NewInvoicePage />} />
           <Route path="/invoice-list" element={<Invoicelist />} />
           <Route path="/customer" element={<CustomerPage />} />
@@ -63,22 +65,28 @@ function App() {
           <Route path="/items" element={  <ItemsPage />} />
           <Route path="/add-items" element={<AddItem />} />
           <Route path="/item-list" element={<ItemList />} />
-          <Route path="/purchase-order" element={<FirstTimePurchaseOrder />} />
+          {/* <Route path="/purchase-order" element={<FirstTimePurchaseOrder />} /> */}
+          <Route path="/purchase-order" element={<PurchaseOrderList></PurchaseOrderList>} />
           <Route path="/add-purchase-order" element={<PurchaseOrderForm />} />
           <Route path="/purchase-order-list" element={<PurchaseOrderList />} />
-          <Route path="/vendors" element={<Vendors />} />
+          {/* <Route path="/vendors" element={<Vendors />} /> */}
+          <Route path="/vendors" element={<VendorListPage/>} />
           <Route path="/add-vendor" element={<NewVendorForm />} />
           <Route path="/vendor-list" element={<VendorListPage />} />
-          <Route path="/Quotation" element={<Quotation />} />
+          {/* <Route path="/Quotation" element={<Quotation />} /> */}
+          <Route path="/Quotation" element={<QuotationListPage />} />
           <Route path="/add-Quotation" element={<NewQuotation />} />
+          <Route path="/editQuotation/:id" element={<EditQuotationPage />} />
           <Route path="/Quotation-list" element={<QuotationListPage />} />
           <Route path="/Tax" element={<Tax />} />
           <Route path="/add-Tax" element={<AddTax />} />
           <Route path="/Tax-list" element={<Taxlist />} />
-          <Route path="/Work-Order" element={<WorkOrder />} />
+          {/* <Route path="/Work-Order" element={<WorkOrder />} /> */}
+          <Route path="/Work-Order" element={<WorkOrderlist />} />
           <Route path="/add-Work-Order" element={<NewWorkOrder />} />
           <Route path="/Work-Order-list" element={<WorkOrderlist />} />
-          <Route path="/pro-forma-invoice" element={<ProFormaInvoice />} />
+          {/* <Route path="/pro-forma-invoice" element={<ProFormaInvoice />} /> */}
+          <Route path="/pro-forma-invoice" element={<ProformaInvoicelist />} />
           <Route path="/add-pro-forma-invoice" element={<NewProFormaInvoice />} />
           <Route path="/pro-forma-invoice-list" element={<ProformaInvoicelist />} />
           <Route path="/add-financial-year-settings" element={<FinancialYearMain></FinancialYearMain>} />
