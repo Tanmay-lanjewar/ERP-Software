@@ -423,10 +423,10 @@ export default function CustomerList() {
                                                                 <PrintIcon fontSize="small" sx={{ mr: 1 }} /> Print Statement
                                                             </MenuItem>
 
-                                                            {/* <MenuItem onClick={() => toggleCustomerStatus(row)}>
+                                                            <MenuItem onClick={() => toggleCustomerStatus(row)}>
                                 <BlockIcon fontSize="small" sx={{ mr: 1 }} />
                                 {row.status === 'Active' ? 'Mark as Inactive' : 'Mark as Active'}
-                              </MenuItem> */}
+                              </MenuItem>
                                                         </Menu>
                                                     )}
                                                 </TableCell>

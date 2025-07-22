@@ -62,12 +62,12 @@ const salesItems = [
     path: '/invoice',
     matchPaths: ['/invoice', '/new-invoice', '/invoice-list']
   },
-  {
-    text: 'Pro Forma Invoice',
-    icon: <Assignment />,
-    path: '/pro-forma-Invoice',
-    matchPaths: ['/pro-forma-Invoice', '/new-pro-forma-Invoice', '/pro-forma-Invoice-list']
-  },
+  // {
+  //   text: 'Pro Forma Invoice',
+  //   icon: <Assignment />,
+  //   path: '/pro-forma-Invoice',
+  //   matchPaths: ['/pro-forma-Invoice', '/new-pro-forma-Invoice', '/pro-forma-Invoice-list']
+  // },
 ];
 
 const purchaseItems = [

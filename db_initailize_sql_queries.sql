@@ -100,3 +100,5 @@ ADD COLUMN status ENUM('Active', 'Inactive') DEFAULT 'Active';
 
 
 
+
+
