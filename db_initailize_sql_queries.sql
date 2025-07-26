@@ -99,6 +99,45 @@ ALTER TABLE customers
 ADD COLUMN status ENUM('Active', 'Inactive') DEFAULT 'Active';
 
 
+-- vendors:
+CREATE TABLE vendors (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  vendor_name VARCHAR(255),
+  company_name VARCHAR(255),
+  display_name VARCHAR(255),
+  email VARCHAR(255),
+  phone VARCHAR(20),
+  pan VARCHAR(20),
+  gst VARCHAR(20),
+
+  billing_recipient_name VARCHAR(255),
+  billing_country VARCHAR(100),
+  billing_address1 TEXT,
+  billing_address2 TEXT,
+  billing_city VARCHAR(100),
+  billing_state VARCHAR(100),
+  billing_pincode VARCHAR(20),
+  billing_fax VARCHAR(50),
+  billing_phone VARCHAR(20),
+
+  shipping_recipient_name VARCHAR(255),
+  shipping_country VARCHAR(100),
+  shipping_address1 TEXT,
+  shipping_address2 TEXT,
+  shipping_city VARCHAR(100),
+  shipping_state VARCHAR(100),
+  shipping_pincode VARCHAR(20),
+  shipping_fax VARCHAR(50),
+  shipping_phone VARCHAR(20),
+
+  account_holder_name VARCHAR(255),
+  bank_name VARCHAR(255),
+  account_number VARCHAR(50),
+  ifsc VARCHAR(20),
+  remark TEXT,
+  
+  status ENUM('Active', 'Inactive') DEFAULT 'Active'
+);
 
 
 
