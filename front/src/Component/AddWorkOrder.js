@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
   InputAdornment,
@@ -37,20 +37,58 @@ import CloseIcon from '@mui/icons-material/Close';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 const NewWorkOrder = () => {
 const navigate =useNavigate()
-  const [customers, setCustomers] = useState(['Customer 1', 'Customer 2']);
-  const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [customerModalOpen, setCustomerModalOpen] = useState(false);
-  const [customerTab, setCustomerTab] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRowIndex, setSelectedRowIndex] = useState(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
+const [customers, setCustomers] = useState([]);
+const [selectedCustomer, setSelectedCustomer] = useState('');
+const [customerModalOpen, setCustomerModalOpen] = useState(false);
+const [customerTab, setCustomerTab] = useState(0);
+const [searchTerm, setSearchTerm] = useState('');
+const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+const [previewOpen, setPreviewOpen] = useState(false);
+
+useEffect(() => {
+  fetch('http://localhost:5000/api/customers')
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then((data) => {
+      console.log('Fetched customers:', data);
+      const customerNames = data.map((customer) => customer.customer_name);
+      setCustomers(customerNames);
+    })
+    .catch((error) => {
+      console.error('Error fetching customers:', error);
+    });
+}, []);
 
   const handleAddCustomer = () => {
     setCustomerModalOpen(true);
   }
-  const [items, setItems] = useState(['Item 1', 'Item 2']);
+const [items, setItems] = useState([]);
+const [products, setProducts] = useState([]);
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [itemSearchTerm, setItemSearchTerm] = useState('');
+
+useEffect(() => {
+  fetch('http://localhost:5000/api/products')
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then((data) => {
+      console.log('Fetched products:', data);
+      setProducts(data);
+      const productNames = data.map((product) => product.product_name);
+      setItems(productNames);
+    })
+    .catch((error) => {
+      console.error('Error fetching products:', error);
+    });
+}, []);
   const [rows, setRows] = useState([
     { item: '', qty: 0, rate: 0, discount: 0, amount: 0 },
   ]);
@@ -67,7 +105,13 @@ const navigate =useNavigate()
 
   const updateRow = (index, field, value) => {
     const updated = [...rows];
-    updated[index][field] = parseFloat(value) || 0;
+    if (field === 'rate') {
+      updated[index][field] = Number(value) || 0;
+    } else if (field === 'qty' || field === 'discount') {
+      updated[index][field] = parseFloat(value) || 0;
+    } else {
+      updated[index][field] = value;
+    }
     updated[index].amount = calculateAmount(updated[index]);
     setRows(updated);
   };
@@ -332,18 +376,36 @@ const navigate =useNavigate()
                   {rows.map((row, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        <TextField
-                          fullWidth
-                          placeholder="Type or Click to select an item"
-                          value={row.item}
-                          InputProps={{ readOnly: true }}
-                          onClick={() => {
-                            setSelectedRowIndex(index);
-                            setItemModalOpen(true);
-                            setItemSearchTerm('');
-                          }}
-                          size="small"
-                        />
+                      <Select
+                        fullWidth
+                        value={row.item}
+                        onChange={(e) => {
+                          const selectedProductId = e.target.value;
+                          updateRow(index, 'item', selectedProductId);
+                          // Fetch product details by id and update rate
+                          fetch(`http://localhost:5000/api/products/${selectedProductId}`)
+                            .then((res) => res.json())
+.then((product) => {
+  console.log('Fetched product details:', product);
+  updateRow(index, 'rate', product.sale_price || 0);
+})
+                            .catch((err) => {
+                              console.error('Error fetching product details:', err);
+                            });
+                        }}
+                        size="small"
+                        displayEmpty
+                        sx={{ width: '100%' }}
+                      >
+                        <MenuItem value="">
+                          <em>Select Item</em>
+                        </MenuItem>
+                        {products.map((product, idx) => (
+                          <MenuItem key={idx} value={product.id}>
+                            {product.product_name}
+                          </MenuItem>
+                        ))}
+                      </Select>
                       </TableCell>
                       <TableCell>
                         <TextField
