@@ -6,9 +6,30 @@ import SearchIcon from '@mui/icons-material/Search';
 import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate } from 'react-router-dom';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone'
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
 const Vendors = () => {
-    const navigate=useNavigate()
+    const [vendors, setVendors] = useState([]);
+    const [loading, setLoading] = useState(true);
+     const navigate=useNavigate()
+     useEffect(() => {
+  axios.get('http://localhost:5000/api/vendors')
+    .then((res) => {
+      setVendors(res.data || []);
+      console.log('Fetched vendors:', res.data);
+      setLoading(false);
+    })
+    .catch((err) => {
+      console.error('Error fetching vendors:', err);
+      setLoading(false);
+    });
+}, []);
+
+
+
+
     return (
         <Box display="flex">
             <Sidebar />

@@ -32,7 +32,8 @@ CREATE TABLE products_services (
     purchase_discount_type ENUM('%', 'Flat') DEFAULT '%',
     purchase_description TEXT,
     preferred_vendor VARCHAR(100),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT
+    _TIMESTAMP
 );
 
 -- Taxes

@@ -9,9 +9,96 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import axios from 'axios';
+import { useState } from 'react';
 export default function NewVendorForm() {
 
   const navigate = useNavigate()
+   const [vendorName, setVendorName] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [companyPhone, setCompanyPhone] = useState('');
+  const [panNumber, setPanNumber] = useState('');
+  const [gstNumber, setGstNumber] = useState('');
+
+  const [billingRecipient, setBillingRecipient] = useState('');
+  const [billingCountry, setBillingCountry] = useState('');
+  const [billingAddress1, setBillingAddress1] = useState('');
+  const [billingAddress2, setBillingAddress2] = useState('');
+  const [billingCity, setBillingCity] = useState('');
+  const [billingState, setBillingState] = useState('');
+  const [billingPinCode, setBillingPinCode] = useState('');
+  const [billingFax, setBillingFax] = useState('');
+  const [billingOtherPhone, setBillingOtherPhone] = useState('');
+
+  const [shippingRecipient, setShippingRecipient] = useState('');
+  const [shippingCountry, setShippingCountry] = useState('');
+  const [shippingAddress1, setShippingAddress1] = useState('');
+  const [shippingAddress2, setShippingAddress2] = useState('');
+  const [shippingCity, setShippingCity] = useState('');
+  const [shippingState, setShippingState] = useState('');
+  const [shippingPinCode, setShippingPinCode] = useState('');
+  const [shippingFax, setShippingFax] = useState('');
+  const [shippingOtherPhone, setShippingOtherPhone] = useState('');
+
+  const [accountHolderName, setAccountHolderName] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [ifscCode, setIfscCode] = useState('');
+
+  const [remark, setRemark] = useState('');
+
+  const API_URL = "http://localhost:5000/api/vendors";
+
+  const handleSave = async () => {
+    const vendorData = {
+      vendor_name: vendorName,
+      company_name: companyName,
+      display_name: displayName,
+      email: email,
+      phone: companyPhone,
+      pan: panNumber,
+      gst: gstNumber,
+
+      billing_recipient: billingRecipient,
+      billing_country: billingCountry,
+      billing_address1: billingAddress1,
+      billing_address2: billingAddress2,
+      billing_city: billingCity,
+      billing_state: billingState,
+      billing_pincode: billingPinCode,
+      billing_fax: billingFax,
+      billing_other_phone: billingOtherPhone,
+
+      shipping_recipient: shippingRecipient,
+      shipping_country: shippingCountry,
+      shipping_address1: shippingAddress1,
+      shipping_address2: shippingAddress2,
+      shipping_city: shippingCity,
+      shipping_state: shippingState,
+      shipping_pincode: shippingPinCode,
+      shipping_fax: shippingFax,
+      shipping_other_phone: shippingOtherPhone,
+
+      account_holder_name: accountHolderName,
+      bank_name: bankName,
+      account_number: accountNumber,
+      ifsc: ifscCode,
+      remark: remark
+    };
+
+    try {
+      const response = await axios.post(API_URL, vendorData);
+      if (response.status === 201) {
+        alert("Vendor added successfully!");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to add vendor: " + (error.response?.data?.message || error.message));
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', backgroundColor: '#f9f9f9', minHeight: '100vh' }}>
             <Sidebar />
@@ -107,7 +194,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Primary Contact Full Name" />
+                    }} fullWidth label="Primary Contact Full Name" onChange={(e) => setVendorName(e.target.value)} />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <TextField      sx={{
@@ -124,7 +211,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Company Name" />
+                    }} fullWidth label="Company Name" onChange={(e) => setCompanyName(e.target.value)}/>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <TextField      sx={{
@@ -141,7 +228,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Display Name" />
+                    }} fullWidth label="Display Name"onChange={(e) => setDisplayName(e.target.value)} />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <TextField      sx={{
@@ -158,7 +245,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Email Address" />
+                    }} fullWidth label="Email Address" onChange={(e) => setEmail(e.target.value)}/>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <TextField      sx={{
@@ -175,7 +262,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Company Phone Number" />
+                    }} fullWidth label="Company Phone Number"onChange={(e) => setCompanyPhone(e.target.value)}  />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <TextField      sx={{
@@ -192,7 +279,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="PAN Number" />
+                    }} fullWidth label="PAN Number"onChange={(e) => setPanNumber(e.target.value)} />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <TextField      sx={{
@@ -209,7 +296,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="GST Number" />
+                    }} fullWidth label="GST Number" onChange={(e) => setGstNumber(e.target.value)} />
         </Grid>
       </Grid>
 
@@ -238,7 +325,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Recipient Name" />
+                    }} fullWidth label="Recipient Name"onChange={(e) => setBillingRecipient(e.target.value)} />
               </Grid>
               <Grid item xs={12}>
                 <FormControl fullWidth      sx={{
@@ -255,7 +342,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }}>
+                    }} onChange={(e) => setBillingCountry(e.target.value)}>
                   <InputLabel>Country/Region</InputLabel>
                   <Select label="Country/Region">
                     <MenuItem value="India">India</MenuItem>
@@ -278,7 +365,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Address 1" />
+                    }} fullWidth label="Address 1" onChange={(e) => setBillingAddress1(e.target.value)}/>
               </Grid>
               <Grid item xs={12}>
                 <TextField      sx={{
@@ -295,7 +382,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Address 2" />
+                    }} fullWidth label="Address 2" onChange={(e) => setBillingAddress2(e.target.value)} />
               </Grid>
               <Grid item xs={6}>
                 <TextField      sx={{
@@ -312,7 +399,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="City" />
+                    }} fullWidth label="City"onChange={(e) => setBillingCity(e.target.value)} />
               </Grid>
               <Grid item xs={6}>
                 <TextField      sx={{
@@ -329,7 +416,8 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="State" />
+                    }} fullWidth label="State"onChange={(e) => setBillingState(e.target.value)}
+                     />
               </Grid>
               <Grid item xs={6}>
                 <TextField      sx={{
@@ -346,7 +434,8 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Pin Code" />
+                    }} fullWidth label="Pin Code"onChange={(e) => setBillingPinCode(e.target.value)}
+                     />
               </Grid>
               <Grid item xs={6}>
                 <TextField      sx={{
@@ -363,7 +452,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Fax Number" />
+                    }} fullWidth label="Fax Number"onChange={(e) => setBillingFax(e.target.value)}  />
               </Grid>
               <Grid item xs={12}>
                 <TextField      sx={{
@@ -380,7 +469,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Other Phone Number" />
+                    }} fullWidth label="Other Phone Number" onChange={(e) => setBillingOtherPhone(e.target.value)}  />
               </Grid>
             </Grid>
           </Grid>
@@ -411,7 +500,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Recipient Name" />
+                    }} fullWidth label="Recipient Name" onChange={(e) => setShippingRecipient(e.target.value)}/>
               </Grid>
               <Grid item xs={12}>
                 <FormControl fullWidth      sx={{
@@ -428,7 +517,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }}>
+                    }}onChange={(e) => setShippingCountry(e.target.value)} >
                   <InputLabel>Country/Region</InputLabel>
                   <Select label="Country/Region">
                     <MenuItem value="India">India</MenuItem>
@@ -451,7 +540,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Address 1" />
+                    }} fullWidth label="Address 1"onChange={(e) => setShippingAddress1(e.target.value)} />
               </Grid>
               <Grid item xs={12}>
                 <TextField      sx={{
@@ -468,7 +557,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Address 2" />
+                    }} fullWidth label="Address 2" onChange={(e) => setShippingAddress2(e.target.value)}/>
               </Grid>
               <Grid item xs={6}>
                 <TextField      sx={{
@@ -485,7 +574,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="City" />
+                    }} fullWidth label="City" onChange={(e) => setShippingCity(e.target.value)}/>
               </Grid>
               <Grid item xs={6}>
                 <TextField      sx={{
@@ -502,7 +591,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="State" />
+                    }} fullWidth label="State"  onChange={(e) => setShippingState(e.target.value)}/>
               </Grid>
               <Grid item xs={6}>
                 <TextField      sx={{
@@ -519,7 +608,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Pin Code" />
+                    }} fullWidth label="Pin Code" onChange={(e) => setShippingPinCode(e.target.value)}/>
               </Grid>
               <Grid item xs={6}>
                 <TextField      sx={{
@@ -536,7 +625,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Fax Number" />
+                    }} fullWidth label="Fax Number" onChange={(e) => setShippingFax(e.target.value)}/>
               </Grid>
               <Grid item xs={12}>
                 <TextField      sx={{
@@ -553,7 +642,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Other Phone Number" />
+                    }} fullWidth label="Other Phone Number"onChange={(e) => setShippingOtherPhone(e.target.value)} />
               </Grid>
             </Grid>
           </Grid>
@@ -580,7 +669,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Account Holder Name" />
+                    }} fullWidth label="Account Holder Name"onChange={(e) => setAccountHolderName(e.target.value)}  />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <TextField      sx={{
@@ -597,7 +686,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Bank Name" />
+                    }} fullWidth label="Bank Name" onChange={(e) => setBankName(e.target.value)}/>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <TextField      sx={{
@@ -614,7 +703,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Account Number" />
+                    }} fullWidth label="Account Number"onChange={(e) => setAccountNumber(e.target.value)} />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <TextField      sx={{
@@ -648,7 +737,7 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="IFSC" />
+                    }} fullWidth label="IFSC" onChange={(e) => setIfscCode(e.target.value)}/>
           </Grid>
           <Grid item xs={12} md={9}>
             <TextField      sx={{
@@ -665,14 +754,14 @@ export default function NewVendorForm() {
                         fontSize: '14px',
                         padding: '10px 14px',
                       },
-                    }} fullWidth label="Remark" />
+                    }} fullWidth label="Remark"onChange={(e) => setRemark(e.target.value)} />
           </Grid>
         </Grid>
       </Box>
 
       <Box mt={4} display="flex" justifyContent="flex-end" gap={2}>
         <Button variant="outlined">Cancel</Button>
-        <Button variant="contained" color="primary"onClick={() => navigate('/vendor-list')}>Add</Button>
+        <Button variant="contained" color="primary"onClick={handleSave}>Add</Button>
       </Box></Paper></Box>
     </Box>
     </Box>
