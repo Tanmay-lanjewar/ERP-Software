@@ -59,6 +59,8 @@ exports.update = (id, data, cb) => {
     shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
 
     remark, status
+     
+    
   } = data;
 
   db.query(
