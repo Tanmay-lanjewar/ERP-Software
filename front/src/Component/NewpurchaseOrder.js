@@ -21,6 +21,7 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { useNavigate } from 'react-router-dom';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+
 const PurchaseOrderForm = () => {
 const navigate= useNavigate()
     const [customers, setCustomers] = useState(['Customer 1', 'Customer 2']);
@@ -77,6 +78,7 @@ const navigate= useNavigate()
     const subtotal = rows.reduce((sum, row) => sum + calculateAmount(row), 0);
     const gst = subtotal * 0.09;
     const total = subtotal + gst * 2;
+    
 
     return (
         <Box sx={{ display: 'flex', backgroundColor: '#f9f9f9', minHeight: '100vh' }}>
