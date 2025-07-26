@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
   InputAdornment,
@@ -35,15 +35,32 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import axios from 'axios';
 const NewInvoicePage = () => {
 const navigate =useNavigate()
-  const [customers, setCustomers] = useState(['Customer 1', 'Customer 2']);
+  const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState('');
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [customerTab, setCustomerTab] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRowIndex, setSelectedRowIndex] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [status, setStatus] = useState('Draft');
+  const [invoiceDate, setInvoiceDate] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [subject, setSubject] = useState('');
+  const [customerNotes, setCustomerNotes] = useState('');
+  const [termsAndConditions, setTermsAndConditions] = useState('');
+
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/customers')
+      .then(res => setCustomers(res.data))
+      .catch(() => setCustomers([]));
+    axios.get('http://localhost:5000/api/invoice/next-number')
+      .then(res => setInvoiceNumber(res.data.nextQuoteNumber))
+      .catch(() => setInvoiceNumber(''));
+  }, []);
 
   const handleAddCustomer = () => {
     setCustomerModalOpen(true);
@@ -91,6 +108,41 @@ const navigate =useNavigate()
   const subtotal = rows.reduce((sum, row) => sum + calculateAmount(row), 0);
   const gst = subtotal * 0.09;
   const total = subtotal + gst * 2;
+
+  // On form submit, POST to backend
+  const handleSubmit = async () => {
+    // Find selected customer object
+    const customerObj = customers.find(c => c.customer_id === selectedCustomer);
+    const invoiceData = {
+      customer_name: customerObj ? customerObj.customer_name : '',
+      invoice_date: invoiceDate,
+      expiry_date: expiryDate,
+      subject: subject,
+      customer_notes: customerNotes,
+      terms_and_conditions: termsAndConditions,
+      status: status
+    };
+    const items = rows.map(row => ({
+      item_detail: row.item,
+      quantity: row.qty,
+      rate: row.rate,
+      discount: row.discount,
+      amount: row.amount
+    }));
+    try {
+      await axios.post('http://localhost:5000/api/invoice', {
+        invoice: invoiceData,
+        items: items
+      }, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      // Success: redirect or show message
+      navigate('/invoice-list');
+    } catch (err) {
+      // Handle error
+      alert('Failed to save invoice');
+    }
+  };
 
   return (
     <Box sx={{ display: 'flex', backgroundColor: '#f9f9f9', minHeight: '100vh' }}>
@@ -175,7 +227,8 @@ const navigate =useNavigate()
               <TextField
                 required
                 label="Invoice Number"
-                defaultValue="INV-000001"
+                value={invoiceNumber}
+                InputProps={{ readOnly: true }}
                 sx={{
                   width: 500,
                   '& .MuiOutlinedInput-root': {
@@ -195,7 +248,7 @@ const navigate =useNavigate()
                   <InputLabel>Customer Name</InputLabel>
                   <Select
                     value={selectedCustomer}
-                    onChange={(e) => setSelectedCustomer(e.target.value)}
+                    onChange={e => setSelectedCustomer(e.target.value)}
                     displayEmpty
                     sx={{
                       bgcolor: '#f9fafb',
@@ -207,8 +260,8 @@ const navigate =useNavigate()
                       <MenuItem disabled>No result found</MenuItem>
                     ) : (
                       customers.map((customer, index) => (
-                        <MenuItem key={index} value={customer}>
-                          {customer}
+                        <MenuItem key={customer.customer_id} value={customer.customer_id}>
+                          {customer.customer_name}
                         </MenuItem>
                       ))
                     )}
@@ -231,7 +284,8 @@ const navigate =useNavigate()
                   required
                   label="Invoice Date"
                   type="date"
-                  defaultValue="2025-06-21"
+                  value={invoiceDate}
+                  onChange={e => setInvoiceDate(e.target.value)}
                   InputLabelProps={{ shrink: true }}
                   InputProps={{
                     sx: {
@@ -244,20 +298,16 @@ const navigate =useNavigate()
               </Grid>
 
               <Grid item xs={12} sm={6} md={2}>
-                <FormControl fullWidth required>
-                  <InputLabel>Payment Terms</InputLabel>
+                <FormControl fullWidth required sx={{ mt: 2 }}>
+                  <InputLabel>Status</InputLabel>
                   <Select
-                    label="Payment Terms"
-                    defaultValue="Due end of the month"
-                    sx={{
-                      bgcolor: '#f9fafb',
-                      borderRadius: '12px',
-                      width: 200,
-                    }}
+                    value={status}
+                    onChange={e => setStatus(e.target.value)}
+                    sx={{ bgcolor: '#f9fafb', borderRadius: '12px', width: 200 }}
                   >
-                    <MenuItem value="Due end of the month">Due end of the month</MenuItem>
-                    <MenuItem value="Net 15">Net 15</MenuItem>
-                    <MenuItem value="Net 30">Net 30</MenuItem>
+                    <MenuItem value="Draft">Draft</MenuItem>
+                    <MenuItem value="Partial">Partial</MenuItem>
+                    <MenuItem value="Paid">Paid</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -268,7 +318,8 @@ const navigate =useNavigate()
                   required
                   label="Due Date"
                   type="date"
-                  defaultValue="2025-06-30"
+                  value={expiryDate}
+                  onChange={e => setExpiryDate(e.target.value)}
                   InputLabelProps={{ shrink: true }}
                   InputProps={{
                     sx: {
@@ -287,6 +338,8 @@ const navigate =useNavigate()
                   fullWidth
                   label="Subject"
                   placeholder="Write what this invoice is about"
+                  value={subject}
+                  onChange={e => setSubject(e.target.value)}
                   InputProps={{
                     sx: {
                       bgcolor: '#f9fafb',
@@ -336,11 +389,11 @@ const navigate =useNavigate()
                           fullWidth
                           placeholder="Type or Click to select an item"
                           value={row.item}
-                          InputProps={{ readOnly: true }}
-                          onClick={() => {
-                            setSelectedRowIndex(index);
-                            setItemModalOpen(true);
-                            setItemSearchTerm('');
+                          onChange={e => {
+                            const updated = [...rows];
+                            updated[index].item = e.target.value;
+                            updated[index].amount = calculateAmount(updated[index]);
+                            setRows(updated);
                           }}
                           size="small"
                         />
@@ -403,7 +456,8 @@ const navigate =useNavigate()
                     multiline
                     rows={1}
                     label="Customer Notes"
-                    defaultValue="Thanks for your business."
+                    value={customerNotes}
+                    onChange={e => setCustomerNotes(e.target.value)}
                     helperText="Will be displayed on the invoice"
                     sx={{ bgcolor: '#f9fafb', borderRadius: 1, width: 500, }}
                   />
@@ -455,7 +509,7 @@ const navigate =useNavigate()
 
           <Grid container spacing={2} mt={3}>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Terms & Conditions" />
+              <TextField fullWidth label="Terms & Conditions" value={termsAndConditions} onChange={e => setTermsAndConditions(e.target.value)} />
               <Box display="flex" alignItems="center" mt={1}>
                 <Checkbox />
                 <Typography variant="body2">Use this in future for all invoices</Typography>
@@ -497,7 +551,7 @@ const navigate =useNavigate()
                 color: '#003366',border: '1px solid #004085',
               
                 }}>Save as Draft</Button>
-              <Button variant="contained" onClick={() => navigate('/invoice-list')} 
+              <Button variant="contained" onClick={handleSubmit} 
                 sx={{
                   textTransform: 'none',
                   borderRadius: 2,

@@ -100,13 +100,15 @@ export default function CustomerList() {
     };
 
     const toggleCustomerStatus = async (customer) => {
+        console.log(customer)
         const newStatus = customer.status === 'Active' ? 'Inactive' : 'Active';
         try {
-            await fetch(`http://localhost:5000/api/customers/${customer._id}`, {
-                method: 'PUT',
+            const response = await fetch(`http://localhost:5000/api/customers/${customer.id}/status`, {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...customer, status: newStatus })
             });
+            console.log(response)
             await fetchCustomers(); // refresh list
         } catch (err) {
             console.error('Failed to toggle status', err);
@@ -190,7 +192,7 @@ export default function CustomerList() {
                         <form onSubmit={async (e) => {
                             e.preventDefault();
                             try {
-                                await fetch(`http://localhost:5000/api/customers/${editingCustomer._id}`, {
+                                await fetch(`http://localhost:5000/api/customers/${editingCustomer.id}`, {
                                     method: 'PUT',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(editingCustomer),
@@ -408,8 +410,8 @@ export default function CustomerList() {
                                                 <TableCell>{row.email}</TableCell>
                                                 <TableCell>{row.mobile}</TableCell>
                                                 <TableCell align="center">
-                                                    <IconButton onClick={(e) => handleMenuOpen(e, row._id)}><MoreVertIcon /></IconButton>
-                                                    {selectedRow === row._id && (
+                                                    <IconButton onClick={(e) => handleMenuOpen(e, row.id)}><MoreVertIcon /></IconButton>
+                                                    {selectedRow === row.id && (
                                                         <Menu
                                                             anchorEl={menuAnchor}
                                                             open={Boolean(menuAnchor)}

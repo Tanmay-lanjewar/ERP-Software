@@ -99,6 +99,34 @@ ADD COLUMN status ENUM('Active', 'Inactive') DEFAULT 'Active';
 
 
 
+USE erp_db;
+   
 
 
+-- Create table for quotation
+CREATE TABLE IF NOT EXISTS quotation (
+  quotation_id INT AUTO_INCREMENT PRIMARY KEY,
+  customer_name VARCHAR(255) NOT NULL,
+  quotation_date DATE NOT NULL,
+  expiry_date DATE NOT NULL,
+  subject VARCHAR(255),
+  customer_notes TEXT,
+  terms_and_conditions TEXT,
+  sub_total DOUBLE,
+  cgst DOUBLE,
+  sgst DOUBLE,
+  attachment_url VARCHAR(500),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
+-- Create table for quotation items
+CREATE TABLE IF NOT EXISTS quotation_items (
+  item_id INT AUTO_INCREMENT PRIMARY KEY,
+  quotation_id INT,
+  item_detail VARCHAR(255),
+  quantity INT,
+  rate DOUBLE,
+  discount FLOAT,
+  amount FLOAT,
+  FOREIGN KEY (quotation_id) REFERENCES quotation(quotation_id) ON DELETE CASCADE
+);

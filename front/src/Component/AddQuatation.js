@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Button, Typography, Grid, TextField, Select, MenuItem,
-  InputLabel, FormControl, IconButton, Paper, Divider,Avatar
+  InputLabel, FormControl, IconButton, Paper, Divider, Avatar,
+  CircularProgress, Snackbar, Alert
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -19,56 +20,144 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import SearchIcon from '@mui/icons-material/Search';
 import InputBase from '@mui/material/InputBase';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import axios from 'axios';
 
 export default function NewQuotation() {
   const [quoteDate, setQuoteDate] = useState('2025-08-21');
   const [expiryDate, setExpiryDate] = useState('2025-09-21');
+  const [customerName, setCustomerName] = useState('');
+  const [subject, setSubject] = useState('');
+  const [customerNotes, setCustomerNotes] = useState('Thanks for your business.');
+  const [termsAndConditions, setTermsAndConditions] = useState('');
+  const [attachment, setAttachment] = useState(null);
   const [items, setItems] = useState([
-    { id: 1, details: '', quantity: 0, rate: 0, discount: 0 }
+    { id: Date.now(), item_detail: '', quantity: 0, rate: 0, discount: 0, amount: 0 }
   ]);
-const [rows, setRows] = useState([
-    { item: '', qty: 0, rate: 0, discount: 0, amount: 0 },
-  ]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [itemModalOpen, setItemModalOpen] = useState(false);
+  const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+  const [itemSearchTerm, setItemSearchTerm] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const navigate = useNavigate();
+  const [customers, setCustomers] = useState([]);
+  const [quoteNumber, setQuoteNumber] = useState('');
+
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/customers')
+      .then(res => setCustomers(res.data))
+      .catch(() => setCustomers([]));
+  }, []);
+
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/quotation/next-number')
+      .then(res => setQuoteNumber(res.data.nextQuoteNumber))
+      .catch(() => setQuoteNumber(''));
+  }, []);
 
   const handleAddRow = () => {
-    setItems([...items, { id: Date.now(), details: '', quantity: 0, rate: 0, discount: 0 }]);
+    setItems([...items, { id: Date.now(), item_detail: '', quantity: 0, rate: 0, discount: 0, amount: 0 }]);
   };
 
   const handleRemoveRow = (id) => {
     setItems(items.filter(item => item.id !== id));
   };
 
+  const updateRow = (index, field, value) => {
+    const updated = [...items];
+    updated[index][field] = ['quantity', 'rate', 'discount'].includes(field) ? Number(value) : value;
+    updated[index].amount = calculateAmount(updated[index]);
+    setItems(updated);
+  };
+
   const calculateAmount = (item) => {
     const amount = (item.quantity * item.rate) - item.discount;
     return isNaN(amount) ? 0 : amount;
   };
-const navigate = useNavigate();
-const [selectedRowIndex, setSelectedRowIndex] = useState(null);
-const [itemModalOpen, setItemModalOpen] = useState(false);
-const [itemSearchTerm, setItemSearchTerm] = useState('');
-const [previewOpen, setPreviewOpen] = useState(false);
 
-
-const updateRow = (index, field, value) => {
-  const updated = [...items];
-  updated[index][field] = field === 'qty' || field === 'rate' ? Number(value) : value;
-  setItems(updated);
-};
-
-
-const deleteRow = (index) => {
-  const updated = items.filter((_, i) => i !== index);
-  setItems(updated);
-};
-
-  const subtotal = rows.reduce((sum, row) => sum + calculateAmount(row), 0);
+  const subtotal = items.reduce((sum, item) => sum + calculateAmount(item), 0);
   const gst = subtotal * 0.09;
   const total = subtotal + gst * 2;
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.size > 10 * 1024 * 1024) {
+      setError('File size exceeds 10MB limit');
+      return;
+    }
+    setAttachment(file);
+  };
+
+  const handleSubmit = async (saveAsDraft = false) => {
+    if (!customerName) {
+      setError('Customer name is required');
+      return;
+    }
+    if (!quoteDate) {
+      setError('Quote date is required');
+      return;
+    }
+    if (!expiryDate) {
+      setError('Expiry date is required');
+      return;
+    }
+    if (items.length === 0 || items.every(item => !item.item_detail)) {
+      setError('At least one item with details is required');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    const quotationData = {
+      customer_name: customerName,
+      quotation_date: quoteDate,
+      expiry_date: expiryDate,
+      subject,
+      customer_notes: customerNotes,
+      terms_and_conditions: termsAndConditions,
+      sub_total: subtotal,
+      cgst: gst,
+      sgst: gst,
+      total_amount: total,
+      status: saveAsDraft ? 'Draft' : 'Sent'
+    };
+
+    // Debug: log the payload
+    console.log('Sending to backend:', {
+      quotation: quotationData,
+      items: items
+    });
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/quotation', {
+        quotation: quotationData,
+        items: items
+      }, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      setQuoteNumber(response.data.quoteNumber || '');
+      setSuccess('Quotation saved successfully' + (response.data.quoteNumber ? ` (Quote#: ${response.data.quoteNumber})` : ''));
+      if (!saveAsDraft) {
+        navigate('/quotation-list');
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.error?.sqlMessage ||
+        err.response?.data?.error ||
+        'Failed to save quotation'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
-       <Box sx={{ flex: 1, bgcolor: '#f9fafc', minHeight: '100vh' }}>
-
+      <Box sx={{ flex: 1, bgcolor: '#f9fafc', minHeight: '100vh' }}>
         <Box
           sx={{
             display: 'flex',
@@ -79,17 +168,14 @@ const deleteRow = (index) => {
             px: 3
           }}
         >
-
           <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
             <Typography color="text.secondary" fontSize="14px">
-              Quatation
+              Quotation
             </Typography>
-            <Typography variant="h6" fontWeight={100} sx={{fontSize: 15}}>
-              Add Quatation
+            <Typography variant="h6" fontWeight={100} sx={{ fontSize: 15 }}>
+              Add Quotation
             </Typography>
-
           </Breadcrumbs>
-
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Paper
               elevation={0}
@@ -111,7 +197,6 @@ const deleteRow = (index) => {
                 inputProps={{ 'aria-label': 'search' }}
               />
             </Paper>
-
             <IconButton
               sx={{
                 borderRadius: '12px',
@@ -121,317 +206,371 @@ const deleteRow = (index) => {
               }}
             >
               <NotificationsNoneIcon sx={{ fontSize: 20, color: '#666' }} />
-            </IconButton> <Box display="flex" alignItems="center" gap={1}>
+            </IconButton>
+            <Box display="flex" alignItems="center" gap={1}>
               <Avatar src="https://i.pravatar.cc/40?img=1" />
               <Typography fontSize={14}>Admin name</Typography>
               <ArrowDropDownIcon />
             </Box>
           </Box>
         </Box>
-         <Box sx={{ px: 4, py: 3,  }}>
-  <Paper sx={{ p: 1, borderRadius: 2 }}>
-           
-           
-    <Typography     variant="h6"
+        <Box sx={{ px: 4, py: 3 }}>
+          <Paper sx={{ p: 1, borderRadius: 2 }}>
+            <Typography
+              variant="h6"
               sx={{
                 fontWeight: 600,
                 color: '#111',
                 mb: 2,
                 borderBottom: '1px solid #eee',
                 pb: 1,
-              }}>Quatation</Typography>
-        <Grid container spacing={2} mb={2}>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField label="Quote#" fullWidth value="QT-000001" InputProps={{ readOnly: true }} sx={{ borderRadius: 2,
-                width: { xs: '100%', sm: '100%', md: 400 }
-,
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '10px',
-                bgcolor: '#f9fafb',
-                height: 40,
-              },
-            }} />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth sx={{
-                width: { xs: '100%', sm: '100%', md: 400 }
-,
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '10px',
-                bgcolor: '#f9fafb',
-                height: 40,
-              },
-            }}>
-              <InputLabel>Customer Name*</InputLabel>
-              <Select defaultValue="">
-                <MenuItem value=""><em>Select or add a customer</em></MenuItem>
-                <MenuItem value="Customer A">Customer A</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              label="Quote Date*"
-              type="date"
-              fullWidth
-              value={quoteDate}
-              onChange={(e) => setQuoteDate(e.target.value)}
-              InputLabelProps={{ shrink: true }} sx={{
-                width: { xs: '100%', sm: '100%', md: 400 }
-,
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '10px',
-                bgcolor: '#f9fafb',
-                height: 40,
-              },
-            }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              label="Expiry Date*"
-              type="date"
-              fullWidth
-              value={expiryDate}
-              onChange={(e) => setExpiryDate(e.target.value)}
-              InputLabelProps={{ shrink: true }} sx={{
-                width: { xs: '100%', sm: '100%', md: 400 }
-,
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '10px',
-                bgcolor: '#f9fafb',
-                height: 40,
-              },
-            }}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField label="Subject" fullWidth placeholder="Write what this invoice is about"  sx={{
-                width: { xs: '100%', sm: '100%', md: 400 }
-,
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '10px',
-                bgcolor: '#f9fafb',
-                height: 40,
-              },
-            }}/>
-          </Grid>
-        </Grid>
-
-        <Box mt={5}>
-            <Divider />
-            <Typography variant="subtitle1" fontWeight="bold" mb={2} sx={{ fontWeight: 600, fontSize: 18, }}>
-              Item Table
+              }}
+            >
+              Quotation
             </Typography>
-            <Box display="flex" justifyContent="flex-end" mt={1} gap={3}>
-              <Button variant="text" sx={{ fontWeight: 500, color: '#1976d2' }} onClick={handleAddRow}>
-                + ADD NEW ROW
-              </Button>
-              <Button variant="text" sx={{ fontWeight: 500, color: '#1976d2' }}>
-                + ADD ITEMS IN BULK
-              </Button>
-            </Box>
-
-            <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 'none' }}>
-              <Table size="small">
-                <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
-                  <TableRow>
-                    <TableCell>Item Details</TableCell>
-                    <TableCell>Quantity</TableCell>
-                    <TableCell>Rate</TableCell>
-                    <TableCell>Discount</TableCell>
-                    <TableCell>Amount</TableCell>
-                    <TableCell></TableCell>
-                  </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {rows.map((row, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <TextField
-                          fullWidth
-                          placeholder="Type or Click to select an item"
-                          value={row.item}
-                          InputProps={{ readOnly: true }}
-                          onClick={() => {
-                            setSelectedRowIndex(index);
-                            setItemModalOpen(true);
-                            setItemSearchTerm('');
-                          }}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          fullWidth
-                          type="number"
-                          value={row.qty}
-                          onChange={(e) => updateRow(index, 'qty', e.target.value)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          fullWidth
-                          type="number"
-                          value={row.rate}
-                          onChange={(e) => updateRow(index, 'rate', e.target.value)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <FormControl fullWidth >
-                          <Select
-                            value={row.discount}
-                            onChange={(e) => updateRow(index, 'discount', e.target.value)}
-                          >
-                            <MenuItem value={0}>0%</MenuItem>
-                            <MenuItem value={5}>5%</MenuItem>
-                            <MenuItem value={10}>10%</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          fullWidth
-                          type="number"
-                          value={calculateAmount(row).toFixed(2)}
-                          InputProps={{ readOnly: true }}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <IconButton onClick={() => deleteRow(index)} color="error">
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            <Grid container spacing={2} mt={4}>
-              <Grid item xs={12} sm={8}>
-                <Paper variant="outlined" sx={{ p: 2 }}>
-                  <TextField
-
-                    multiline
-                    rows={1}
-                    label="Customer Notes"
-                    defaultValue="Thanks for your business."
-                    helperText="Will be displayed on the invoice"
-                    sx={{ bgcolor: '#f9fafb', borderRadius: 1, width: 500, }}
-                  />
-                </Paper>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={4} sx={{ ml: 15 }}>
-                <Paper
-                  variant="outlined"
+            <Grid container spacing={2} mb={2}>
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  label="Quote#"
+                  fullWidth
+                  value={quoteNumber}
+                  InputProps={{ readOnly: true }}
                   sx={{
-                    p: 3,
-                    borderRadius: 2,
-                    bgcolor: '#fafafa',
-                    width: '200%',
+                    width: { xs: '100%', sm: '100%', md: 400 },
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '10px',
+                      bgcolor: '#f9fafb',
+                      height: 40,
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth sx={{
+                  width: { xs: '100%', sm: '100%', md: 400 },
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '10px',
+                    bgcolor: '#f9fafb',
+                    height: 40,
+                  },
+                }}>
+                  <InputLabel>Customer Name*</InputLabel>
+                  <Select
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                  >
+                    <MenuItem value=""><em>Select or add a customer</em></MenuItem>
+                    {customers.map(customer => (
+                      <MenuItem key={customer.customer_id} value={customer.customer_name}>
+                        {customer.customer_name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  label="Quote Date*"
+                  type="date"
+                  fullWidth
+                  value={quoteDate}
+                  onChange={(e) => setQuoteDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{
+                    width: { xs: '100%', sm: '100%', md: 400 },
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '10px',
+                      bgcolor: '#f9fafb',
+                      height: 40,
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  label="Expiry Date*"
+                  type="date"
+                  fullWidth
+                  value={expiryDate}
+                  onChange={(e) => setExpiryDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{
+                    width: { xs: '100%', sm: '100%', md: 400 },
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '10px',
+                      bgcolor: '#f9fafb',
+                      height: 40,
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Subject"
+                  fullWidth
+                  placeholder="Write what this quotation is about"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  sx={{
+                    width: { xs: '100%', sm: '100%', md: 400 },
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '10px',
+                      bgcolor: '#f9fafb',
+                      height: 40,
+                    },
+                  }}
+                />
+              </Grid>
+            </Grid>
+
+            <Box mt={5}>
+              <Divider />
+              <Typography variant="subtitle1" fontWeight="bold" mb={2} sx={{ fontWeight: 600, fontSize: 18 }}>
+                Item Table
+              </Typography>
+              <Box display="flex" justifyContent="flex-end" mt={1} gap={3}>
+                <Button variant="text" sx={{ fontWeight: 500, color: '#1976d2' }} onClick={handleAddRow}>
+                  + ADD NEW ROW
+                </Button>
+                <Button
+                  variant="text"
+                  sx={{ fontWeight: 500, color: '#1976d2' }}
+                  onClick={() => {
+                    setItemModalOpen(true);
+                    setItemSearchTerm('');
                   }}
                 >
-                  {[
-                    { label: 'Sub Total', value: `₹${subtotal.toFixed(2)}` },
-                    { label: 'CGST (9%)', value: `₹${gst.toFixed(2)}` },
-                    { label: 'SGST (9%)', value: `₹${gst.toFixed(2)}` },
-                  ].map((item, i) => (
-                    <Box
-                      key={i}
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      mb={1}
-                    >
-                      <Typography fontSize={14}>{item.label}</Typography>
-                      <Typography fontSize={14}>{item.value}</Typography>
-                    </Box>
-                  ))}
-
-                  <Divider sx={{ my: 1 }} />
-
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography fontWeight="bold" fontSize="1rem">
-                      Total (₹)
-                    </Typography>
-                    <Typography fontWeight="bold" fontSize="1rem">
-                      ₹{total.toFixed(2)}
-                    </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
-
-            </Grid>
-          </Box>
-
-          <Grid container spacing={2} mt={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Terms & Conditions" />
-              <Box display="flex" alignItems="center" mt={1}>
-                <Checkbox />
-                <Typography variant="body2">Use this in future for all invoices</Typography>
+                  + ADD ITEMS IN BULK
+                </Button>
               </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} sx={{ ml: 60 }}>
-              <Typography>Attachment</Typography>
-              <Button variant="outlined" startIcon={<CloudUploadIcon />} sx={{ mt: 1 }}>
-                Upload File
-              </Button>
-              <Typography variant="caption" display="block" mt={1}>
-                You can upload a maximum of 10 files, 10MB each
-              </Typography>
-            </Grid>
-          </Grid>
 
-          <Box mt={4} display="flex" justifyContent="space-between" flexWrap="wrap" gap={2}>
-            <Box display="flex" justifyContent="flex-end" mb={2}>
-              <Button
-                startIcon={<VisibilityOutlinedIcon />}
-                sx={{ color: '#002D72', textTransform: 'none', fontWeight: 'bold' }}
-                onClick={() => setPreviewOpen(true)}
-              >
-                Preview Invoice
-              </Button>
+              <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 'none' }}>
+                <Table size="small">
+                  <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+                    <TableRow>
+                      <TableCell>Item Details</TableCell>
+                      <TableCell>Quantity</TableCell>
+                      <TableCell>Rate</TableCell>
+                      <TableCell>Discount</TableCell>
+                      <TableCell>Amount</TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {items.map((item, index) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <TextField
+                            fullWidth
+                            placeholder="Type or click to select an item"
+                            value={item.item_detail}
+                            onChange={(e) => updateRow(index, 'item_detail', e.target.value)}
+                            onClick={() => {
+                              setSelectedRowIndex(index);
+                              setItemModalOpen(true);
+                              setItemSearchTerm('');
+                            }}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            fullWidth
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateRow(index, 'quantity', e.target.value)}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            fullWidth
+                            type="number"
+                            value={item.rate}
+                            onChange={(e) => updateRow(index, 'rate', e.target.value)}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <FormControl fullWidth>
+                            <Select
+                              value={item.discount}
+                              onChange={(e) => updateRow(index, 'discount', e.target.value)}
+                            >
+                              <MenuItem value={0}>0%</MenuItem>
+                              <MenuItem value={5}>5%</MenuItem>
+                              <MenuItem value={10}>10%</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            fullWidth
+                            type="number"
+                            value={calculateAmount(item).toFixed(2)}
+                            InputProps={{ readOnly: true }}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <IconButton onClick={() => handleRemoveRow(item.id)} color="error">
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
 
+              <Grid container spacing={2} mt={4}>
+                <Grid item xs={12} sm={8}>
+                  <Paper variant="outlined" sx={{ p: 2 }}>
+                    <TextField
+                      multiline
+                      rows={1}
+                      label="Customer Notes"
+                      value={customerNotes}
+                      onChange={(e) => setCustomerNotes(e.target.value)}
+                      helperText="Will be displayed on the quotation"
+                      sx={{ bgcolor: '#f9fafb', borderRadius: 1, width: 500 }}
+                    />
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={6} md={4} sx={{ ml: 15 }}>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 3,
+                      borderRadius: 2,
+                      bgcolor: '#fafafa',
+                      width: '200%',
+                    }}
+                  >
+                    {[
+                      { label: 'Sub Total', value: `₹${subtotal.toFixed(2)}` },
+                      { label: 'CGST (9%)', value: `₹${gst.toFixed(2)}` },
+                      { label: 'SGST (9%)', value: `₹${gst.toFixed(2)}` },
+                    ].map((item, i) => (
+                      <Box
+                        key={i}
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        mb={1}
+                      >
+                        <Typography fontSize={14}>{item.label}</Typography>
+                        <Typography fontSize={14}>{item.value}</Typography>
+                      </Box>
+                    ))}
+                    <Divider sx={{ my: 1 }} />
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography fontWeight="bold" fontSize="1rem">
+                        Total (₹)
+                      </Typography>
+                      <Typography fontWeight="bold" fontSize="1rem">
+                        ₹{total.toFixed(2)}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                </Grid>
+              </Grid>
             </Box>
-            <Box display="flex" gap={2}>
-              <Button variant="outlined" color="error"  sx={{
-                                
-                                    px: 1,
-                                    py: 1,
-                                    borderRadius: '15px',
-                                    textTransform: 'none',
-                                    fontWeight: 600,
-                                }}>Cancel</Button>
-              <Button variant="outlined"onClick={() => navigate('/quatation-list')}   sx={{
-                                  
-                                   
-                                    px: 1,
-                                    py: 1,
-                                    borderRadius: '15px',
-                                    textTransform: 'none',
-                                    fontWeight: 600,
-                                }}>Save as Draft</Button>
-              <Button variant="contained" onClick={() => navigate('/Quotation-list')}  sx={{
-                                    backgroundColor: '#004085',
-                                    '&:hover': { backgroundColor: '#003366' },
-                                    px: 1,
-                                    py: 1,
-                                    borderRadius: '15px',
-                                    textTransform: 'none',
-                                    fontWeight: 600,
-                                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
-                                }}>Save & Send</Button>
+
+            <Grid container spacing={2} mt={3}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Terms & Conditions"
+                  value={termsAndConditions}
+                  onChange={(e) => setTermsAndConditions(e.target.value)}
+                />
+                <Box display="flex" alignItems="center" mt={1}>
+                  <Checkbox />
+                  <Typography variant="body2">Use this in future for all quotations</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6} sx={{ ml: 60 }}>
+                <Typography>Attachment</Typography>
+                <Button variant="outlined" startIcon={<CloudUploadIcon />} sx={{ mt: 1 }} component="label">
+                  Upload File
+                  <input type="file" hidden onChange={handleFileChange} />
+                </Button>
+                <Typography variant="caption" display="block" mt={1}>
+                  You can upload a maximum of 10 files, 10MB each
+                </Typography>
+              </Grid>
+            </Grid>
+
+            <Box mt={4} display="flex" justifyContent="space-between" flexWrap="wrap" gap={2}>
+              <Box display="flex" justifyContent="flex-end" mb={2}>
+                <Button
+                  startIcon={<VisibilityOutlinedIcon />}
+                  sx={{ color: '#002D72', textTransform: 'none', fontWeight: 'bold' }}
+                  onClick={() => setPreviewOpen(true)}
+                >
+                  Preview Quotation
+                </Button>
+              </Box>
+              <Box display="flex" gap={2}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  sx={{
+                    px: 1,
+                    py: 1,
+                    borderRadius: '15px',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                  }}
+                  onClick={() => navigate('/quotation-list')}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="outlined"
+                  sx={{
+                    px: 1,
+                    py: 1,
+                    borderRadius: '15px',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                  }}
+                  onClick={() => handleSubmit(true)}
+                  disabled={loading}
+                >
+                  {loading ? <CircularProgress size={24} /> : 'Save as Draft'}
+                </Button>
+                <Button
+                  variant="contained"
+                  sx={{
+                    backgroundColor: '#004085',
+                    '&:hover': { backgroundColor: '#003366' },
+                    px: 1,
+                    py: 1,
+                    borderRadius: '15px',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
+                  }}
+                  onClick={() => handleSubmit(false)}
+                  disabled={loading}
+                >
+                  {loading ? <CircularProgress size={24} /> : 'Save & Send'}
+                </Button>
+              </Box>
             </Box>
-          </Box></Paper></Box>
-</Box>
+          </Paper>
+        </Box>
+        <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
+          <Alert onClose={() => setError('')} severity="error">
+            {typeof error === 'string' ? error : error?.sqlMessage || JSON.stringify(error)}
+          </Alert>
+        </Snackbar>
+        <Snackbar open={!!success} autoHideDuration={6000} onClose={() => setSuccess('')}>
+          <Alert onClose={() => setSuccess('')} severity="success">{success}</Alert>
+        </Snackbar>
+      </Box>
     </Box>
   );
 }

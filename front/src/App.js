@@ -40,6 +40,7 @@ import Dashboard from './Component/Dashboard';
 import { useState } from 'react';
 import EditTax from './Component/EditTax';
 import EditQuotationPage from './Component/EditQuotationPage';
+import EditInvoicePage from './Component/EditInvoicePage';
 
 
 
@@ -95,6 +96,7 @@ function App() {
           <Route path="/Report-and-analytics" element={<ReportsAndAnalytics />} />
           <Route path='/add/financial_year' element={<AddFinancialYear></AddFinancialYear>}/>
           <Route path="/edit-tax/:id" element={<EditTax />} />
+          <Route path="/edit-invoice/:id" element={<EditInvoicePage />} />
 
         </Routes>
       </Router>

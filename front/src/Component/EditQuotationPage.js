@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Box, TextField, Button, Paper, Typography } from "@mui/material";
+import { Box, TextField, Button, Paper, Typography, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 
 
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -10,45 +10,76 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import SearchIcon from "@mui/icons-material/Search";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import jsPDF from "jspdf";
-
-// Dummy data (same as your main page)
-const sampleQuotations = Array.from({ length: 15 }, (_, i) => ({
-  id: i + 1,
-  quoteNumber: "QT-00001",
-  customer: "Customer 1",
-  createdDate: "30/06/2025",
-  expiryDate: "30/08/2025",
-  status: i % 3 === 0 ? "Sent" : "Draft",
-  amount: "₹118.00",
-}));
+import axios from 'axios';
 
 export default function EditQuotationPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    quoteNumber: "",
-    customer: "",
-    createdDate: "",
-    expiryDate: "",
-    status: "",
-    amount: "",
+    quotation_id: '',
+    customer_name: '',
+    quotation_date: '',
+    expiry_date: '',
+    status: '',
+    grand_total: '',
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [customers, setCustomers] = useState([]);
 
   useEffect(() => {
-    const quote = sampleQuotations.find((q) => q.id === Number(id));
-    if (quote) setFormData(quote);
+    const fetchQuotation = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const res = await axios.get(`http://localhost:5000/api/quotation/${id}`);
+        const q = res.data.quotation;
+        setFormData({
+          quotation_id: q.quotation_id,
+          customer_name: q.customer_name,
+          quotation_date: q.quotation_date,
+          expiry_date: q.expiry_date,
+          status: q.status || '',
+          grand_total: res.data.grand_total || '',
+        });
+      } catch (err) {
+        setError('Failed to fetch quotation');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchQuotation();
   }, [id]);
+
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/customers')
+      .then(res => setCustomers(res.data))
+      .catch(() => setCustomers([]));
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Updated Data:", formData);
-    alert("Quotation updated successfully!");
-    navigate("/Quotation"); // Redirect to the quotation list after saving
-    
+    setLoading(true);
+    setError('');
+    try {
+      await axios.put(`http://localhost:5000/api/quotation/${id}`, {
+        customer_name: formData.customer_name,
+        quotation_date: formData.quotation_date,
+        expiry_date: formData.expiry_date,
+        status: formData.status,
+        // Add other fields if needed
+      });
+      alert('Quotation updated successfully!');
+      navigate('/Quotation');
+    } catch (err) {
+      setError('Failed to update quotation');
+    } finally {
+      setLoading(false);
+    }
   };
 
 
@@ -64,33 +95,44 @@ export default function EditQuotationPage() {
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              name="quoteNumber"
+              name="quotation_id"
               label="Quotation #"
-              value={formData.quoteNumber}
+              value={formData.quotation_id}
               onChange={handleChange}
               margin="normal"
+              disabled
             />
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Customer</InputLabel>
+              <Select
+                name="customer_name"
+                value={formData.customer_name || ''}
+                label="Customer"
+                onChange={handleChange}
+              >
+                {customers.map(customer => (
+                  <MenuItem key={customer.customer_id} value={customer.customer_name}>
+                    {customer.customer_name}
+                  </MenuItem>
+                ))}
+                {formData.customer_name && !customers.some(c => c.customer_name === formData.customer_name) && (
+                  <MenuItem value={formData.customer_name}>{formData.customer_name}</MenuItem>
+                )}
+              </Select>
+            </FormControl>
             <TextField
               fullWidth
-              name="customer"
-              label="Customer"
-              value={formData.customer}
-              onChange={handleChange}
-              margin="normal"
-            />
-            <TextField
-              fullWidth
-              name="createdDate"
+              name="quotation_date"
               label="Created Date"
-              value={formData.createdDate}
+              value={formData.quotation_date}
               onChange={handleChange}
               margin="normal"
             />
             <TextField
               fullWidth
-              name="expiryDate"
+              name="expiry_date"
               label="Expiry Date"
-              value={formData.expiryDate}
+              value={formData.expiry_date}
               onChange={handleChange}
               margin="normal"
             />
@@ -104,11 +146,12 @@ export default function EditQuotationPage() {
             />
             <TextField
               fullWidth
-              name="amount"
+              name="grand_total"
               label="Amount"
-              value={formData.amount}
+              value={formData.grand_total}
               onChange={handleChange}
               margin="normal"
+              disabled
             />
             <Box display="flex" justifyContent="space-between" mt={3}>
               <Button

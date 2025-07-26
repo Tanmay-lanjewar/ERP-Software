@@ -30,15 +30,9 @@ import Sidebar from "./Sidebar";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import { useNavigate } from "react-router-dom";
-
-const invoices = Array.from({ length: 13 }).map((_, i) => ({
-  id: `INV-000${i + 1}`,
-  customer: "Customer 1",
-  createdDate: "30/06/2025",
-  dueDate: "30/06/2025",
-  status: i % 3 === 0 ? "Paid" : i % 2 === 0 ? "Draft" : "Partial",
-  amount: "₹118.00",
-}));
+import axios from 'axios';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const statusColor = {
   Paid: "success",
@@ -51,6 +45,19 @@ export default function Invoicelist() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuIndex, setMenuIndex] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState("All Invoices");
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  React.useEffect(() => {
+    setLoading(true);
+    setError('');
+    axios.get('http://localhost:5000/api/invoice')
+      .then(res => setInvoices(res.data))
+      .catch(() => setError('Failed to fetch invoices'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleMenuOpen = (event, index) => {
     setAnchorEl(event.currentTarget);
@@ -65,34 +72,32 @@ export default function Invoicelist() {
   const handleNewInvoice = () => navigate("/new-invoice");
 
   const handleEditInvoice = (id) => {
-    // navigate(`/editInvoice/${id}`);
+    navigate(`/edit-invoice/${id}`);
   };
 
   const handleDownloadPdf = (invoice) => {
-    import("jspdf").then(({ jsPDF }) => {
-      const doc = new jsPDF();
-      doc.setFontSize(18);
-      doc.text("Invoice Document", 105, 20, null, null, "center");
-      doc.setLineWidth(0.5);
-      doc.line(20, 25, 190, 25);
-      let y = 40;
-      const details = [
-        ["Invoice #", invoice.id],
-        ["Customer", invoice.customer],
-        ["Created Date", invoice.createdDate],
-        ["Due Date", invoice.dueDate],
-        ["Status", invoice.status],
-        ["Amount", invoice.amount],
-      ];
-      details.forEach(([label, value]) => {
-        doc.setFont("helvetica", "bold");
-        doc.text(`${label}:`, 25, y);
-        doc.setFont("helvetica", "normal");
-        doc.text(`${value}`, 70, y);
-        y += 12;
-      });
-      doc.save(`${invoice.id}.pdf`);
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Invoice Document", 105, 20, null, null, "center");
+    doc.setLineWidth(0.5);
+    doc.line(20, 25, 190, 25);
+    let y = 40;
+    const details = [
+      ["Invoice #", invoice.id],
+      ["Customer", invoice.customer],
+      ["Created Date", invoice.createdDate],
+      ["Due Date", invoice.dueDate],
+      ["Status", invoice.status],
+      ["Amount", invoice.amount],
+    ];
+    details.forEach(([label, value]) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(`${label}:`, 25, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(`${value}`, 70, y);
+      y += 12;
     });
+    doc.save(`${invoice.id}.pdf`);
   };
 
   const handlePrintInvoice = (invoice) => {
@@ -133,7 +138,11 @@ export default function Invoicelist() {
     if (selectedFilter === "Draft Invoices") return invoice.status === "Draft";
     if (selectedFilter === "Pro Forma Invoices") return invoice.status === "Partial";
     return true;
-  });
+  }).filter(invoice =>
+    !searchTerm ||
+    invoice.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    invoice.customer_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -147,7 +156,13 @@ export default function Invoicelist() {
               border: "1px solid #e0e0e0", bgcolor: "#f9fafb", width: 240,
             }}>
               <SearchIcon sx={{ fontSize: 20, color: "#999" }} />
-              <InputBase placeholder="Search anything here..." sx={{ ml: 1, fontSize: 14, flex: 1 }} />
+              <InputBase
+                placeholder="Search anything here..."
+                sx={{ ml: 1, fontSize: 14, flex: 1 }}
+                inputProps={{ "aria-label": "search" }}
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
             </Paper>
             <IconButton sx={{
               borderRadius: "12px", border: "1px solid #e0e0e0", bgcolor: "#f9fafb", p: 1,
@@ -227,21 +242,36 @@ export default function Invoicelist() {
                   {filteredInvoices.map((row, index) => (
                     <TableRow key={index}>
                       <TableCell padding="checkbox"><Checkbox /></TableCell>
-                      <TableCell sx={{ color: "#0061F2", fontWeight: 500 }}>{row.id}</TableCell>
-                      <TableCell>{row.customer}</TableCell>
-                      <TableCell>{row.createdDate}</TableCell>
-                      <TableCell>{row.dueDate}</TableCell>
+                      <TableCell sx={{ color: "#0061F2", fontWeight: 500 }}>{row.invoice_number}</TableCell>
+                      <TableCell>{row.customer_name}</TableCell>
+                      <TableCell>{row.invoice_date}</TableCell>
+                      <TableCell>{row.expiry_date}</TableCell>
                       <TableCell><Chip label={row.status} color={statusColor[row.status]} size="small" /></TableCell>
-                      <TableCell>{row.amount}</TableCell>
+                      <TableCell>{row.grand_total ? `₹${row.grand_total}` : ''}</TableCell>
                       <TableCell align="center">
                         <IconButton onClick={(e) => handleMenuOpen(e, index)}><MoreVertIcon /></IconButton>
                         {menuIndex === index && (
                           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose} PaperProps={{ sx: { width: 200 } }}>
-                            <MenuItem onClick={() => handleEditInvoice(row.id)}><EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit</MenuItem>
+                            <MenuItem onClick={() => handleEditInvoice(row.invoice_id)}><EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit</MenuItem>
                             <MenuItem onClick={() => handleDownloadPdf(row)}><PictureAsPdfIcon fontSize="small" sx={{ mr: 1 }} /> Download the PDF</MenuItem>
                             <MenuItem onClick={() => handlePrintInvoice(row)}><PrintIcon fontSize="small" sx={{ mr: 1 }} /> Print Invoice</MenuItem>
                             <MenuItem onClick={() => handleSendEmail(row)}><EmailIcon fontSize="small" sx={{ mr: 1 }} /> Send Email</MenuItem>
                             <MenuItem onClick={() => handleShareLink(row)}><ShareIcon fontSize="small" sx={{ mr: 1 }} /> Share Link</MenuItem>
+                            <MenuItem onClick={async () => {
+                              await axios.put(`http://localhost:5000/api/invoice/${row.invoice_id}`, { status: 'Paid' });
+                              setInvoices(prev => prev.map(inv => inv.invoice_id === row.invoice_id ? { ...inv, status: 'Paid' } : inv));
+                              handleMenuClose();
+                            }}>Mark as Paid</MenuItem>
+                            <MenuItem onClick={async () => {
+                              await axios.put(`http://localhost:5000/api/invoice/${row.invoice_id}`, { status: 'Partial' });
+                              setInvoices(prev => prev.map(inv => inv.invoice_id === row.invoice_id ? { ...inv, status: 'Partial' } : inv));
+                              handleMenuClose();
+                            }}>Mark as Partial</MenuItem>
+                            <MenuItem onClick={async () => {
+                              await axios.put(`http://localhost:5000/api/invoice/${row.invoice_id}`, { status: 'Draft' });
+                              setInvoices(prev => prev.map(inv => inv.invoice_id === row.invoice_id ? { ...inv, status: 'Draft' } : inv));
+                              handleMenuClose();
+                            }}>Mark as Draft</MenuItem>
                           </Menu>
                         )}
                       </TableCell>
