@@ -15,93 +15,92 @@ import {
   Modal,
   Tabs,
   Tab,
-  InputBase, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,Avatar
+  InputBase,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Avatar,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useState, useEffect } from 'react';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import {
-  InputAdornment,
-} from '@mui/material';
-import {
-  Search,
-} from '@mui/icons-material';
+import { InputAdornment } from '@mui/material';
+import { Search } from '@mui/icons-material';
 import { Breadcrumbs } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-const NewWorkOrder = () => {
-const navigate =useNavigate()
-const [customers, setCustomers] = useState([]);
-const [selectedCustomer, setSelectedCustomer] = useState('');
-const [customerModalOpen, setCustomerModalOpen] = useState(false);
-const [customerTab, setCustomerTab] = useState(0);
-const [searchTerm, setSearchTerm] = useState('');
-const [selectedRowIndex, setSelectedRowIndex] = useState(null);
-const [previewOpen, setPreviewOpen] = useState(false);
 
-useEffect(() => {
-  fetch('http://localhost:5000/api/customers')
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then((data) => {
-      console.log('Fetched customers:', data);
-      const customerNames = data.map((customer) => customer.customer_name);
-      setCustomers(customerNames);
-    })
-    .catch((error) => {
-      console.error('Error fetching customers:', error);
-    });
-}, []);
+const NewWorkOrder = () => {
+  const navigate = useNavigate();
+  const [customers, setCustomers] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState('');
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const [customerTab, setCustomerTab] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const [workOrderNumber, setWorkOrderNumber] = useState('INV-000001');
+  const [workOrderDate, setWorkOrderDate] = useState('2025-06-21');
+  const [paymentTerms, setPaymentTerms] = useState('Due end of the month');
+  const [dueDate, setDueDate] = useState('2025-06-30');
+  const [subject, setSubject] = useState('');
+  const [customerNotes, setCustomerNotes] = useState('Thanks for your business.');
+  const [termsConditions, setTermsConditions] = useState('');
+  const [attachmentUrl, setAttachmentUrl] = useState('');
+  const [status, setStatus] = useState('Draft');
+
+  const [products, setProducts] = useState([]);
+
+  const [rows, setRows] = useState([{ item: '', qty: 0, rate: 0, discount: 0, amount: 0 }]);
+  const [subtotal, setSubtotal] = useState(0);
+  const [gst, setGst] = useState(0);
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/customers')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        const customerNames = data.map((customer) => customer.customer_name);
+        setCustomers(customerNames);
+      })
+      .catch((error) => {
+        console.error('Error fetching customers:', error);
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/products')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setProducts(data);
+      })
+      .catch((error) => {
+        console.error('Error fetching products:', error);
+      });
+  }, []);
 
   const handleAddCustomer = () => {
     setCustomerModalOpen(true);
-  }
-const [items, setItems] = useState([]);
-const [products, setProducts] = useState([]);
-  const [itemModalOpen, setItemModalOpen] = useState(false);
-  const [itemSearchTerm, setItemSearchTerm] = useState('');
-
-useEffect(() => {
-  fetch('http://localhost:5000/api/products')
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then((data) => {
-      console.log('Fetched products:', data);
-      setProducts(data);
-      const productNames = data.map((product) => product.product_name);
-      setItems(productNames);
-    })
-    .catch((error) => {
-      console.error('Error fetching products:', error);
-    });
-}, []);
-  const [rows, setRows] = useState([
-    { item: '', qty: 0, rate: 0, discount: 0, amount: 0 },
-  ]);
-
-
-
-  const handleItemSelect = (rowIndex, itemName) => {
-    const updatedRows = [...rows];
-    updatedRows[rowIndex].item = itemName;
-    setRows(updatedRows);
-    setItemModalOpen(false);
   };
-
 
   const updateRow = (index, field, value) => {
     const updated = [...rows];
@@ -115,7 +114,6 @@ useEffect(() => {
     updated[index].amount = calculateAmount(updated[index]);
     setRows(updated);
   };
-
 
   const calculateAmount = (row) => {
     const total = (row.qty || 0) * (row.rate || 0);
@@ -132,9 +130,60 @@ useEffect(() => {
     setRows(updated);
   };
 
-  const subtotal = rows.reduce((sum, row) => sum + calculateAmount(row), 0);
-  const gst = subtotal * 0.09;
-  const total = subtotal + gst * 2;
+  useEffect(() => {
+    const newSubtotal = rows.reduce((sum, row) => sum + calculateAmount(row), 0);
+    const newGst = newSubtotal * 0.09;
+    const newTotal = newSubtotal + newGst * 2;
+    setSubtotal(newSubtotal);
+    setGst(newGst);
+    setTotal(newTotal);
+  }, [rows]);
+
+  const handleSubmit = () => {
+    const workOrderData = {
+      work_order_number: workOrderNumber,
+      customer_name: selectedCustomer,
+      work_order_date: workOrderDate,
+      due_date: dueDate,
+      payment_terms: paymentTerms,
+      subject: subject,
+      customer_notes: customerNotes,
+      terms_and_conditions: termsConditions,
+      attachment_url: attachmentUrl,
+      sub_total: subtotal,
+      cgst: gst,
+      sgst: gst,
+      grand_total: total,
+      status: status,
+      items: rows.map((row) => ({
+        item_detail: row.item,
+        quantity: row.qty,
+        rate: row.rate,
+        discount: row.discount,
+        amount: calculateAmount(row),
+      })),
+    };
+
+    fetch('http://localhost:5000/api/add-Work-Order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(workOrderData),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to save work order');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log('Work order saved:', data);
+        navigate('/Work-Order-list');
+      })
+      .catch((error) => {
+        console.error('Error saving work order:', error);
+        alert('Error saving work order');
+      });
+  };
 
   return (
     <Box sx={{ display: 'flex', backgroundColor: '#f9f9f9', minHeight: '100vh' }}>
@@ -149,10 +198,9 @@ useEffect(() => {
             mt: 1,
           }}
         >
-
           <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
             <Typography color="text.secondary" fontSize="14px">
-               Work Order
+              Work Order
             </Typography>
             <Typography color="text.primary" fontWeight={600} fontSize="14px">
               New Work Order
@@ -178,6 +226,8 @@ useEffect(() => {
                 placeholder="Search anything here..."
                 sx={{ ml: 1, fontSize: 14, flex: 1 }}
                 inputProps={{ 'aria-label': 'search' }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </Paper>
 
@@ -190,7 +240,8 @@ useEffect(() => {
               }}
             >
               <NotificationsNoneIcon sx={{ fontSize: 20, color: '#666' }} />
-            </IconButton> <Box display="flex" alignItems="center" gap={1}>
+            </IconButton>
+            <Box display="flex" alignItems="center" gap={1}>
               <Avatar src="https://i.pravatar.cc/40?img=1" />
               <Typography fontSize={14}>Admin name</Typography>
               <ArrowDropDownIcon />
@@ -198,8 +249,6 @@ useEffect(() => {
           </Box>
         </Box>
         <Paper sx={{ p: 1, borderRadius: 2 }}>
-
-
           <Typography
             variant="h6"
             sx={{
@@ -214,12 +263,12 @@ useEffect(() => {
           </Typography>
 
           <Grid container spacing={1}>
-
             <Grid item xs={12} sm={6} md={1}>
               <TextField
                 required
                 label="Work Order Number"
-                defaultValue="INV-000001"
+                value={workOrderNumber}
+                onChange={(e) => setWorkOrderNumber(e.target.value)}
                 sx={{
                   width: 500,
                   '& .MuiOutlinedInput-root': {
@@ -228,12 +277,9 @@ useEffect(() => {
                   },
                 }}
               />
-
             </Grid>
 
-
             <Grid container spacing={2} sx={{ mt: 1 }}>
-
               <Grid item xs={12} sm={6} md={3}>
                 <FormControl fullWidth required>
                   <InputLabel>Customer Name</InputLabel>
@@ -275,7 +321,8 @@ useEffect(() => {
                   required
                   label="Work Order Date"
                   type="date"
-                  defaultValue="2025-06-21"
+                  value={workOrderDate}
+                  onChange={(e) => setWorkOrderDate(e.target.value)}
                   InputLabelProps={{ shrink: true }}
                   InputProps={{
                     sx: {
@@ -292,7 +339,8 @@ useEffect(() => {
                   <InputLabel>Payment Terms</InputLabel>
                   <Select
                     label="Payment Terms"
-                    defaultValue="Due end of the month"
+                    value={paymentTerms}
+                    onChange={(e) => setPaymentTerms(e.target.value)}
                     sx={{
                       bgcolor: '#f9fafb',
                       borderRadius: '12px',
@@ -312,7 +360,8 @@ useEffect(() => {
                   required
                   label="Due Date"
                   type="date"
-                  defaultValue="2025-06-30"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
                   InputLabelProps={{ shrink: true }}
                   InputProps={{
                     sx: {
@@ -331,6 +380,8 @@ useEffect(() => {
                   fullWidth
                   label="Subject"
                   placeholder="Write what this Work Order is about"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
                   InputProps={{
                     sx: {
                       bgcolor: '#f9fafb',
@@ -342,11 +393,14 @@ useEffect(() => {
             </Grid>
           </Grid>
 
-
-
           <Box mt={5}>
             <Divider />
-            <Typography variant="subtitle1" fontWeight="bold" mb={2} sx={{ fontWeight: 600, fontSize: 18, }}>
+            <Typography
+              variant="subtitle1"
+              fontWeight="bold"
+              mb={2}
+              sx={{ fontWeight: 600, fontSize: 18 }}
+            >
               Item Table
             </Typography>
             <Box display="flex" justifyContent="flex-end" mt={1} gap={3}>
@@ -365,9 +419,8 @@ useEffect(() => {
                     <TableCell>Item Details</TableCell>
                     <TableCell>Quantity</TableCell>
                     <TableCell>Rate</TableCell>
-                                                                   <TableCell>Discount</TableCell>
-                                                               
-                                                                <TableCell>Amount</TableCell>
+                    <TableCell>Discount</TableCell>
+                    <TableCell>Amount</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 </TableHead>
@@ -376,36 +429,35 @@ useEffect(() => {
                   {rows.map((row, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                      <Select
-                        fullWidth
-                        value={row.item}
-                        onChange={(e) => {
-                          const selectedProductId = e.target.value;
-                          updateRow(index, 'item', selectedProductId);
-                          // Fetch product details by id and update rate
-                          fetch(`http://localhost:5000/api/products/${selectedProductId}`)
-                            .then((res) => res.json())
-.then((product) => {
-  console.log('Fetched product details:', product);
-  updateRow(index, 'rate', product.sale_price || 0);
-})
-                            .catch((err) => {
-                              console.error('Error fetching product details:', err);
-                            });
-                        }}
-                        size="small"
-                        displayEmpty
-                        sx={{ width: '100%' }}
-                      >
-                        <MenuItem value="">
-                          <em>Select Item</em>
-                        </MenuItem>
-                        {products.map((product, idx) => (
-                          <MenuItem key={idx} value={product.id}>
-                            {product.product_name}
+                        <Select
+                          fullWidth
+                          value={row.item}
+                          onChange={(e) => {
+                            const selectedProductId = e.target.value;
+                            updateRow(index, 'item', selectedProductId);
+                            // Fetch product details by id and update rate
+                            fetch(`http://localhost:5000/api/products/${selectedProductId}`)
+                              .then((res) => res.json())
+                              .then((product) => {
+                                updateRow(index, 'rate', product.sale_price || 0);
+                              })
+                              .catch((err) => {
+                                console.error('Error fetching product details:', err);
+                              });
+                          }}
+                          size="small"
+                          displayEmpty
+                          sx={{ width: '100%' }}
+                        >
+                          <MenuItem value="">
+                            <em>Select Item</em>
                           </MenuItem>
-                        ))}
-                      </Select>
+                          {products.map((product, idx) => (
+                            <MenuItem key={idx} value={product.id}>
+                              {product.product_name}
+                            </MenuItem>
+                          ))}
+                        </Select>
                       </TableCell>
                       <TableCell>
                         <TextField
@@ -426,7 +478,7 @@ useEffect(() => {
                         />
                       </TableCell>
                       <TableCell>
-                        <FormControl fullWidth >
+                        <FormControl fullWidth>
                           <Select
                             value={row.discount}
                             onChange={(e) => updateRow(index, 'discount', e.target.value)}
@@ -457,73 +509,93 @@ useEffect(() => {
               </Table>
             </TableContainer>
 
-            <Grid container spacing={2} mt={4}>
-              <Grid item xs={12} sm={8}>
-                <Paper variant="outlined" sx={{ p: 2 }}>
-                  <TextField
-
-                    multiline
-                    rows={1}
-                    label="Customer Notes"
-                    defaultValue="Thanks for your business."
-                    helperText="Will be displayed on the Work Order"
-                    sx={{ bgcolor: '#f9fafb', borderRadius: 1, width: 500, }}
-                  />
-                </Paper>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={4} sx={{ ml: 15 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 3,
-                    borderRadius: 2,
-                    bgcolor: '#fafafa',
-                    width: '200%',
-                  }}
-                >
-                  {[
-                    { label: 'Sub Total', value: `₹${subtotal.toFixed(2)}` },
-                    { label: 'CGST (9%)', value: `₹${gst.toFixed(2)}` },
-                    { label: 'SGST (9%)', value: `₹${gst.toFixed(2)}` },
-                  ].map((item, i) => (
-                    <Box
-                      key={i}
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      mb={1}
-                    >
-                      <Typography fontSize={14}>{item.label}</Typography>
-                      <Typography fontSize={14}>{item.value}</Typography>
-                    </Box>
-                  ))}
-
-                  <Divider sx={{ my: 1 }} />
-
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography fontWeight="bold" fontSize="1rem">
-                      Total (₹)
-                    </Typography>
-                    <Typography fontWeight="bold" fontSize="1rem">
-                      ₹{total.toFixed(2)}
-                    </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
-
+          <Grid container spacing={2} mt={4}>
+            <Grid item xs={12} sm={8}>
+              <Paper variant="outlined" sx={{ p: 1 }}>
+                <TextField
+                  multiline
+                  rows={1}
+                  label="Customer Notes"
+                  value={customerNotes}
+                  onChange={(e) => setCustomerNotes(e.target.value)}
+                  helperText="Will be displayed on the Work Order"
+                  sx={{ bgcolor: '#f9fafb', borderRadius: 1, width: 500 }}
+                />
+              </Paper>
             </Grid>
+          </Grid>
+
+          <Grid container spacing={4} mt={2} justifyContent="space-between" alignItems="flex-start">
+            <Grid item xs={12} sm={6} md={6}>
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  bgcolor: '#fafafa',
+                  width: '100%',
+                  height: '100%',
+                }}
+              >
+                <TextField
+                  fullWidth
+                  label="Terms & Conditions"
+                  value={termsConditions}
+                  onChange={(e) => setTermsConditions(e.target.value)}
+                  multiline
+                  minRows={4}
+                />
+                <Box display="flex" alignItems="center" mt={1}>
+                  <Checkbox />
+                  <Typography variant="body2">Use this in future for all Work Orders</Typography>
+                </Box>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={5} md={5}>
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  bgcolor: '#f0f0f0',
+                  width: '100%',
+                  boxShadow: 3,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  minHeight: 150,
+                  ml: '-40px',
+                }}
+              >
+                <Typography variant="subtitle1" fontWeight="bold" mb={1} justifyContent={'right'}>GST Summary
+                  
+                </Typography>
+                <Box display="flex" justifyContent="space-between" mb={0.5} width="100%">
+                  <Typography>CGST (9%)</Typography>
+                  <Typography>₹{gst.toFixed(2)}</Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between" mb={0.5} width="100%">
+                  <Typography>SGST (9%)</Typography>
+                  <Typography>₹{gst.toFixed(2)}</Typography>
+                </Box>
+                <Divider sx={{ my: 1, width: '100%' }} />
+                <Box display="flex" justifyContent="space-between" mb={0.5} width="100%">
+                  <Typography>Total GST (18%)</Typography>
+                  <Typography>₹{(gst * 2).toFixed(2)}</Typography>
+                </Box>
+                <Divider sx={{ my: 1, width: '100%' }} />
+                <Box display="flex" justifyContent="space-between" fontWeight="bold" width="100%">
+                  <Typography>Final Amount</Typography>
+                  <Typography>₹{(subtotal + gst * 2).toFixed(2)}</Typography>
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
           </Box>
 
           <Grid container spacing={2} mt={3}>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Terms & Conditions" />
-              <Box display="flex" alignItems="center" mt={1}>
-                <Checkbox />
-                <Typography variant="body2">Use this in future for all Work Orders</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} sx={{ ml: 90 }}>
               <Typography>Attachment</Typography>
               <Button variant="outlined" startIcon={<CloudUploadIcon />} sx={{ mt: 1 }}>
                 Upload File
@@ -532,26 +604,31 @@ useEffect(() => {
                 You can upload a maximum of 10 files, 10MB each
               </Typography>
             </Grid>
+            <Grid item xs={12} sm={6} sx={{ ml: 90 }}>
+              <Box mt={4} display="flex" justifyContent="space-between" flexWrap="wrap" gap={2}>
+                <Box display="flex" justifyContent="flex-end" mb={2}>
+                  <Button
+                    startIcon={<VisibilityOutlinedIcon />}
+                    sx={{ color: '#002D72', textTransform: 'none', fontWeight: 'bold' }}
+                    onClick={() => setPreviewOpen(true)}
+                  >
+                    Preview Work Order
+                  </Button>
+                </Box>
+                <Box display="flex" gap={2}>
+                  <Button variant="outlined" color="inherit" onClick={() => navigate('/Work-Order-list')}>
+                    Cancel
+                  </Button>
+                  <Button variant="outlined" onClick={handleSubmit}>
+                    Save as Draft
+                  </Button>
+                  <Button variant="contained" onClick={handleSubmit}>
+                    Save & Send
+                  </Button>
+                </Box>
+              </Box>
+            </Grid>
           </Grid>
-
-          <Box mt={4} display="flex" justifyContent="space-between" flexWrap="wrap" gap={2}>
-            <Box display="flex" justifyContent="flex-end" mb={2}>
-              <Button
-                startIcon={<VisibilityOutlinedIcon />}
-                sx={{ color: '#002D72', textTransform: 'none', fontWeight: 'bold' }}
-                onClick={() => setPreviewOpen(true)}
-              >
-                Preview Work Order
-              </Button>
-
-            </Box>
-            <Box display="flex" gap={2}>
-              <Button variant="outlined" color="inherit">Cancel</Button>
-              <Button variant="outlined"onClick={() => navigate('/Work-Order-list')}>Save as Draft</Button>
-              <Button variant="contained" onClick={() => navigate('/Work-Order-list')}>Save & Send</Button>
-            </Box>
-          </Box>
-
 
           <Modal open={customerModalOpen} onClose={() => setCustomerModalOpen(false)}>
             <Box
@@ -564,7 +641,7 @@ useEffect(() => {
                 bgcolor: 'background.paper',
                 borderRadius: 2,
                 boxShadow: 24,
-                p: 3
+                p: 3,
               }}
             >
               <TextField
@@ -575,7 +652,7 @@ useEffect(() => {
                     <InputAdornment position="start">
                       <Search />
                     </InputAdornment>
-                  )
+                  ),
                 }}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -588,127 +665,164 @@ useEffect(() => {
                 <Typography color="text.secondary">No result found</Typography>
               </Box>
               <Box mt={2} textAlign="center">
-                <Button variant="text" size="small">+ Add New Customer</Button>
+                <Button variant="text" size="small">
+                  + Add New Customer
+                </Button>
               </Box>
             </Box>
           </Modal>
-<Modal open={previewOpen} onClose={() => setPreviewOpen(false)}>
-  <Box
-    sx={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      bgcolor: 'rgba(0,0,0,0.6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1300,
-      flexDirection: 'column',
-    }}
-  >
-    <Box
-      sx={{
-        width: 480,
-        bgcolor: '#fff',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        boxShadow: 24,
-        px: 3,
-        py: 4,
-        position: 'relative',
-      }}
-    >
-      <Box sx={{ position: 'absolute', top: 20, right: 20 }}>
-        <img src="https://cdn-icons-png.flaticon.com/512/8372/8372013.png" alt="logo" width={40} />
-      </Box>
 
-      <Box sx={{ mb: 3 }}>
-        <Typography fontWeight="bold" fontSize={20}>Work Order</Typography>
-        <Typography fontSize={12} color="text.secondary">#ME22334-01</Typography>
-      </Box>
+          <Modal open={previewOpen} onClose={() => setPreviewOpen(false)}>
+            <Box
+              sx={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                bgcolor: 'rgba(0,0,0,0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1300,
+                flexDirection: 'column',
+              }}
+            >
+              <Box
+                sx={{
+                  width: 480,
+                  bgcolor: '#fff',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  boxShadow: 24,
+                  px: 3,
+                  py: 4,
+                  position: 'relative',
+                }}
+              >
+                <Box sx={{ position: 'absolute', top: 20, right: 20 }}>
+                  <img src="https://cdn-icons-png.flaticon.com/512/8372/8372013.png" alt="logo" width={40} />
+                </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <Box>
-          <Typography fontSize={12}>Issued</Typography>
-          <Typography fontSize={13} fontWeight={500}>01 Aug, 2023</Typography>
-        </Box>
-        <Box>
-          <Typography fontSize={12}>Due</Typography>
-          <Typography fontSize={13} fontWeight={500}>10 Aug, 2023</Typography>
-        </Box>
-      </Box>
+                <Box sx={{ mb: 3 }}>
+                  <Typography fontWeight="bold" fontSize={20}>
+                    Work Order
+                  </Typography>
+                  <Typography fontSize={12} color="text.secondary">
+                    #ME22334-01
+                  </Typography>
+                </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Typography fontSize={12} fontWeight={500}>Bill To</Typography>
-          <Typography fontSize={13}>Company Name</Typography>
-          <Typography fontSize={13}>Delhi, India - 000000</Typography>
-          <Typography fontSize={13}>+91 92483-64327</Typography>
-        </Box>
-        <Box>
-          <Typography fontSize={12} fontWeight={500}>From</Typography>
-          <Typography fontSize={13}>Ramesh, Inc</Typography>
-          <Typography fontSize={13}>Dudu, India - 303008</Typography>
-          <Typography fontSize={13}>IN +91 83028-29003</Typography>
-        </Box>
-      </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Box>
+                    <Typography fontSize={12}>Issued</Typography>
+                    <Typography fontSize={13} fontWeight={500}>
+                      01 Aug, 2023
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography fontSize={12}>Due</Typography>
+                    <Typography fontSize={13} fontWeight={500}>
+                      10 Aug, 2023
+                    </Typography>
+                  </Box>
+                </Box>
 
-      <Box sx={{
-        display: 'flex', fontWeight: 600, fontSize: 13,
-        borderBottom: '1px solid #ddd', pb: 1
-      }}>
-        <Box width="40%">Service</Box>
-        <Box width="15%">Qty</Box>
-        <Box width="20%">Rate</Box>
-        <Box width="25%" textAlign="right">Line Total</Box>
-      </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                  <Box>
+                    <Typography fontSize={12} fontWeight={500}>
+                      Bill To
+                    </Typography>
+                    <Typography fontSize={13}>Company Name</Typography>
+                    <Typography fontSize={13}>Delhi, India - 000000</Typography>
+                    <Typography fontSize={13}>+91 92483-64327</Typography>
+                  </Box>
+                  <Box>
+                    <Typography fontSize={12} fontWeight={500}>
+                      From
+                    </Typography>
+                    <Typography fontSize={13}>Ramesh, Inc</Typography>
+                    <Typography fontSize={13}>Dudu, India - 303008</Typography>
+                    <Typography fontSize={13}>IN +91 83028-29003</Typography>
+                  </Box>
+                </Box>
 
-      {rows.map((row, i) => (
-        <Box key={i} sx={{
-          display: 'flex', fontSize: 13, py: 1,
-          borderBottom: '1px solid #f0f0f0'
-        }}>
-          <Box width="40%">{row.item || '-'}</Box>
-          <Box width="15%">{row.qty}</Box>
-          <Box width="20%">₹{row.rate}</Box>
-          <Box width="25%" textAlign="right">₹{calculateAmount(row).toFixed(2)}</Box>
-        </Box>
-      ))}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    fontWeight: 600,
+                    fontSize: 13,
+                    borderBottom: '1px solid #ddd',
+                    pb: 1,
+                  }}
+                >
+                  <Box width="40%">Service</Box>
+                  <Box width="15%">Qty</Box>
+                  <Box width="20%">Rate</Box>
+                  <Box width="25%" textAlign="right">
+                    Line Total
+                  </Box>
+                </Box>
 
-      <Box mt={2} mb={2} sx={{ textAlign: 'right', fontSize: 13 }}>
-        <Typography>Subtotal: ₹{total.toFixed(2)}</Typography>
-        <Typography>Tax (9%): ₹{(total * 0.09).toFixed(2)}</Typography>
-        <Typography fontWeight="bold" mt={1}>Total: ₹{(total * 1.09).toFixed(2)}</Typography>
-        <Typography color="primary" mt={1} fontWeight="bold">Amount due: ₹{(total * 1.09).toFixed(2)}</Typography>
-      </Box>
+                {rows.map((row, i) => (
+                  <Box
+                    key={i}
+                    sx={{
+                      display: 'flex',
+                      fontSize: 13,
+                      py: 1,
+                      borderBottom: '1px solid #f0f0f0',
+                    }}
+                  >
+                    <Box width="40%">{row.item || '-'}</Box>
+                    <Box width="15%">{row.qty}</Box>
+                    <Box width="20%">₹{row.rate}</Box>
+                    <Box width="25%" textAlign="right">
+                      ₹{calculateAmount(row).toFixed(2)}
+                    </Box>
+                  </Box>
+                ))}
 
-  
-      <Box mt={3} sx={{ borderTop: '1px solid #eee', pt: 2, fontSize: 12 }}>
-        <Typography>Thanks for your business!</Typography>
-        <Typography variant="caption" display="block" color="text.secondary">This is a system generated Work Order.</Typography>
-      </Box>
-    </Box>
+          <Box mt={2} mb={2} sx={{ textAlign: 'right', fontSize: 13 }}>
+            <Typography>Subtotal: ₹{subtotal.toFixed(2)}</Typography>
+            <Typography>CGST (9%): ₹{gst.toFixed(2)}</Typography>
+            <Typography>SGST (9%): ₹{gst.toFixed(2)}</Typography>
+            <Typography fontWeight="bold" mt={1}>
+              Total GST (18%): ₹{(gst * 2).toFixed(2)}
+            </Typography>
+            <Typography fontWeight="bold" mt={1}>
+              Total: ₹{total.toFixed(2)}
+            </Typography>
+            <Typography color="primary" mt={1} fontWeight="bold">
+              Amount due: ₹{total.toFixed(2)}
+            </Typography>
+          </Box>
 
-    <Box sx={{ mt: 2 }}>
-      <IconButton
-        onClick={() => setPreviewOpen(false)}
-        sx={{
-          bgcolor: '#fff',
-          borderRadius: '50%',
-          boxShadow: 3,
-          '&:hover': {
-            bgcolor: '#f5f5f5',
-          },
-        }}
-      >
-        <CloseIcon />
-      </IconButton>
-    </Box>
-  </Box>
-</Modal>
+                <Box mt={3} sx={{ borderTop: '1px solid #eee', pt: 2, fontSize: 12 }}>
+                  <Typography>Thanks for your business!</Typography>
+                  <Typography variant="caption" display="block" color="text.secondary">
+                    This is a system generated Work Order.
+                  </Typography>
+                </Box>
+              </Box>
 
+              <Box sx={{ mt: 2 }}>
+                <IconButton
+                  onClick={() => setPreviewOpen(false)}
+                  sx={{
+                    bgcolor: '#fff',
+                    borderRadius: '50%',
+                    boxShadow: 3,
+                    '&:hover': {
+                      bgcolor: '#f5f5f5',
+                    },
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </Box>
+          </Modal>
         </Paper>
       </Box>
     </Box>

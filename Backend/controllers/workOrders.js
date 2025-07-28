@@ -1,62 +1,36 @@
-const db = require('../config/db');
+const WorkOrder = require('../models/workorders');
 
-// Get all workorders
-exports.getAllWorkOrders = (cb) => {
-  db.query('SELECT * FROM work_orders', cb);
+exports.create = (req, res) => {
+  WorkOrder.create(req.body, (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.status(201).json({ message: 'Work order created', id: result.insertId });
+  });
 };
 
-// Create a new workorder
-exports.createWorkOrder = (data, cb) => {
-  const {
-    work_order_number, customer_name, work_order_date, due_date, payment_terms,
-    subject, customer_notes, terms_and_conditions, attachment_url,
-    sub_total, cgst, sgst, grand_total, status
-  } = data;
-
-  db.query(
-    `INSERT INTO work_orders (
-      work_order_number, customer_name, work_order_date, due_date, payment_terms,
-      subject, customer_notes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      work_order_number, customer_name, work_order_date, due_date, payment_terms,
-      subject, customer_notes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status || 'Draft'
-    ],
-    cb
-  );
+exports.getAll = (req, res) => {
+  WorkOrder.getAll((err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(result);
+  });
 };
 
-// Update an existing workorder
-exports.updateWorkOrder = (id, data, cb) => {
-  const {
-    work_order_number, customer_name, work_order_date, due_date, payment_terms,
-    subject, customer_notes, terms_and_conditions, attachment_url,
-    sub_total, cgst, sgst, grand_total, status
-  } = data;
-
-  db.query(
-    `UPDATE work_orders SET
-      work_order_number=?, customer_name=?, work_order_date=?, due_date=?, payment_terms=?,
-      subject=?, customer_notes=?, terms_and_conditions=?, attachment_url=?,
-      sub_total=?, cgst=?, sgst=?, grand_total=?, status=?
-      WHERE work_order_id=?`,
-    [
-      work_order_number, customer_name, work_order_date, due_date, payment_terms,
-      subject, customer_notes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status, id
-    ],
-    cb
-  );
+exports.getById = (req, res) => {
+  WorkOrder.getById(req.params.id, (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(result[0]);
+  });
 };
 
-// Delete a workorder
-exports.deleteWorkOrder = (id, cb) => {
-  db.query('DELETE FROM work_orders WHERE work_order_id=?', [id], cb);
+exports.update = (req, res) => {
+  WorkOrder.update(req.params.id, req.body, (err) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json({ message: 'Work order updated' });
+  });
 };
 
-// Update status of a workorder
-exports.updateWorkOrderStatus = (id, status, cb) => {
-  db.query('UPDATE work_orders SET status = ? WHERE work_order_id = ?', [status, id], cb);
+exports.remove = (req, res) => {
+  WorkOrder.remove(req.params.id, (err) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json({ message: 'Work order deleted' });
+  });
 };
