@@ -1,57 +1,61 @@
-const db = require('../config/db');
+const db = require('../config/db'); // assumes db is your MySQL connection
 
-exports.getAll = (cb) => {
-  db.query('SELECT * FROM work_orders', cb);
-};
-
-exports.create = (data, cb) => {
-  const {
-    work_order_number, customer_name, work_order_date, due_date, payment_terms,
-    subject, customer_notes, terms_and_conditions, attachment_url,
-    sub_total, cgst, sgst, grand_total, status
-  } = data;
-
-  db.query(
-    `INSERT INTO work_orders (
+const WorkOrder = {
+  create: (data, callback) => {
+    const {
       work_order_number, customer_name, work_order_date, due_date, payment_terms,
       subject, customer_notes, terms_and_conditions, attachment_url,
       sub_total, cgst, sgst, grand_total, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
+    } = data;
+
+    const sql = `
+      INSERT INTO work_orders (
+        work_order_number, customer_name, work_order_date, due_date, payment_terms,
+        subject, customer_notes, terms_and_conditions, attachment_url,
+        sub_total, cgst, sgst, grand_total, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(sql, [
       work_order_number, customer_name, work_order_date, due_date, payment_terms,
       subject, customer_notes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status || 'Draft'
-    ],
-    cb
-  );
-};
+      sub_total, cgst, sgst, grand_total, status
+    ], callback);
+  },
 
-exports.update = (id, data, cb) => {
-  const {
-    work_order_number, customer_name, work_order_date, due_date, payment_terms,
-    subject, customer_notes, terms_and_conditions, attachment_url,
-    sub_total, cgst, sgst, grand_total, status
-  } = data;
+  getAll: (callback) => {
+    db.query('SELECT * FROM work_orders', callback);
+  },
 
-  db.query(
-    `UPDATE work_orders SET
-      work_order_number=?, customer_name=?, work_order_date=?, due_date=?, payment_terms=?,
-      subject=?, customer_notes=?, terms_and_conditions=?, attachment_url=?,
-      sub_total=?, cgst=?, sgst=?, grand_total=?, status=?
-      WHERE work_order_id=?`,
-    [
-      work_order_number, customer_name, work_order_date, due_date, payment_terms,
+  getById: (id, callback) => {
+    db.query('SELECT * FROM work_orders WHERE work_order_id = ?', [id], callback);
+  },
+
+  update: (id, data, callback) => {
+    const {
+      customer_name, work_order_date, due_date, payment_terms,
+      subject, customer_notes, terms_and_conditions, attachment_url,
+      sub_total, cgst, sgst, grand_total, status
+    } = data;
+
+    const sql = `
+      UPDATE work_orders SET
+        customer_name = ?, work_order_date = ?, due_date = ?, payment_terms = ?,
+        subject = ?, customer_notes = ?, terms_and_conditions = ?, attachment_url = ?,
+        sub_total = ?, cgst = ?, sgst = ?, grand_total = ?, status = ?
+      WHERE work_order_id = ?
+    `;
+
+    db.query(sql, [
+      customer_name, work_order_date, due_date, payment_terms,
       subject, customer_notes, terms_and_conditions, attachment_url,
       sub_total, cgst, sgst, grand_total, status, id
-    ],
-    cb
-  );
+    ], callback);
+  },
+
+  remove: (id, callback) => {
+    db.query('DELETE FROM work_orders WHERE work_order_id = ?', [id], callback);
+  }
 };
 
-exports.remove = (id, cb) => {
-  db.query('DELETE FROM work_orders WHERE work_order_id=?', [id], cb);
-};
-
-exports.updateStatus = (id, status, cb) => {
-  db.query('UPDATE work_orders SET status = ? WHERE work_order_id = ?', [status, id], cb);
-};
+module.exports = WorkOrder;
