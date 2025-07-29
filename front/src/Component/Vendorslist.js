@@ -225,10 +225,11 @@ export default function VendorListPage() {
           </Menu>
 
           <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-            <DialogTitle>Delete Vendor</DialogTitle>
-            <DialogContent>
+            {/* <DialogTitle>Delete Vendor</DialogTitle> */}
+           {/* <DialogContent>
               Are you sure you want to delete "{selectedVendor?.display_name}"?
             </DialogContent>
+           */}
             <DialogActions>
               <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
               <Button onClick={confirmDelete} color="error" variant="contained">Delete</Button>

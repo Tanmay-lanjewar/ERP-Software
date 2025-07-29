@@ -1,28 +1,38 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box, Button, Typography, TextField, IconButton, InputAdornment, Paper,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Menu, MenuItem, Checkbox, Avatar, InputBase, Tabs, Tab, Breadcrumbs
 } from '@mui/material';
+import { useNavigate } from "react-router-dom";
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchIcon from '@mui/icons-material/Search';
 import Sidebar from './Sidebar';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import axios from 'axios';
 
 const PurchaseOrderActions = () => {
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuIndex, setMenuIndex] = useState(null);
   const [tab, setTab] = useState(0);
+  const [rows, setRows] = useState([]);
 
-  const rows = Array.from({ length: 10 }).map((_, i) => ({
-    orderNo: `PO-000${i + 1}`,
-    vendor: 'Vendor 1',
-    created: '30/06/2025',
-    delivery: '30/08/2025',
-    status: i % 2 === 0 ? 'Draft' : 'Sent',
-    amount: '₹118.00'
-  }));
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/purchase')
+        .then(res => {
+            // Group by purchase_order_no so each order appears only once
+            const grouped = {};
+            res.data.forEach(row => {
+                if (!grouped[row.purchase_order_no]) {
+                    grouped[row.purchase_order_no] = row;
+                }
+            });
+            setRows(Object.values(grouped));
+        })
+        .catch(() => setRows([]));
+  }, []);
 
   const filteredRows = rows.filter(row => {
     if (tab === 0) return true;
@@ -39,6 +49,9 @@ const PurchaseOrderActions = () => {
   const handleMenuClose = () => {
     setAnchorEl(null);
     setMenuIndex(null);
+  };
+  const handleEditPurchase = (id) => {
+    navigate(`/edit-purchase/${id}`);
   };
 
   const handleDownloadPdf = (order) => {
@@ -154,18 +167,18 @@ window.location.href = '/add-purchase-order'
                   {filteredRows.map((row, i) => (
                     <TableRow key={i}>
                       <TableCell><Checkbox /></TableCell>
-                      <TableCell sx={{ color: '#0B5FFF', fontWeight: 500 }}>{row.orderNo}</TableCell>
-                      <TableCell>{row.vendor}</TableCell>
-                      <TableCell>{row.created}</TableCell>
-                      <TableCell>{row.delivery}</TableCell>
+                      <TableCell sx={{ color: '#0B5FFF', fontWeight: 500 }}>{row.purchase_order_no}</TableCell>
+                      <TableCell>{row.vendor_name}</TableCell>
+                      <TableCell>{row.purchase_order_date ? row.purchase_order_date.slice(0,10) : ''}</TableCell>
+                      <TableCell>{row.delivery_date ? row.delivery_date.slice(0,10) : ''}</TableCell>
                       <TableCell>
-                        <Typography variant="caption" sx={{ backgroundColor: row.status === 'Sent' ? '#D1FADF' : '#F2F4F7', color: row.status === 'Sent' ? '#067647' : '#344054', px: 1.5, py: 0.5, borderRadius: '12px', fontWeight: 600 }}>{row.status}</Typography>
+                        <Typography variant="caption" sx={{ backgroundColor: '#F2F4F7', color: '#344054', px: 1.5, py: 0.5, borderRadius: '12px', fontWeight: 600 }}>Draft</Typography>
                       </TableCell>
-                      <TableCell>{row.amount}</TableCell>
+                      <TableCell>{row.total ? `₹${row.total}` : ''}</TableCell>
                       <TableCell>
                         <IconButton onClick={(e) => handleMenuOpen(e, i)}><MoreVertIcon /></IconButton>
                         <Menu anchorEl={anchorEl} open={Boolean(anchorEl) && menuIndex === i} onClose={handleMenuClose}>
-                          <MenuItem>Edit</MenuItem>
+                          <MenuItem onClick={() => handleEditPurchase(row.id)}>Edit</MenuItem>
                           <MenuItem onClick={() => handleDownloadPdf(row)}>Download PDF</MenuItem>
                           <MenuItem onClick={() => handlePrintOrder(row)}>Print</MenuItem>
                           <MenuItem onClick={() => handleSendEmail(row)}>Send Email</MenuItem>

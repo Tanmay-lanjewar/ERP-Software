@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Button, InputBase, IconButton, Avatar, Chip,
   Table, TableHead, TableRow, TableCell, TableBody, Menu, MenuItem,
@@ -13,15 +13,6 @@ import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-const workOrders = Array.from({ length: 20 }, (_, i) => ({
-  id: i + 1,
-  orderNo: `WO-000${i + 1}`,
-  customer: `Customer ${i + 1}`,
-  date: '30/06/2025',
-  status: ['Draft', 'In Progress', 'Completed', 'Cancelled'][i % 4],
-  amount: '₹118.00'
-}));
-
 const statusColorMap = {
   Draft: { bg: '#E6F4EA', color: '#333' },
   'In Progress': { bg: '#E5F0FB', color: '#1565C0' },
@@ -33,7 +24,24 @@ const WorkOrderlist = () => {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [tab, setTab] = useState('All');
+  const [workOrders, setWorkOrders] = useState([]);
+  const [search, setSearch] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchWorkOrders();
+  }, []);
+
+  const fetchWorkOrders = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/work-orders'); // 
+      const data = await res.json();
+      console.log("📦 Work Orders from backend:", data); // ✅ Add this line
+      setWorkOrders(data);
+    } catch (err) {
+      console.error('Failed to fetch work orders:', err);
+    }
+  };
 
   const handleMenuClick = (event, order) => {
     setMenuAnchor(event.currentTarget);
@@ -63,9 +71,15 @@ const WorkOrderlist = () => {
   };
 
   const getFilteredOrders = () => {
-    if (tab === 'All') return workOrders;
-    return workOrders.filter(order => order.status === tab);
+    return workOrders.filter(order => {
+      const customerName = order.customer_name || '';
+      const matchesTab = tab === 'All' || order.status === tab;
+      const matchesSearch = customerName.toLowerCase().includes(search.toLowerCase());
+      return matchesTab && matchesSearch;
+    });
   };
+
+
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#F9FAFB' }}>
@@ -97,7 +111,12 @@ const WorkOrderlist = () => {
               }}
             >
               <SearchIcon fontSize="small" sx={{ color: '#555' }} />
-              <InputBase placeholder="Search anything here..." sx={{ ml: 1, flex: 1, fontSize: 14 }} />
+              <InputBase
+                placeholder="Search customer name..."
+                sx={{ ml: 1, flex: 1, fontSize: 14 }}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </Box>
             <IconButton><NotificationsNoneIcon /></IconButton>
             <Box display="flex" alignItems="center" gap={1}>
@@ -147,21 +166,21 @@ const WorkOrderlist = () => {
               </TableHead>
               <TableBody>
                 {getFilteredOrders().map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>{row.orderNo}</TableCell>
-                    <TableCell>{row.customer}</TableCell>
-                    <TableCell>{row.date}</TableCell>
+                  <TableRow key={row.work_order_id}>
+                    <TableCell>{row.work_order_number}</TableCell>
+                    <TableCell>{row.customer_name}</TableCell>
+                    <TableCell>{new Date(row.work_order_date).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <Chip
                         label={row.status}
                         size="small"
                         sx={{
-                          bgcolor: statusColorMap[row.status].bg,
-                          color: statusColorMap[row.status].color
+                          bgcolor: statusColorMap[row.status]?.bg,
+                          color: statusColorMap[row.status]?.color
                         }}
                       />
                     </TableCell>
-                    <TableCell>{row.amount}</TableCell>
+                    <TableCell>{row.grand_total || '-'}</TableCell>
                     <TableCell>
                       <IconButton onClick={(e) => handleMenuClick(e, row)}>
                         <MoreVertIcon />
@@ -170,6 +189,7 @@ const WorkOrderlist = () => {
                   </TableRow>
                 ))}
               </TableBody>
+
             </Table>
           </Paper>
         </Box>

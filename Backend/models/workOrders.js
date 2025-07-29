@@ -1,0 +1,61 @@
+const db = require('../config/db'); // assumes db is your MySQL connection
+
+const WorkOrder = {
+  create: (data, callback) => {
+    const {
+      work_order_number, customer_name, work_order_date, due_date, payment_terms,
+      subject, customer_notes, terms_and_conditions, attachment_url,
+      sub_total, cgst, sgst, grand_total, status
+    } = data;
+
+    const sql = `
+      INSERT INTO work_orders (
+        work_order_number, customer_name, work_order_date, due_date, payment_terms,
+        subject, customer_notes, terms_and_conditions, attachment_url,
+        sub_total, cgst, sgst, grand_total, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(sql, [
+      work_order_number, customer_name, work_order_date, due_date, payment_terms,
+      subject, customer_notes, terms_and_conditions, attachment_url,
+      sub_total, cgst, sgst, grand_total, status
+    ], callback);
+  },
+
+  getAll: (callback) => {
+    db.query('SELECT * FROM work_orders', callback);
+  },
+
+  getById: (id, callback) => {
+    db.query('SELECT * FROM work_orders WHERE work_order_id = ?', [id], callback);
+  },
+
+  update: (id, data, callback) => {
+    const {
+      customer_name, work_order_date, due_date, payment_terms,
+      subject, customer_notes, terms_and_conditions, attachment_url,
+      sub_total, cgst, sgst, grand_total, status
+    } = data;
+
+    const sql = `
+      UPDATE work_orders SET
+        customer_name = ?, work_order_date = ?, due_date = ?, payment_terms = ?,
+        subject = ?, customer_notes = ?, terms_and_conditions = ?, attachment_url = ?,
+        sub_total = ?, cgst = ?, sgst = ?, grand_total = ?, status = ?
+      WHERE work_order_id = ?
+    `;
+
+    db.query(sql, [
+      customer_name, work_order_date, due_date, payment_terms,
+      subject, customer_notes, terms_and_conditions, attachment_url,
+      sub_total, cgst, sgst, grand_total, status, id
+    ], callback);
+  },
+
+  remove: (id, callback) => {
+    db.query('DELETE FROM work_orders WHERE work_order_id = ?', [id], callback);
+  }
+};
+
+module.exports = WorkOrder;

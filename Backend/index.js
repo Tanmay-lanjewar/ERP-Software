@@ -53,6 +53,16 @@ app.use('/api/financialYear', financialYearRoutes);
 const invoiceRoutes = require('./routes/invoice');
 app.use('/api/invoice', invoiceRoutes);
 
+// const workOrderRoutes = require('./routes/workorders');
+// app.use('/api', workOrderRoutes);
+
+const workOrderRoutes = require('./routes/workOrders');
+app.use('/api/work-orders', workOrderRoutes);
+
+
+
+
+
 app.get('/', (req, res) => {
   res.send('✅ Server is running and MySQL should be connected');
 });
