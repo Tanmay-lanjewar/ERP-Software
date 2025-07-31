@@ -164,7 +164,7 @@ const NewWorkOrder = () => {
       })),
     };
 
-    fetch('http://localhost:5000/api/add-Work-Order', {
+    fetch('http://localhost:5000/api/work-orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(workOrderData),

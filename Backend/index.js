@@ -35,6 +35,9 @@ app.use('/api/vendors', vendorRoutes);
 const quotationRoutes = require('./routes/quotation');
 app.use ('/api/quotation',quotationRoutes)
 
+const PurchaseRoutes = require('./routes/purchase');
+app.use ('/api/purchase',PurchaseRoutes)
+
 // Product routes: for /api/customers
 const customerRoutes = require('./routes/customers');
 app.use('/api/customers', customerRoutes);
