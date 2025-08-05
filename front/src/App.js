@@ -41,6 +41,9 @@ import { useState } from 'react';
 import EditTax from './Component/EditTax';
 import EditQuotationPage from './Component/EditQuotationPage';
 import EditInvoicePage from './Component/EditInvoicePage';
+import EditPurchaseOrderPage from './Component/EditPurchaseOrderPage';
+import EditVendorDialog from './Component/EditVendor';
+import EditWorkOrderPage from './Component/EditWorkOrder';
 
 
 
@@ -70,10 +73,12 @@ function App() {
           <Route path="/purchase-order" element={<PurchaseOrderList></PurchaseOrderList>} />
           <Route path="/add-purchase-order" element={<PurchaseOrderForm />} />
           <Route path="/purchase-order-list" element={<PurchaseOrderList />} />
+          <Route path="/edit-purchase/:id" element={<EditPurchaseOrderPage />} />'
           {/* <Route path="/vendors" element={<Vendors />} /> */}
           <Route path="/vendors" element={<VendorListPage/>} />
           <Route path="/add-vendor" element={<NewVendorForm />} />
           <Route path="/vendor-list" element={<VendorListPage />} />
+          <Route path="/edit-vendor/:id" element={<EditVendorDialog />} />'
           {/* <Route path="/Quotation" element={<Quotation />} /> */}
           <Route path="/Quotation" element={<QuotationListPage />} />
           <Route path="/add-Quotation" element={<NewQuotation />} />
@@ -86,6 +91,7 @@ function App() {
           <Route path="/Work-Order" element={<WorkOrderlist />} />
           <Route path="/add-Work-Order" element={<NewWorkOrder />} />
           <Route path="/Work-Order-list" element={<WorkOrderlist />} />
+          <Route path="/edit-work-order/:id" element={<EditWorkOrderPage />} />
           {/* <Route path="/pro-forma-invoice" element={<ProFormaInvoice />} /> */}
           <Route path="/pro-forma-invoice" element={<ProformaInvoicelist />} />
           <Route path="/add-pro-forma-invoice" element={<NewProFormaInvoice />} />
