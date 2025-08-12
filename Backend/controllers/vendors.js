@@ -34,3 +34,11 @@ exports.updateStatus = (req, res) => {
     res.json({ success: true });
   });
 };
+// In controllers/vendors.js
+exports.getById = (req, res) => {
+  Vendor.getById(req.params.id, (err, vendor) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
+    res.json(vendor);
+  });
+};

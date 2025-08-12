@@ -26,6 +26,8 @@ const WorkOrderlist = () => {
   const [tab, setTab] = useState('All');
   const [workOrders, setWorkOrders] = useState([]);
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,12 +36,20 @@ const WorkOrderlist = () => {
 
   const fetchWorkOrders = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/work-orders'); // 
+      setLoading(true);
+      setError('');
+      const res = await fetch('http://localhost:5000/api/work-orders');
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
       const data = await res.json();
-      console.log("📦 Work Orders from backend:", data); // ✅ Add this line
-      setWorkOrders(data);
+      console.log("📦 Work Orders from backend:", data);
+      setWorkOrders(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
       console.error('Failed to fetch work orders:', err);
+      setError(`Failed to load work orders: ${err.message}. Please check the backend endpoint.`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -53,20 +63,33 @@ const WorkOrderlist = () => {
     setSelectedOrder(null);
   };
 
+  const handleEdit = () => {
+    if (selectedOrder) {
+      navigate(`/edit-work-order/${selectedOrder.work_order_id}`);
+      handleClose();
+    }
+  };
+
   const handleShareLink = (order) => {
-    navigator.clipboard.writeText(`https://dummy-workorder-link/${order.orderNo}`);
+    navigator.clipboard.writeText(`https://dummy-workorder-link/${order.work_order_id}`);
     alert('Work order link copied to clipboard!');
     handleClose();
   };
 
   const handleDownloadPDF = (order) => {
     const doc = new jsPDF();
-    doc.text(`Work Order: ${order.orderNo}`, 20, 20);
-    doc.text(`Customer: ${order.customer}`, 20, 30);
-    doc.text(`Date: ${order.date}`, 20, 40);
-    doc.text(`Status: ${order.status}`, 20, 50);
-    doc.text(`Amount: ${order.amount}`, 20, 60);
-    doc.save(`${order.orderNo}.pdf`);
+    doc.autoTable({
+      startY: 20,
+      head: [['Field', 'Value']],
+      body: [
+        ['Work Order #', order.work_order_number || 'N/A'],
+        ['Customer', order.customer_name || 'N/A'],
+        ['Date', order.work_order_date ? new Date(order.work_order_date).toLocaleDateString() : 'N/A'],
+        ['Status', order.status || 'N/A'],
+        ['Amount', order.grand_total || '-'],
+      ],
+    });
+    doc.save(`${order.work_order_number || 'work-order'}.pdf`);
     handleClose();
   };
 
@@ -79,7 +102,24 @@ const WorkOrderlist = () => {
     });
   };
 
+  if (loading) {
+    return (
+      <Box sx={{ p: 4 }}>
+        <Typography>Loading work orders...</Typography>
+      </Box>
+    );
+  }
 
+  if (error) {
+    return (
+      <Box sx={{ p: 4 }}>
+        <Typography color="error">{error}</Typography>
+        <Button onClick={fetchWorkOrders} variant="contained" sx={{ mt: 2 }}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#F9FAFB' }}>
@@ -167,16 +207,16 @@ const WorkOrderlist = () => {
               <TableBody>
                 {getFilteredOrders().map((row) => (
                   <TableRow key={row.work_order_id}>
-                    <TableCell>{row.work_order_number}</TableCell>
-                    <TableCell>{row.customer_name}</TableCell>
-                    <TableCell>{new Date(row.work_order_date).toLocaleDateString()}</TableCell>
+                    <TableCell>{row.work_order_number || 'N/A'}</TableCell>
+                    <TableCell>{row.customer_name || 'N/A'}</TableCell>
+                    <TableCell>{row.work_order_date ? new Date(row.work_order_date).toLocaleDateString() : 'N/A'}</TableCell>
                     <TableCell>
                       <Chip
-                        label={row.status}
+                        label={row.status || 'Unknown'}
                         size="small"
                         sx={{
-                          bgcolor: statusColorMap[row.status]?.bg,
-                          color: statusColorMap[row.status]?.color
+                          bgcolor: statusColorMap[row.status]?.bg || '#E0E0E0',
+                          color: statusColorMap[row.status]?.color || '#000'
                         }}
                       />
                     </TableCell>
@@ -189,7 +229,6 @@ const WorkOrderlist = () => {
                   </TableRow>
                 ))}
               </TableBody>
-
             </Table>
           </Paper>
         </Box>
@@ -202,7 +241,7 @@ const WorkOrderlist = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <MenuItem onClick={handleClose}>Edit</MenuItem>
+        <MenuItem onClick={handleEdit}>Edit</MenuItem>
         <MenuItem onClick={() => handleDownloadPDF(selectedOrder)}>Download PDF</MenuItem>
         <MenuItem onClick={() => handleShareLink(selectedOrder)}>Share Link</MenuItem>
       </Menu>
