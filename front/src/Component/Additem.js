@@ -1,45 +1,23 @@
 import {
-  Box, Grid, Typography, TextField, Button, MenuItem, Tooltip,
-  IconButton, InputAdornment, Paper, Breadcrumbs, InputBase, FormControl, Select, Avatar
+  Box, Grid, Typography, TextField, Button, MenuItem, Paper, Breadcrumbs, InputBase, IconButton, Avatar
 } from '@mui/material';
 import {
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio
+  FormLabel, RadioGroup, FormControlLabel, Radio
 } from '@mui/material';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Sidebar from './Sidebar';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const units = ['cm', 'mm', 'kg', 'pcs'];
-const vendors = ['Laxmi Motors', 'ABC Traders'];
-
-
-
-
-
 
 export default function AddItems() {
-
-
-
-  useEffect(() => {
-    axios.get('http://localhost:5000/api/taxes')
-      .then(res => {
-        const activeTaxes = res.data.filter(tax => tax.status === 'Active');
-        setTaxList(activeTaxes);
-      })
-      .catch(err => console.error("Error fetching taxes:", err));
-  }, []);
-
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     type: 'Product',
     product_name: '',
@@ -60,24 +38,44 @@ export default function AddItems() {
   });
 
   const [taxList, setTaxList] = useState([]);
+  const [vendors, setVendors] = useState([]);
+
+  // Fetch Taxes
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/taxes')
+      .then(res => {
+        const activeTaxes = res.data.filter(tax => tax.status === 'Active');
+        setTaxList(activeTaxes);
+      })
+      .catch(err => console.error("Error fetching taxes:", err));
+  }, []);
+
+  // Fetch Vendors
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/vendors')
+      .then(res => setVendors(res.data))
+      .catch(err => {
+        console.error("Error fetching vendors:", err);
+        setVendors([]);
+      });
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const generateSKU = () => {
     const prefix = formData.product_name?.substring(0, 3).toUpperCase() || "SKU";
-    const uniqueNumber = Date.now().toString().slice(-5); // e.g., last 5 digits of timestamp
+    const uniqueNumber = Date.now().toString().slice(-5);
     return `${prefix}${uniqueNumber}`;
   };
 
   const handleSubmit = async () => {
     const dataToSend = {
       ...formData,
-      sku: generateSKU(), // auto-generated
+      sku: generateSKU(),
     };
-
     try {
       await axios.post('http://localhost:5000/api/products', dataToSend);
       navigate('/item-list');
@@ -86,12 +84,11 @@ export default function AddItems() {
     }
   };
 
-
-
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar active="Items" />
       <Box sx={{ flex: 1, bgcolor: '#f9fafc', minHeight: '100vh' }}>
+        {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, mt: 1, px: 3 }}>
           <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
             <Typography color="text.secondary" fontSize="14px">Product & Services</Typography>
@@ -100,7 +97,7 @@ export default function AddItems() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Paper elevation={0} sx={{ display: 'flex', alignItems: 'center', px: 1.5, py: 0.5, borderRadius: '999px', border: '1px solid #e0e0e0', bgcolor: '#f9fafb', width: 240 }}>
               <SearchIcon sx={{ fontSize: 20, color: '#999' }} />
-              <InputBase placeholder="Search anything here..." sx={{ ml: 1, fontSize: 14, flex: 1 }} inputProps={{ 'aria-label': 'search' }} />
+              <InputBase placeholder="Search anything here..." sx={{ ml: 1, fontSize: 14, flex: 1 }} />
             </Paper>
             <IconButton sx={{ borderRadius: '12px', border: '1px solid #e0e0e0', bgcolor: '#f9fafb', p: 1 }}>
               <NotificationsNoneIcon sx={{ fontSize: 20, color: '#666' }} />
@@ -113,6 +110,7 @@ export default function AddItems() {
           </Box>
         </Box>
 
+        {/* Form */}
         <Box sx={{ px: 4, py: 4 }}>
           <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>New Product & Services</Typography>
@@ -129,7 +127,6 @@ export default function AddItems() {
               </Grid>
 
               <Grid item xs={12} md={4}>
-
                 <TextField
                   select
                   fullWidth
@@ -137,10 +134,9 @@ export default function AddItems() {
                   name="tax_applicable"
                   label="Tax Applicable"
                   value={formData.tax_applicable}
-                  style={{width:"200px"}}
                   onChange={(e) => {
                     if (e.target.value === 'add_new_tax') {
-                      navigate('/add-tax'); // ⬅️ Redirect to tax form
+                      navigate('/add-tax');
                     } else {
                       handleChange(e);
                     }
@@ -156,37 +152,26 @@ export default function AddItems() {
                     + Add New Tax
                   </MenuItem>
                 </TextField>
-
-
               </Grid>
+
               <Grid item xs={12} md={4}>
-                <TextField select fullWidth size="small" name="status" label="Status" value={formData.status}  onChange={handleChange}>
+                <TextField select fullWidth size="small" name="status" label="Status" value={formData.status} onChange={handleChange}>
                   <MenuItem value="Active">Active</MenuItem>
                   <MenuItem value="Inactive">Inactive</MenuItem>
                 </TextField>
               </Grid>
+
               <Grid item xs={12} md={4}>
                 <TextField fullWidth size="small" name="category" label="Category" value={formData.category} onChange={handleChange} />
               </Grid>
+
               <Grid item xs={12} md={4}>
-                <TextField select fullWidth size="small" name="unit" label="Unit" value={formData.unit} onChange={handleChange}
-                  sx={{
-                    width: { xs: '100%', sm: '100%', md: 70 },
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '10px',
-                      backgroundColor: '#f9fafb',
-                      height: 40,
-                    },
-                    '& .MuiSelect-select': {
-                      fontSize: '14px',
-                      padding: '10px 14px',
-                    },
-                  }}
-                >
+                <TextField select fullWidth size="small" name="unit" label="Unit" value={formData.unit} onChange={handleChange}>
                   {units.map((unit) => <MenuItem key={unit} value={unit}>{unit}</MenuItem>)}
                 </TextField>
               </Grid>
 
+              {/* Sales Info */}
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle1">Sales Information</Typography>
                 <TextField fullWidth size="small" label="Sale Price" name="sale_price" value={formData.sale_price} onChange={handleChange} />
@@ -198,6 +183,7 @@ export default function AddItems() {
                 <TextField fullWidth size="small" multiline rows={2} label="Sale Description" name="sale_description" value={formData.sale_description} onChange={handleChange} sx={{ mt: 2 }} />
               </Grid>
 
+              {/* Purchase Info */}
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle1">Purchase Information</Typography>
                 <TextField fullWidth size="small" label="Purchase Price" name="purchase_price" value={formData.purchase_price} onChange={handleChange} />
@@ -208,11 +194,16 @@ export default function AddItems() {
                 </TextField>
                 <TextField fullWidth size="small" multiline rows={2} label="Purchase Description" name="purchase_description" value={formData.purchase_description} onChange={handleChange} sx={{ mt: 2 }} />
                 <TextField select fullWidth size="small" label="Preferred Vendor" name="preferred_vendor" value={formData.preferred_vendor} onChange={handleChange} sx={{ mt: 2 }}>
-                  {vendors.map((vendor) => <MenuItem key={vendor} value={vendor}>{vendor}</MenuItem>)}
+                  {vendors.map((vendor) => (
+                    <MenuItem key={vendor.id} value={vendor.vendor_name}>
+                      {vendor.vendor_name}
+                    </MenuItem>
+                  ))}
                 </TextField>
               </Grid>
             </Grid>
 
+            {/* Buttons */}
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
               <Button variant="outlined" sx={{ textTransform: 'none', borderRadius: 2, px: 4 }}>Cancel</Button>
               <Button variant="contained" onClick={handleSubmit} sx={{ textTransform: 'none', borderRadius: 2, bgcolor: '#004085', '&:hover': { bgcolor: '#003366' } }}>Add</Button>
