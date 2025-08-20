@@ -32,7 +32,6 @@ import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 const statusColor = {
   Paid: "success",
@@ -77,27 +76,17 @@ export default function Invoicelist() {
 
   const handleDownloadPdf = (invoice) => {
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Invoice Document", 105, 20, null, null, "center");
-    doc.setLineWidth(0.5);
-    doc.line(20, 25, 190, 25);
-    let y = 40;
-    const details = [
-      ["Invoice #", invoice.id],
-      ["Customer", invoice.customer],
-      ["Created Date", invoice.createdDate],
-      ["Due Date", invoice.dueDate],
-      ["Status", invoice.status],
-      ["Amount", invoice.amount],
-    ];
-    details.forEach(([label, value]) => {
-      doc.setFont("helvetica", "bold");
-      doc.text(`${label}:`, 25, y);
-      doc.setFont("helvetica", "normal");
-      doc.text(`${value}`, 70, y);
-      y += 12;
-    });
-    doc.save(`${invoice.id}.pdf`);
+
+    // Load image from public folder using %PUBLIC_URL%
+    const img = new Image();
+    img.src = process.env.PUBLIC_URL + '/pdf.png'; // Adjust file name if different
+    img.onload = () => {
+      doc.addImage(img, 'PNG', 10, 10, 190, 0); // x, y, width, height (auto height)
+      doc.save(`${invoice.id}_screenshot.pdf`);
+    };
+    img.onerror = () => {
+      alert("Error loading screenshot. Check file name or path in public folder.");
+    };
   };
 
   const handlePrintInvoice = (invoice) => {
