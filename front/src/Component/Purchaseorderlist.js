@@ -178,7 +178,7 @@ window.location.href = '/add-purchase-order'
                       <TableCell>
                         <IconButton onClick={(e) => handleMenuOpen(e, i)}><MoreVertIcon /></IconButton>
                         <Menu anchorEl={anchorEl} open={Boolean(anchorEl) && menuIndex === i} onClose={handleMenuClose}>
-                          <MenuItem onClick={() => handleEditPurchase(row.id)}>Edit</MenuItem>
+                          <MenuItem onClick={() => handleEditPurchase(row._id)}>Edit</MenuItem>
                           <MenuItem onClick={() => handleDownloadPdf(row)}>Download PDF</MenuItem>
                           <MenuItem onClick={() => handlePrintOrder(row)}>Print</MenuItem>
                           <MenuItem onClick={() => handleSendEmail(row)}>Send Email</MenuItem>

@@ -87,3 +87,10 @@ exports.remove = (id, cb) => {
 exports.updateStatus = (id, status, cb) => {
   db.query('UPDATE vendors SET status=? WHERE id=?', [status, id], cb);
 };
+// In models/vendors.js
+exports.getById = (id, cb) => {
+  db.query('SELECT * FROM vendors WHERE id = ?', [id], (err, rows) => {
+    if (err) return cb(err);
+    cb(null, rows[0]);
+  });
+};
