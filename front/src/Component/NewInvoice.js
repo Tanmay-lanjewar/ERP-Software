@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -13,82 +14,85 @@ import {
   Paper,
   Checkbox,
   Modal,
-  Tabs,
-  Tab,
-  InputBase, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,Avatar
-} from '@mui/material';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { useState, useEffect } from 'react';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import {
-  InputAdornment,
-} from '@mui/material';
-import {
-  Search,
-} from '@mui/icons-material';
-import { Breadcrumbs } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import { Navigate, useNavigate } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import CloseIcon from '@mui/icons-material/Close';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import axios from 'axios';
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Avatar,
+  InputBase,
+  Breadcrumbs,
+} from "@mui/material";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import SearchIcon from "@mui/icons-material/Search";
+import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import CloseIcon from "@mui/icons-material/Close";
+import { useNavigate } from "react-router-dom";
+import Sidebar from "./Sidebar";
+import axios from "axios";
+
 const NewInvoicePage = () => {
-const navigate =useNavigate()
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
-  const [selectedCustomer, setSelectedCustomer] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState("");
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [customerTab, setCustomerTab] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [invoiceNumber, setInvoiceNumber] = useState('');
-  const [status, setStatus] = useState('Draft');
-  const [invoiceDate, setInvoiceDate] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [subject, setSubject] = useState('');
-  const [customerNotes, setCustomerNotes] = useState('');
-  const [termsAndConditions, setTermsAndConditions] = useState('');
-
-  useEffect(() => {
-    axios.get('http://localhost:5000/api/customers')
-      .then(res => setCustomers(res.data))
-      .catch(() => setCustomers([]));
-    axios.get('http://localhost:5000/api/invoice/next-number')
-      .then(res => setInvoiceNumber(res.data.nextQuoteNumber))
-      .catch(() => setInvoiceNumber(''));
-  }, []);
-
-  const handleAddCustomer = () => {
-    setCustomerModalOpen(true);
-  }
-  const [items, setItems] = useState(['Item 1', 'Item 2']);
-  const [itemModalOpen, setItemModalOpen] = useState(false);
-  const [itemSearchTerm, setItemSearchTerm] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [status, setStatus] = useState("Draft");
+  const [invoiceDate, setInvoiceDate] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [subject, setSubject] = useState("");
+  const [customerNotes, setCustomerNotes] = useState("");
+  const [termsAndConditions, setTermsAndConditions] = useState("");
+  const [products, setProducts] = useState([]);
   const [rows, setRows] = useState([
-    { item: '', qty: 0, rate: 0, discount: 0, amount: 0 },
+    { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0 },
   ]);
 
+  useEffect(() => {
+    // Fetch customers
+    axios
+      .get("http://localhost:5000/api/customers")
+      .then((res) => setCustomers(res.data))
+      .catch(() => setCustomers([]));
 
+    // Fetch invoice number
+    axios
+      .get("http://localhost:5000/api/invoice/next-number")
+      .then((res) => setInvoiceNumber(res.data.nextQuoteNumber))
+      .catch(() => setInvoiceNumber(""));
 
-  const handleItemSelect = (rowIndex, itemName) => {
-    const updatedRows = [...rows];
-    updatedRows[rowIndex].item = itemName;
-    setRows(updatedRows);
-    setItemModalOpen(false);
-  };
-
+    // Fetch products
+    fetch("http://localhost:5000/api/products")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setProducts(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching products:", error);
+      });
+  }, []);
 
   const updateRow = (index, field, value) => {
     const updated = [...rows];
-    updated[index][field] = parseFloat(value) || 0;
+    updated[index][field] = ["qty", "rate", "discount"].includes(field)
+      ? parseFloat(value) || 0
+      : value;
     updated[index].amount = calculateAmount(updated[index]);
     setRows(updated);
   };
-
 
   const calculateAmount = (row) => {
     const total = (row.qty || 0) * (row.rate || 0);
@@ -96,7 +100,10 @@ const navigate =useNavigate()
   };
 
   const addNewRow = () => {
-    setRows([...rows, { item: '', qty: 0, rate: 0, discount: 0, amount: 0 }]);
+    setRows([
+      ...rows,
+      { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0 },
+    ]);
   };
 
   const deleteRow = (index) => {
@@ -109,96 +116,99 @@ const navigate =useNavigate()
   const gst = subtotal * 0.09;
   const total = subtotal + gst * 2;
 
-  // On form submit, POST to backend
   const handleSubmit = async () => {
-    // Find selected customer object
-    const customerObj = customers.find(c => c.customer_id === selectedCustomer);
+    const customerObj = customers.find((c) => c.customer_id === selectedCustomer);
     const invoiceData = {
-      customer_name: customerObj ? customerObj.customer_name : '',
+      customer_name: customerObj ? customerObj.customer_name : "",
       invoice_date: invoiceDate,
       expiry_date: expiryDate,
       subject: subject,
       customer_notes: customerNotes,
       terms_and_conditions: termsAndConditions,
-      status: status
+      status: status,
+      sub_total: subtotal,
+      cgst: gst,
+      sgst: gst,
+      total_amount: total,
+      items: rows.map((row) => ({
+        item_detail: row.item,
+        quantity: row.qty,
+        rate: row.rate,
+        discount: row.discount,
+        amount: calculateAmount(row),
+      })),
     };
-    const items = rows.map(row => ({
-      item_detail: row.item,
-      quantity: row.qty,
-      rate: row.rate,
-      discount: row.discount,
-      amount: row.amount
-    }));
+
     try {
-      await axios.post('http://localhost:5000/api/invoice', {
-        invoice: invoiceData,
-        items: items
-      }, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      // Success: redirect or show message
-      navigate('/invoice-list');
+      await axios.post(
+        "http://localhost:5000/api/invoice",
+        {
+          invoice: invoiceData,
+          items: rows,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      navigate("/invoice-list");
     } catch (err) {
-      // Handle error
-      alert('Failed to save invoice');
+      alert("Failed to save invoice");
     }
   };
 
   return (
-    <Box sx={{ display: 'flex', backgroundColor: '#f9f9f9', minHeight: '100vh' }}>
+    <Box sx={{ display: "flex", backgroundColor: "#f9f9f9", minHeight: "100vh" }}>
       <Sidebar />
       <Box sx={{ flex: 1, p: 4 }}>
         <Box
           sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
             mb: 3,
             mt: 1,
           }}
         >
-
           <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
             <Typography color="text.secondary" fontSize="14px">
-              New Invoice
+              Invoice
             </Typography>
             <Typography color="text.primary" fontWeight={600} fontSize="14px">
               New Invoice
             </Typography>
           </Breadcrumbs>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Paper
               elevation={0}
               sx={{
-                display: 'flex',
-                alignItems: 'center',
+                display: "flex",
+                alignItems: "center",
                 px: 1.5,
                 py: 0.5,
-                borderRadius: '999px',
-                border: '1px solid #e0e0e0',
-                bgcolor: '#f9fafb',
+                borderRadius: "999px",
+                border: "1px solid #e0e0e0",
+                bgcolor: "#f9fafb",
                 width: 240,
               }}
             >
-              <SearchIcon sx={{ fontSize: 20, color: '#999' }} />
+              <SearchIcon sx={{ fontSize: 20, color: "#999" }} />
               <InputBase
                 placeholder="Search anything here..."
                 sx={{ ml: 1, fontSize: 14, flex: 1 }}
-                inputProps={{ 'aria-label': 'search' }}
+                inputProps={{ "aria-label": "search" }}
               />
             </Paper>
-
             <IconButton
               sx={{
-                borderRadius: '12px',
-                border: '1px solid #e0e0e0',
-                bgcolor: '#f9fafb',
+                borderRadius: "12px",
+                border: "1px solid #e0e0e0",
+                bgcolor: "#f9fafb",
                 p: 1,
               }}
             >
-              <NotificationsNoneIcon sx={{ fontSize: 20, color: '#666' }} />
-            </IconButton> <Box display="flex" alignItems="center" gap={1}>
+              <NotificationsNoneIcon sx={{ fontSize: 20, color: "#666" }} />
+            </IconButton>
+            <Box display="flex" alignItems="center" gap={1}>
               <Avatar src="https://i.pravatar.cc/40?img=1" />
               <Typography fontSize={14}>Admin name</Typography>
               <ArrowDropDownIcon />
@@ -206,23 +216,19 @@ const navigate =useNavigate()
           </Box>
         </Box>
         <Paper sx={{ p: 1, borderRadius: 2 }}>
-
-
           <Typography
             variant="h6"
             sx={{
               fontWeight: 600,
-              color: '#111',
+              color: "#111",
               mb: 2,
-              borderBottom: '1px solid #eee',
+              borderBottom: "1px solid #eee",
               pb: 1,
             }}
           >
             New Invoice
           </Typography>
-
           <Grid container spacing={1}>
-
             <Grid item xs={12} sm={6} md={1}>
               <TextField
                 required
@@ -231,35 +237,31 @@ const navigate =useNavigate()
                 InputProps={{ readOnly: true }}
                 sx={{
                   width: 500,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '22px',
-                    bgcolor: '#f9fafb',
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "22px",
+                    bgcolor: "#f9fafb",
                   },
                 }}
               />
-
             </Grid>
-
-
             <Grid container spacing={2} sx={{ mt: 1 }}>
-
               <Grid item xs={12} sm={6} md={3}>
                 <FormControl fullWidth required>
                   <InputLabel>Customer Name</InputLabel>
                   <Select
                     value={selectedCustomer}
-                    onChange={e => setSelectedCustomer(e.target.value)}
+                    onChange={(e) => setSelectedCustomer(e.target.value)}
                     displayEmpty
                     sx={{
-                      bgcolor: '#f9fafb',
-                      borderRadius: '12px',
+                      bgcolor: "#f9fafb",
+                      borderRadius: "12px",
                       width: 300,
                     }}
                   >
                     {customers.length === 0 ? (
                       <MenuItem disabled>No result found</MenuItem>
                     ) : (
-                      customers.map((customer, index) => (
+                      customers.map((customer) => (
                         <MenuItem key={customer.customer_id} value={customer.customer_id}>
                           {customer.customer_name}
                         </MenuItem>
@@ -270,14 +272,13 @@ const navigate =useNavigate()
                 <Box mt={1}>
                   <Button
                     size="small"
-                    sx={{ textTransform: 'none', color: '#3f51b5' }}
-                    onClick={handleAddCustomer}
+                    sx={{ textTransform: "none", color: "#3f51b5" }}
+                    onClick={() => setCustomerModalOpen(true)}
                   >
                     + Add New Customer
                   </Button>
                 </Box>
               </Grid>
-
               <Grid item xs={12} sm={6} md={2}>
                 <TextField
                   fullWidth
@@ -285,25 +286,24 @@ const navigate =useNavigate()
                   label="Invoice Date"
                   type="date"
                   value={invoiceDate}
-                  onChange={e => setInvoiceDate(e.target.value)}
+                  onChange={(e) => setInvoiceDate(e.target.value)}
                   InputLabelProps={{ shrink: true }}
                   InputProps={{
                     sx: {
-                      bgcolor: '#f9fafb',
-                      borderRadius: '12px',
+                      bgcolor: "#f9fafb",
+                      borderRadius: "12px",
                       width: 300,
                     },
                   }}
                 />
               </Grid>
-
               <Grid item xs={12} sm={6} md={2}>
                 <FormControl fullWidth required sx={{ mt: 2 }}>
                   <InputLabel>Status</InputLabel>
                   <Select
                     value={status}
-                    onChange={e => setStatus(e.target.value)}
-                    sx={{ bgcolor: '#f9fafb', borderRadius: '12px', width: 200 }}
+                    onChange={(e) => setStatus(e.target.value)}
+                    sx={{ bgcolor: "#f9fafb", borderRadius: "12px", width: 200 }}
                   >
                     <MenuItem value="Draft">Draft</MenuItem>
                     <MenuItem value="Partial">Partial</MenuItem>
@@ -311,7 +311,6 @@ const navigate =useNavigate()
                   </Select>
                 </FormControl>
               </Grid>
-
               <Grid item xs={12} sm={6} md={2}>
                 <TextField
                   fullWidth
@@ -319,19 +318,18 @@ const navigate =useNavigate()
                   label="Due Date"
                   type="date"
                   value={expiryDate}
-                  onChange={e => setExpiryDate(e.target.value)}
+                  onChange={(e) => setExpiryDate(e.target.value)}
                   InputLabelProps={{ shrink: true }}
                   InputProps={{
                     sx: {
-                      bgcolor: '#f9fafb',
-                      borderRadius: '12px',
+                      bgcolor: "#f9fafb",
+                      borderRadius: "12px",
                       width: 200,
                     },
                   }}
                 />
               </Grid>
             </Grid>
-
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12}>
                 <TextField
@@ -339,71 +337,90 @@ const navigate =useNavigate()
                   label="Subject"
                   placeholder="Write what this invoice is about"
                   value={subject}
-                  onChange={e => setSubject(e.target.value)}
+                  onChange={(e) => setSubject(e.target.value)}
                   InputProps={{
                     sx: {
-                      bgcolor: '#f9fafb',
-                      borderRadius: '12px',
+                      bgcolor: "#f9fafb",
+                      borderRadius: "12px",
                     },
                   }}
                 />
               </Grid>
             </Grid>
           </Grid>
-
-
-
           <Box mt={5}>
             <Divider />
-            <Typography variant="subtitle1" fontWeight="bold" mb={2} sx={{ fontWeight: 600, fontSize: 18, }}>
+            <Typography
+              variant="subtitle1"
+              fontWeight="bold"
+              mb={2}
+              sx={{ fontWeight: 600, fontSize: 18 }}
+            >
               Item Table
             </Typography>
             <Box display="flex" justifyContent="flex-end" mt={1} gap={3}>
-              <Button variant="text" sx={{ fontWeight: 500, color: '#1976d2' }} onClick={addNewRow}>
+              <Button
+                variant="text"
+                sx={{ fontWeight: 500, color: "#1976d2" }}
+                onClick={addNewRow}
+              >
                 + ADD NEW ROW
               </Button>
-              <Button variant="text" sx={{ fontWeight: 500, color: '#1976d2' }}>
+              <Button variant="text" sx={{ fontWeight: 500, color: "#1976d2" }}>
                 + ADD ITEMS IN BULK
               </Button>
             </Box>
-
-            <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 'none' }}>
+            <TableContainer component={Paper} sx={{ mt: 3, boxShadow: "none" }}>
               <Table size="small">
-                <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+                <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
                   <TableRow>
                     <TableCell>Item Details</TableCell>
                     <TableCell>Quantity</TableCell>
                     <TableCell>Rate</TableCell>
-                                                                   <TableCell>Discount</TableCell>
-                                                               
-                                                                <TableCell>Amount</TableCell>
+                    <TableCell>Discount</TableCell>
+                    <TableCell>Amount</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 </TableHead>
-
                 <TableBody>
                   {rows.map((row, index) => (
-                    <TableRow key={index}>
+                    <TableRow key={row.id}>
                       <TableCell>
-                        <TextField
+                        <Select
                           fullWidth
-                          placeholder="Type or Click to select an item"
                           value={row.item}
-                          onChange={e => {
-                            const updated = [...rows];
-                            updated[index].item = e.target.value;
-                            updated[index].amount = calculateAmount(updated[index]);
-                            setRows(updated);
+                          onChange={(e) => {
+                            const selectedProductId = e.target.value;
+                            updateRow(index, "item", selectedProductId);
+                            fetch(`http://localhost:5000/api/products/${selectedProductId}`)
+                              .then((res) => res.json())
+                              .then((product) => {
+                                updateRow(index, "rate", product.sale_price || 0);
+                              })
+                              .catch((err) => {
+                                console.error("Error fetching product details:", err);
+                              });
                           }}
                           size="small"
-                        />
+                          displayEmpty
+                          sx={{ width: "100%" }}
+                        >
+                          <MenuItem value="">
+                            <em>Select Item</em>
+                          </MenuItem>
+                          {products.map((product) => (
+                            <MenuItem key={product.id} value={product.id}>
+                              {product.product_name}
+                            </MenuItem>
+                          ))}
+                        </Select>
                       </TableCell>
                       <TableCell>
                         <TextField
                           fullWidth
                           type="number"
                           value={row.qty}
-                          onChange={(e) => updateRow(index, 'qty', e.target.value)}
+                          onChange={(e) => updateRow(index, "qty", e.target.value)}
                           size="small"
                         />
                       </TableCell>
@@ -412,15 +429,15 @@ const navigate =useNavigate()
                           fullWidth
                           type="number"
                           value={row.rate}
-                          onChange={(e) => updateRow(index, 'rate', e.target.value)}
+                          onChange={(e) => updateRow(index, "rate", e.target.value)}
                           size="small"
                         />
                       </TableCell>
                       <TableCell>
-                        <FormControl fullWidth >
+                        <FormControl fullWidth>
                           <Select
                             value={row.discount}
-                            onChange={(e) => updateRow(index, 'discount', e.target.value)}
+                            onChange={(e) => updateRow(index, "discount", e.target.value)}
                           >
                             <MenuItem value={0}>0%</MenuItem>
                             <MenuItem value={5}>5%</MenuItem>
@@ -447,37 +464,34 @@ const navigate =useNavigate()
                 </TableBody>
               </Table>
             </TableContainer>
-
             <Grid container spacing={2} mt={4}>
               <Grid item xs={12} sm={8}>
                 <Paper variant="outlined" sx={{ p: 2 }}>
                   <TextField
-
                     multiline
                     rows={1}
                     label="Customer Notes"
                     value={customerNotes}
-                    onChange={e => setCustomerNotes(e.target.value)}
+                    onChange={(e) => setCustomerNotes(e.target.value)}
                     helperText="Will be displayed on the invoice"
-                    sx={{ bgcolor: '#f9fafb', borderRadius: 1, width: 500, }}
+                    sx={{ bgcolor: "#f9fafb", borderRadius: 1, width: 500 }}
                   />
                 </Paper>
               </Grid>
-
               <Grid item xs={12} sm={6} md={4} sx={{ ml: 15 }}>
                 <Paper
                   variant="outlined"
                   sx={{
                     p: 3,
                     borderRadius: 2,
-                    bgcolor: '#fafafa',
-                    width: '200%',
+                    bgcolor: "#fafafa",
+                    width: "200%",
                   }}
                 >
                   {[
-                    { label: 'Sub Total', value: `₹${subtotal.toFixed(2)}` },
-                    { label: 'CGST (9%)', value: `₹${gst.toFixed(2)}` },
-                    { label: 'SGST (9%)', value: `₹${gst.toFixed(2)}` },
+                    { label: "Sub Total", value: `₹${subtotal.toFixed(2)}` },
+                    { label: "CGST (9%)", value: `₹${gst.toFixed(2)}` },
+                    { label: "SGST (9%)", value: `₹${gst.toFixed(2)}` },
                   ].map((item, i) => (
                     <Box
                       key={i}
@@ -490,9 +504,7 @@ const navigate =useNavigate()
                       <Typography fontSize={14}>{item.value}</Typography>
                     </Box>
                   ))}
-
                   <Divider sx={{ my: 1 }} />
-
                   <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Typography fontWeight="bold" fontSize="1rem">
                       Total (₹)
@@ -503,13 +515,16 @@ const navigate =useNavigate()
                   </Box>
                 </Paper>
               </Grid>
-
             </Grid>
           </Box>
-
           <Grid container spacing={2} mt={3}>
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Terms & Conditions" value={termsAndConditions} onChange={e => setTermsAndConditions(e.target.value)} />
+              <TextField
+                fullWidth
+                label="Terms & Conditions"
+                value={termsAndConditions}
+                onChange={(e) => setTermsAndConditions(e.target.value)}
+              />
               <Box display="flex" alignItems="center" mt={1}>
                 <Checkbox />
                 <Typography variant="body2">Use this in future for all invoices</Typography>
@@ -525,55 +540,66 @@ const navigate =useNavigate()
               </Typography>
             </Grid>
           </Grid>
-
           <Box mt={4} display="flex" justifyContent="space-between" flexWrap="wrap" gap={2}>
             <Box display="flex" justifyContent="flex-end" mb={2}>
               <Button
                 startIcon={<VisibilityOutlinedIcon />}
-                sx={{ color: '#002D72', textTransform: 'none', fontWeight: 'bold' }}
+                sx={{ color: "#002D72", textTransform: "none", fontWeight: "bold" }}
                 onClick={() => setPreviewOpen(true)}
               >
                 Preview Invoice
               </Button>
-
             </Box>
             <Box display="flex" gap={2}>
-              <Button variant="outlined" color="inherit"
+              <Button
+                variant="outlined"
+                color="inherit"
                 sx={{
-                  textTransform: 'none',
+                  textTransform: "none",
                   borderRadius: 2,
-               
-                }}>Cancel</Button>
-              <Button variant="outlined"onClick={() => navigate('/invoice-list')}
+                }}
+                onClick={() => navigate("/invoice-list")}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="outlined"
                 sx={{
-                  textTransform: 'none',
+                  textTransform: "none",
                   borderRadius: 2,
-                color: '#003366',border: '1px solid #004085',
-              
-                }}>Save as Draft</Button>
-              <Button variant="contained" onClick={handleSubmit} 
+                  color: "#003366",
+                  border: "1px solid #004085",
+                }}
+                onClick={() => handleSubmit(true)}
+              >
+                Save as Draft
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => handleSubmit(false)}
                 sx={{
-                  textTransform: 'none',
+                  textTransform: "none",
                   borderRadius: 2,
-                  bgcolor: '#004085',
-                  '&:hover': { bgcolor: '#003366' }
-                }}>Save & Send</Button>
+                  bgcolor: "#004085",
+                  "&:hover": { bgcolor: "#003366" },
+                }}
+              >
+                Save & Send
+              </Button>
             </Box>
           </Box>
-
-
           <Modal open={customerModalOpen} onClose={() => setCustomerModalOpen(false)}>
             <Box
               sx={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
                 width: 350,
-                bgcolor: 'background.paper',
+                bgcolor: "background.paper",
                 borderRadius: 2,
                 boxShadow: 24,
-                p: 3
+                p: 3,
               }}
             >
               <TextField
@@ -581,143 +607,166 @@ const navigate =useNavigate()
                 placeholder="Search customer here..."
                 InputProps={{
                   startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
-                  )
+                    <SearchIcon />
+                  ),
                 }}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <Tabs value={customerTab} onChange={(e, val) => setCustomerTab(val)} centered sx={{ mt: 2 }}>
-                <Tab label="Business" />
-                <Tab label="Individual" />
-              </Tabs>
               <Box textAlign="center" mt={3}>
                 <Typography color="text.secondary">No result found</Typography>
               </Box>
               <Box mt={2} textAlign="center">
-                <Button variant="text" size="small">+ Add New Customer</Button>
+                <Button variant="text" size="small">
+                  + Add New Customer
+                </Button>
               </Box>
             </Box>
           </Modal>
-<Modal open={previewOpen} onClose={() => setPreviewOpen(false)}>
-  <Box
-    sx={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      bgcolor: 'rgba(0,0,0,0.6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1300,
-      flexDirection: 'column',
-    }}
-  >
-    <Box
-      sx={{
-        width: 480,
-        bgcolor: '#fff',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        boxShadow: 24,
-        px: 3,
-        py: 4,
-        position: 'relative',
-      }}
-    >
-      <Box sx={{ position: 'absolute', top: 20, right: 20 }}>
-        <img src="https://cdn-icons-png.flaticon.com/512/8372/8372013.png" alt="logo" width={40} />
-      </Box>
-
-      <Box sx={{ mb: 3 }}>
-        <Typography fontWeight="bold" fontSize={20}>INVOICE</Typography>
-        <Typography fontSize={12} color="text.secondary">#ME22334-01</Typography>
-      </Box>
-
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <Box>
-          <Typography fontSize={12}>Issued</Typography>
-          <Typography fontSize={13} fontWeight={500}>01 Aug, 2023</Typography>
-        </Box>
-        <Box>
-          <Typography fontSize={12}>Due</Typography>
-          <Typography fontSize={13} fontWeight={500}>10 Aug, 2023</Typography>
-        </Box>
-      </Box>
-
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Typography fontSize={12} fontWeight={500}>Bill To</Typography>
-          <Typography fontSize={13}>Company Name</Typography>
-          <Typography fontSize={13}>Delhi, India - 000000</Typography>
-          <Typography fontSize={13}>+91 92483-64327</Typography>
-        </Box>
-        <Box>
-          <Typography fontSize={12} fontWeight={500}>From</Typography>
-          <Typography fontSize={13}>Ramesh, Inc</Typography>
-          <Typography fontSize={13}>Dudu, India - 303008</Typography>
-          <Typography fontSize={13}>IN +91 83028-29003</Typography>
-        </Box>
-      </Box>
-
-      <Box sx={{
-        display: 'flex', fontWeight: 600, fontSize: 13,
-        borderBottom: '1px solid #ddd', pb: 1
-      }}>
-        <Box width="40%">Service</Box>
-        <Box width="15%">Qty</Box>
-        <Box width="20%">Rate</Box>
-        <Box width="25%" textAlign="right">Line Total</Box>
-      </Box>
-
-      {rows.map((row, i) => (
-        <Box key={i} sx={{
-          display: 'flex', fontSize: 13, py: 1,
-          borderBottom: '1px solid #f0f0f0'
-        }}>
-          <Box width="40%">{row.item || '-'}</Box>
-          <Box width="15%">{row.qty}</Box>
-          <Box width="20%">₹{row.rate}</Box>
-          <Box width="25%" textAlign="right">₹{calculateAmount(row).toFixed(2)}</Box>
-        </Box>
-      ))}
-
-      <Box mt={2} mb={2} sx={{ textAlign: 'right', fontSize: 13 }}>
-        <Typography>Subtotal: ₹{total.toFixed(2)}</Typography>
-        <Typography>Tax (9%): ₹{(total * 0.09).toFixed(2)}</Typography>
-        <Typography fontWeight="bold" mt={1}>Total: ₹{(total * 1.09).toFixed(2)}</Typography>
-        <Typography color="primary" mt={1} fontWeight="bold">Amount due: ₹{(total * 1.09).toFixed(2)}</Typography>
-      </Box>
-
-  
-      <Box mt={3} sx={{ borderTop: '1px solid #eee', pt: 2, fontSize: 12 }}>
-        <Typography>Thanks for your business!</Typography>
-        <Typography variant="caption" display="block" color="text.secondary">This is a system generated invoice.</Typography>
-      </Box>
-    </Box>
-
-    <Box sx={{ mt: 2 }}>
-      <IconButton
-        onClick={() => setPreviewOpen(false)}
-        sx={{
-          bgcolor: '#fff',
-          borderRadius: '50%',
-          boxShadow: 3,
-          '&:hover': {
-            bgcolor: '#f5f5f5',
-          },
-        }}
-      >
-        <CloseIcon />
-      </IconButton>
-    </Box>
-  </Box>
-</Modal>
-
+          <Modal open={previewOpen} onClose={() => setPreviewOpen(false)}>
+            <Box
+              sx={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                bgcolor: "rgba(0,0,0,0.6)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 1300,
+                flexDirection: "column",
+              }}
+            >
+              <Box
+                sx={{
+                  width: 480,
+                  bgcolor: "#fff",
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                  boxShadow: 24,
+                  px: 3,
+                  py: 4,
+                  position: "relative",
+                }}
+              >
+                <Box sx={{ position: "absolute", top: 20, right: 20 }}>
+                  <img src="https://cdn-icons-png.flaticon.com/512/8372/8372013.png" alt="logo" width={40} />
+                </Box>
+                <Box sx={{ mb: 3 }}>
+                  <Typography fontWeight="bold" fontSize={20}>
+                    INVOICE
+                  </Typography>
+                  <Typography fontSize={12} color="text.secondary">
+                    #{invoiceNumber}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+                  <Box>
+                    <Typography fontSize={12}>Issued</Typography>
+                    <Typography fontSize={13} fontWeight={500}>
+                      {invoiceDate || "N/A"}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography fontSize={12}>Due</Typography>
+                    <Typography fontSize={13} fontWeight={500}>
+                      {expiryDate || "N/A"}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+                  <Box>
+                    <Typography fontSize={12} fontWeight={500}>
+                      Bill To
+                    </Typography>
+                    <Typography fontSize={13}>
+                      {customers.find((c) => c.customer_id === selectedCustomer)?.customer_name || "N/A"}
+                    </Typography>
+                    <Typography fontSize={13}>Delhi, India - 000000</Typography>
+                    <Typography fontSize={13}>+91 92483-64327</Typography>
+                  </Box>
+                  <Box>
+                    <Typography fontSize={12} fontWeight={500}>
+                      From
+                    </Typography>
+                    <Typography fontSize={13}>Ramesh, Inc</Typography>
+                    <Typography fontSize={13}>Dudu, India - 303008</Typography>
+                    <Typography fontSize={13}>IN +91 83028-29003</Typography>
+                  </Box>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    fontWeight: 600,
+                    fontSize: 13,
+                    borderBottom: "1px solid #ddd",
+                    pb: 1,
+                  }}
+                >
+                  <Box width="40%">Service</Box>
+                  <Box width="15%">Qty</Box>
+                  <Box width="20%">Rate</Box>
+                  <Box width="25%" textAlign="right">
+                    Line Total
+                  </Box>
+                </Box>
+                {rows.map((row, i) => (
+                  <Box
+                    key={i}
+                    sx={{
+                      display: "flex",
+                      fontSize: 13,
+                      py: 1,
+                      borderBottom: "1px solid #f0f0f0",
+                    }}
+                  >
+                    <Box width="40%">
+                      {products.find((p) => p.id === row.item)?.product_name || row.item || "-"}
+                    </Box>
+                    <Box width="15%">{row.qty}</Box>
+                    <Box width="20%">₹{row.rate.toFixed(2)}</Box>
+                    <Box width="25%" textAlign="right">
+                      ₹{calculateAmount(row).toFixed(2)}
+                    </Box>
+                  </Box>
+                ))}
+                <Box mt={2} mb={2} sx={{ textAlign: "right", fontSize: 13 }}>
+                  <Typography>Subtotal: ₹{subtotal.toFixed(2)}</Typography>
+                  <Typography>CGST (9%): ₹{gst.toFixed(2)}</Typography>
+                  <Typography>SGST (9%): ₹{gst.toFixed(2)}</Typography>
+                  <Typography fontWeight="bold" mt={1}>
+                    Total: ₹{total.toFixed(2)}
+                  </Typography>
+                  <Typography color="primary" mt={1} fontWeight="bold">
+                    Amount due: ₹{total.toFixed(2)}
+                  </Typography>
+                </Box>
+                <Box mt={3} sx={{ borderTop: "1px solid #eee", pt: 2, fontSize: 12 }}>
+                  <Typography>{customerNotes || "Thanks for your business!"}</Typography>
+                  <Typography variant="caption" display="block" color="text.secondary">
+                    This is a system generated invoice.
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ mt: 2 }}>
+                <IconButton
+                  onClick={() => setPreviewOpen(false)}
+                  sx={{
+                    bgcolor: "#fff",
+                    borderRadius: "50%",
+                    boxShadow: 3,
+                    "&:hover": {
+                      bgcolor: "#f5f5f5",
+                    },
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </Box>
+          </Modal>
         </Paper>
       </Box>
     </Box>
