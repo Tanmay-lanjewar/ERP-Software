@@ -59,7 +59,7 @@ function App() {
            <FinancialYearGuard /> 
         <Routes>
           <Route path="/dashboard" element={<Dashboard></Dashboard>} />
-          {/* <Route path="/invoice" element={<InvoicePage />} /> */}
+          <Route path="/" element={<InvoicePage />} />
           <Route path="/invoice" element={<Invoicelist></Invoicelist>} />
           <Route path="/new-invoice" element={<NewInvoicePage />} />
           <Route path="/invoice-list" element={<Invoicelist />} />

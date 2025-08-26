@@ -32,6 +32,8 @@ import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 const statusColor = {
   Paid: "success",
@@ -74,20 +76,203 @@ export default function Invoicelist() {
     navigate(`/edit-invoice/${id}`);
   };
 
-  const handleDownloadPdf = (invoice) => {
-    const doc = new jsPDF();
 
-    // Load image from public folder using %PUBLIC_URL%
-    const img = new Image();
-    img.src = process.env.PUBLIC_URL + '/pdf.png'; // Adjust file name if different
-    img.onload = () => {
-      doc.addImage(img, 'PNG', 10, 10, 190, 0); // x, y, width, height (auto height)
-      doc.save(`${invoice.id}_screenshot.pdf`);
-    };
-    img.onerror = () => {
-      alert("Error loading screenshot. Check file name or path in public folder.");
-    };
-  };
+
+const handleDownloadPdf = (invoice) => {
+ const printWindow = window.open("", "_blank");
+  printWindow.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tax Invoice</title>
+  <style>
+    @page {
+      size: A4 landscape; /* horizontal print */
+      margin: 10mm;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      color: #000;
+    }
+    .invoice-box {
+      width: 98%;
+      border: 1px solid #000;
+      padding: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    td, th {
+      border: 1px solid #000;
+      padding: 5px;
+      vertical-align: top;
+    }
+    .logo {
+    height: 270px;
+    width: auto;
+    object-fit: contain;
+    margin-Top: -100px;
+    margin-Bottom: -90px; 
+    margin-Left: -60px;
+    margin-Right: -70px;
+    } 
+    .no-border{
+     height: -80px;
+    }
+    .no-border td {
+      border: none;
+    }
+    .center {
+      text-align: center;
+    }
+    .right {
+      text-align: right;
+    }
+    .bold {
+      font-weight: bold;
+    }
+    .small {
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="invoice-box">
+
+  <!-- Header -->
+  <table class="no-border">
+    <tr>
+      <td style="border:none;">
+       <img src="/static/media/ui.405d9b691b910181ce2e.png" class="logo" alt="Logo" />
+      </td>
+      <td style="text-align:center; border:none;">
+        <p class="bold">TAX INVOICE</p>
+        <p class="small">[Section 31 of the CGST Act, 2017 read with Rule 1 of Revised Invoice Rules, 2017]</p>
+      </td>
+      <td style="border:none;">
+        <table class="no-border">
+          <tr><td class="bold">Invoice No.:</td><td>ME/2025-26/023</td></tr>
+          <tr><td class="bold">Invoice Date:</td><td>11.05.2025</td></tr>
+          <tr><td class="bold">Cust Order Date:</td><td>31.01.2025</td></tr>
+          <tr><td class="bold">PO Number:</td><td>JUPL/2025/09</td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Supplier GST Info -->
+  <table style="margin-top:10px;">
+    <tr>
+      <td>
+        <p><span class="bold">GSTIN :</span> 27AKUPY6544R1ZM</p>
+        <p><span class="bold">Name :</span> Meraki Expert</p>
+        <p><span class="bold">PAN :</span> AKUPY6544R</p>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Billed / Shipped -->
+  <table style="margin-top:10px;">
+    <tr>
+      <th>Details of Receiver (Billed to)</th>
+      <th>Details of Consignee (Shipped to)</th>
+    </tr>
+    <tr>
+      <td>
+        JUST UNIVERSAL PVT. LTD.<br>
+        Kh. No. 101/1, 101/2, 102, Kapsi Budruk,<br>
+        Tah. Kamptee, Nagpur - 441104.<br>
+        Pin Code - 441104, Maharashtra<br>
+        <b>State Code :</b> 27<br>
+        <b>GSTIN :</b> 27AAFCJ1515K1ZL
+      </td>
+      <td>
+        JUST UNIVERSAL PVT. LTD.<br>
+        Kh. No. 101/1, 101/2, 102, Kapsi Budruk,<br>
+        Tah. Kamptee, Nagpur - 441104.<br>
+        Pin Code - 441104, Maharashtra<br>
+        <b>State Code :</b> 27<br>
+        <b>GSTIN :</b> 27AAFCJ1515K1ZL
+      </td>
+    </tr>
+  </table>
+
+  <!-- Items Table -->
+  <table style="margin-top:10px;">
+    <tr>
+      <th>S.No.</th>
+      <th>Description of Goods</th>
+      <th>HSN / SAC</th>
+      <th>QTY</th>
+      <th>Unit</th>
+      <th>Rate</th>
+      <th>Total Value (Rs.)</th>
+      <th>Disc.</th>
+      <th>Taxable Value (Rs.)</th>
+      <th>CGST</th>
+      <th>SGST</th>
+      <th>IGST</th>
+      <th>Total</th>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>
+        Supply of Kingspan Jindal Contineous Line, 50 mm THK PUR Wall Panel Both Side 0.5 mm PPGL - 300Mpa - SMP - AZ 150 GSM (RAL9002) Plain Lamination Density: 40 (+-2) Kg/cum. - Panel Cover Width:1000MM
+      </td>
+      <td>39259010</td>
+      <td>680.250</td>
+      <td>Sq.M</td>
+      <td>1430.00</td>
+      <td>9,72,757.50</td>
+      <td>-</td>
+      <td>9,72,757.50</td>
+      <td>9%<br>87,548.18</td>
+      <td>9%<br>87,548.18</td>
+      <td>0%</td>
+      <td>11,47,853.85</td>
+    </tr>
+  </table>
+
+  <!-- Totals -->
+  <table style="margin-top:10px;">
+    <tr>
+      <td class="right bold">Grand Total (Inclusive of GST)</td>
+      <td class="bold">11,47,854</td>
+    </tr>
+    <tr>
+      <td colspan="2">Invoice Value (In words): Eleven Lac Fourty Seven Thousand Eight Hundred and Fifty Four Rupees only</td>
+    </tr>
+  </table>
+
+  <!-- Declaration -->
+  <p class="bold" style="margin-top:20px;">Declaration :</p>
+  <p class="small">
+    Certified that the particulars given above are true and correct and the amount indicated represents the Price actually charged
+    and that there is no flow of additional consideration directly or indirectly from the Receiver [Buyer].
+  </p>
+
+  <!-- Footer -->
+  <table class="no-border" style="margin-top:20px;">
+    <tr>
+      <td style="border:none;"></td>
+      <td style="border:none;" class="right">
+        For MERAKI EXPERT<br><br><br>
+        Authorized Signatory
+      </td>
+    </tr>
+  </table>
+</div>
+</body>
+</html>
+
+`);
+  printWindow.document.close();
+  printWindow.print();
+};
+
+
 
   const handlePrintInvoice = (invoice) => {
     const printWindow = window.open("", "_blank");
