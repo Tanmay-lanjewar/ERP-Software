@@ -1,89 +1,139 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
-  Box, Button, Typography, Grid, TextField, Select, MenuItem,
-  InputLabel, FormControl, IconButton, Paper, Divider, Avatar,
-  CircularProgress, Snackbar, Alert
-} from '@mui/material';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import Sidebar from './Sidebar';
+  Box,
+  Button,
+  Typography,
+  Grid,
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  IconButton,
+  Paper,
+  Divider,
+  Avatar,
+  CircularProgress,
+  Snackbar,
+  Alert,
+} from "@mui/material";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import Sidebar from "./Sidebar";
 import {
-  TableContainer, Table, TableHead, TableBody, TableRow, TableCell,
-  Checkbox
-} from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import { useNavigate } from 'react-router-dom';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import SearchIcon from '@mui/icons-material/Search';
-import InputBase from '@mui/material/InputBase';
-import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
-import axios from 'axios';
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Checkbox,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import { useNavigate } from "react-router-dom";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import Breadcrumbs from "@mui/material/Breadcrumbs";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import SearchIcon from "@mui/icons-material/Search";
+import InputBase from "@mui/material/InputBase";
+import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import axios from "axios";
 
 export default function NewQuotation() {
-  const [quoteDate, setQuoteDate] = useState('2025-08-21');
-  const [expiryDate, setExpiryDate] = useState('2025-09-21');
-  const [customerName, setCustomerName] = useState('');
-  const [subject, setSubject] = useState('');
-  const [customerNotes, setCustomerNotes] = useState('Thanks for your business.');
-  const [termsAndConditions, setTermsAndConditions] = useState('');
+  const [quoteDate, setQuoteDate] = useState("2025-08-21");
+  const [expiryDate, setExpiryDate] = useState("2025-09-21");
+  const [customerName, setCustomerName] = useState("");
+  const [subject, setSubject] = useState("");
+  const [customerNotes, setCustomerNotes] = useState(
+    "Thanks for your business."
+  );
+  const [termsAndConditions, setTermsAndConditions] = useState("");
   const [attachment, setAttachment] = useState(null);
-  const [items, setItems] = useState([
-    { id: Date.now(), item_detail: '', quantity: 0, rate: 0, discount: 0, amount: 0 }
+  const [rows, setRows] = useState([
+    { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0 },
   ]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [products, setProducts] = useState([]);
   const [itemModalOpen, setItemModalOpen] = useState(false);
-  const [selectedRowIndex, setSelectedRowIndex] = useState(null);
-  const [itemSearchTerm, setItemSearchTerm] = useState('');
+  const [itemSearchTerm, setItemSearchTerm] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
-  const [quoteNumber, setQuoteNumber] = useState('');
+  const [quoteNumber, setQuoteNumber] = useState("");
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/customers')
-      .then(res => setCustomers(res.data))
+    axios
+      .get("http://localhost:5000/api/customers")
+      .then((res) => setCustomers(res.data))
       .catch(() => setCustomers([]));
   }, []);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/quotation/next-number')
-      .then(res => setQuoteNumber(res.data.nextQuoteNumber))
-      .catch(() => setQuoteNumber(''));
+    fetch("http://localhost:5000/api/products")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setProducts(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching products:", error);
+      });
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/quotation/next-number")
+      .then((res) => setQuoteNumber(res.data.nextQuoteNumber))
+      .catch(() => setQuoteNumber(""));
   }, []);
 
   const handleAddRow = () => {
-    setItems([...items, { id: Date.now(), item_detail: '', quantity: 0, rate: 0, discount: 0, amount: 0 }]);
+    setRows([
+      ...rows,
+      {
+        id: Date.now(),
+        item: "",
+        qty: 0,
+        rate: 0,
+        discount: 0,
+        amount: 0,
+      },
+    ]);
   };
 
   const handleRemoveRow = (id) => {
-    setItems(items.filter(item => item.id !== id));
+    setRows(rows.filter((row) => row.id !== id));
   };
 
   const updateRow = (index, field, value) => {
-    const updated = [...items];
-    updated[index][field] = ['quantity', 'rate', 'discount'].includes(field) ? Number(value) : value;
+    const updated = [...rows];
+    updated[index][field] = ["qty", "rate", "discount"].includes(field)
+      ? Number(value)
+      : value;
     updated[index].amount = calculateAmount(updated[index]);
-    setItems(updated);
+    setRows(updated);
   };
 
-  const calculateAmount = (item) => {
-    const amount = (item.quantity * item.rate) - item.discount;
+  const calculateAmount = (row) => {
+    const amount = row.qty * row.rate - row.discount;
     return isNaN(amount) ? 0 : amount;
   };
 
-  const subtotal = items.reduce((sum, item) => sum + calculateAmount(item), 0);
+  const subtotal = rows.reduce((sum, row) => sum + calculateAmount(row), 0);
   const gst = subtotal * 0.09;
   const total = subtotal + gst * 2;
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file && file.size > 10 * 1024 * 1024) {
-      setError('File size exceeds 10MB limit');
+      setError("File size exceeds 10MB limit");
       return;
     }
     setAttachment(file);
@@ -91,25 +141,25 @@ export default function NewQuotation() {
 
   const handleSubmit = async (saveAsDraft = false) => {
     if (!customerName) {
-      setError('Customer name is required');
+      setError("Customer name is required");
       return;
     }
     if (!quoteDate) {
-      setError('Quote date is required');
+      setError("Quote date is required");
       return;
     }
     if (!expiryDate) {
-      setError('Expiry date is required');
+      setError("Expiry date is required");
       return;
     }
-    if (items.length === 0 || items.every(item => !item.item_detail)) {
-      setError('At least one item with details is required');
+    if (rows.length === 0 || rows.every((row) => !row.item)) {
+      setError("At least one item with details is required");
       return;
     }
 
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     const quotationData = {
       customer_name: customerName,
@@ -122,32 +172,47 @@ export default function NewQuotation() {
       cgst: gst,
       sgst: gst,
       total_amount: total,
-      status: saveAsDraft ? 'Draft' : 'Sent'
+      status: saveAsDraft ? "Draft" : "Sent",
+      items: rows.map((row) => ({
+        item_detail: row.item,
+        quantity: row.qty,
+        rate: row.rate,
+        discount: row.discount,
+        amount: calculateAmount(row),
+      })),
     };
 
-    // Debug: log the payload
-    console.log('Sending to backend:', {
+    console.log("Sending to backend:", {
       quotation: quotationData,
-      items: items
+      items: rows,
     });
 
     try {
-      const response = await axios.post('http://localhost:5000/api/quotation', {
-        quotation: quotationData,
-        items: items
-      }, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      setQuoteNumber(response.data.quoteNumber || '');
-      setSuccess('Quotation saved successfully' + (response.data.quoteNumber ? ` (Quote#: ${response.data.quoteNumber})` : ''));
+      const response = await axios.post(
+        "http://localhost:5000/api/quotation",
+        {
+          quotation: quotationData,
+          items: rows,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      setQuoteNumber(response.data.quoteNumber || "");
+      setSuccess(
+        "Quotation saved successfully" +
+          (response.data.quoteNumber
+            ? ` (Quote#: ${response.data.quoteNumber})`
+            : "")
+      );
       if (!saveAsDraft) {
-        navigate('/quotation-list');
+        navigate("/quotation-list");
       }
     } catch (err) {
       setError(
         err.response?.data?.error?.sqlMessage ||
-        err.response?.data?.error ||
-        'Failed to save quotation'
+          err.response?.data?.error ||
+          "Failed to save quotation"
       );
     } finally {
       setLoading(false);
@@ -155,20 +220,23 @@ export default function NewQuotation() {
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: "flex" }}>
       <Sidebar />
-      <Box sx={{ flex: 1, bgcolor: '#f9fafc', minHeight: '100vh' }}>
+      <Box sx={{ flex: 1, bgcolor: "#f9fafc", minHeight: "100vh" }}>
         <Box
           sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
             mb: 3,
             mt: 1,
-            px: 3
+            px: 3,
           }}
         >
-          <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
+          <Breadcrumbs
+            separator={<NavigateNextIcon fontSize="small" />}
+            aria-label="breadcrumb"
+          >
             <Typography color="text.secondary" fontSize="14px">
               Quotation
             </Typography>
@@ -176,36 +244,36 @@ export default function NewQuotation() {
               Add Quotation
             </Typography>
           </Breadcrumbs>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Paper
               elevation={0}
               sx={{
-                display: 'flex',
-                alignItems: 'center',
+                display: "flex",
+                alignItems: "center",
                 px: 1.5,
                 py: 0.5,
-                borderRadius: '999px',
-                border: '1px solid #e0e0e0',
-                bgcolor: '#f9fafb',
+                borderRadius: "999px",
+                border: "1px solid #e0e0e0",
+                bgcolor: "#f9fafb",
                 width: 240,
               }}
             >
-              <SearchIcon sx={{ fontSize: 20, color: '#999' }} />
+              <SearchIcon sx={{ fontSize: 20, color: "#999" }} />
               <InputBase
                 placeholder="Search anything here..."
                 sx={{ ml: 1, fontSize: 14, flex: 1 }}
-                inputProps={{ 'aria-label': 'search' }}
+                inputProps={{ "aria-label": "search" }}
               />
             </Paper>
             <IconButton
               sx={{
-                borderRadius: '12px',
-                border: '1px solid #e0e0e0',
-                bgcolor: '#f9fafb',
+                borderRadius: "12px",
+                border: "1px solid #e0e0e0",
+                bgcolor: "#f9fafb",
                 p: 1,
               }}
             >
-              <NotificationsNoneIcon sx={{ fontSize: 20, color: '#666' }} />
+              <NotificationsNoneIcon sx={{ fontSize: 20, color: "#666" }} />
             </IconButton>
             <Box display="flex" alignItems="center" gap={1}>
               <Avatar src="https://i.pravatar.cc/40?img=1" />
@@ -220,9 +288,9 @@ export default function NewQuotation() {
               variant="h6"
               sx={{
                 fontWeight: 600,
-                color: '#111',
+                color: "#111",
                 mb: 2,
-                borderBottom: '1px solid #eee',
+                borderBottom: "1px solid #eee",
                 pb: 1,
               }}
             >
@@ -236,32 +304,40 @@ export default function NewQuotation() {
                   value={quoteNumber}
                   InputProps={{ readOnly: true }}
                   sx={{
-                    width: { xs: '100%', sm: '100%', md: 400 },
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '10px',
-                      bgcolor: '#f9fafb',
+                    width: { xs: "100%", sm: "100%", md: 400 },
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "10px",
+                      bgcolor: "#f9fafb",
                       height: 40,
                     },
                   }}
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <FormControl fullWidth sx={{
-                  width: { xs: '100%', sm: '100%', md: 400 },
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '10px',
-                    bgcolor: '#f9fafb',
-                    height: 40,
-                  },
-                }}>
+                <FormControl
+                  fullWidth
+                  sx={{
+                    width: { xs: "100%", sm: "100%", md: 400 },
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "10px",
+                      bgcolor: "#f9fafb",
+                      height: 40,
+                    },
+                  }}
+                >
                   <InputLabel>Customer Name*</InputLabel>
                   <Select
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                   >
-                    <MenuItem value=""><em>Select or add a customer</em></MenuItem>
-                    {customers.map(customer => (
-                      <MenuItem key={customer.customer_id} value={customer.customer_name}>
+                    <MenuItem value="">
+                      <em>Select or add a customer</em>
+                    </MenuItem>
+                    {customers.map((customer) => (
+                      <MenuItem
+                        key={customer.customer_id}
+                        value={customer.customer_name}
+                      >
                         {customer.customer_name}
                       </MenuItem>
                     ))}
@@ -277,10 +353,10 @@ export default function NewQuotation() {
                   onChange={(e) => setQuoteDate(e.target.value)}
                   InputLabelProps={{ shrink: true }}
                   sx={{
-                    width: { xs: '100%', sm: '100%', md: 400 },
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '10px',
-                      bgcolor: '#f9fafb',
+                    width: { xs: "100%", sm: "100%", md: 400 },
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "10px",
+                      bgcolor: "#f9fafb",
                       height: 40,
                     },
                   }}
@@ -295,10 +371,10 @@ export default function NewQuotation() {
                   onChange={(e) => setExpiryDate(e.target.value)}
                   InputLabelProps={{ shrink: true }}
                   sx={{
-                    width: { xs: '100%', sm: '100%', md: 400 },
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '10px',
-                      bgcolor: '#f9fafb',
+                    width: { xs: "100%", sm: "100%", md: 400 },
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "10px",
+                      bgcolor: "#f9fafb",
                       height: 40,
                     },
                   }}
@@ -312,10 +388,10 @@ export default function NewQuotation() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   sx={{
-                    width: { xs: '100%', sm: '100%', md: 400 },
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '10px',
-                      bgcolor: '#f9fafb',
+                    width: { xs: "100%", sm: "100%", md: 400 },
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "10px",
+                      bgcolor: "#f9fafb",
                       height: 40,
                     },
                   }}
@@ -325,28 +401,40 @@ export default function NewQuotation() {
 
             <Box mt={5}>
               <Divider />
-              <Typography variant="subtitle1" fontWeight="bold" mb={2} sx={{ fontWeight: 600, fontSize: 18 }}>
+              <Typography
+                variant="subtitle1"
+                fontWeight="bold"
+                mb={2}
+                sx={{ fontWeight: 600, fontSize: 18 }}
+              >
                 Item Table
               </Typography>
               <Box display="flex" justifyContent="flex-end" mt={1} gap={3}>
-                <Button variant="text" sx={{ fontWeight: 500, color: '#1976d2' }} onClick={handleAddRow}>
+                <Button
+                  variant="text"
+                  sx={{ fontWeight: 500, color: "#1976d2" }}
+                  onClick={handleAddRow}
+                >
                   + ADD NEW ROW
                 </Button>
                 <Button
                   variant="text"
-                  sx={{ fontWeight: 500, color: '#1976d2' }}
+                  sx={{ fontWeight: 500, color: "#1976d2" }}
                   onClick={() => {
                     setItemModalOpen(true);
-                    setItemSearchTerm('');
+                    setItemSearchTerm("");
                   }}
                 >
                   + ADD ITEMS IN BULK
                 </Button>
               </Box>
 
-              <TableContainer component={Paper} sx={{ mt: 3, boxShadow: 'none' }}>
+              <TableContainer
+                component={Paper}
+                sx={{ mt: 3, boxShadow: "none" }}
+              >
                 <Table size="small">
-                  <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+                  <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
                     <TableRow>
                       <TableCell>Item Details</TableCell>
                       <TableCell>Quantity</TableCell>
@@ -357,28 +445,55 @@ export default function NewQuotation() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {items.map((item, index) => (
-                      <TableRow key={item.id}>
+                    {rows.map((row, index) => (
+                      <TableRow key={index}>
                         <TableCell>
-                          <TextField
+                          <Select
                             fullWidth
-                            placeholder="Type or click to select an item"
-                            value={item.item_detail}
-                            onChange={(e) => updateRow(index, 'item_detail', e.target.value)}
-                            onClick={() => {
-                              setSelectedRowIndex(index);
-                              setItemModalOpen(true);
-                              setItemSearchTerm('');
+                            value={row.item}
+                            onChange={(e) => {
+                              const selectedProductId = e.target.value;
+                              updateRow(index, "item", selectedProductId);
+                              fetch(
+                                `http://localhost:5000/api/products/${selectedProductId}`
+                              )
+                                .then((res) => res.json())
+                                .then((product) => {
+                                  updateRow(
+                                    index,
+                                    "rate",
+                                    product.sale_price || 0
+                                  );
+                                })
+                                .catch((err) => {
+                                  console.error(
+                                    "Error fetching product details:",
+                                    err
+                                  );
+                                });
                             }}
                             size="small"
-                          />
+                            displayEmpty
+                            sx={{ width: "100%" }}
+                          >
+                            <MenuItem value="">
+                              <em>Select Item</em>
+                            </MenuItem>
+                            {products.map((product, idx) => (
+                              <MenuItem key={idx} value={product.id}>
+                                {product.product_name}
+                              </MenuItem>
+                            ))}
+                          </Select>
                         </TableCell>
                         <TableCell>
                           <TextField
                             fullWidth
                             type="number"
-                            value={item.quantity}
-                            onChange={(e) => updateRow(index, 'quantity', e.target.value)}
+                            value={row.qty}
+                            onChange={(e) =>
+                              updateRow(index, "qty", e.target.value)
+                            }
                             size="small"
                           />
                         </TableCell>
@@ -386,16 +501,20 @@ export default function NewQuotation() {
                           <TextField
                             fullWidth
                             type="number"
-                            value={item.rate}
-                            onChange={(e) => updateRow(index, 'rate', e.target.value)}
+                            value={row.rate}
+                            onChange={(e) =>
+                              updateRow(index, "rate", e.target.value)
+                            }
                             size="small"
                           />
                         </TableCell>
                         <TableCell>
                           <FormControl fullWidth>
                             <Select
-                              value={item.discount}
-                              onChange={(e) => updateRow(index, 'discount', e.target.value)}
+                              value={row.discount}
+                              onChange={(e) =>
+                                updateRow(index, "discount", e.target.value)
+                              }
                             >
                               <MenuItem value={0}>0%</MenuItem>
                               <MenuItem value={5}>5%</MenuItem>
@@ -407,13 +526,16 @@ export default function NewQuotation() {
                           <TextField
                             fullWidth
                             type="number"
-                            value={calculateAmount(item).toFixed(2)}
+                            value={calculateAmount(row).toFixed(2)}
                             InputProps={{ readOnly: true }}
                             size="small"
                           />
                         </TableCell>
                         <TableCell>
-                          <IconButton onClick={() => handleRemoveRow(item.id)} color="error">
+                          <IconButton
+                            onClick={() => handleRemoveRow(row.id)}
+                            color="error"
+                          >
                             <DeleteIcon />
                           </IconButton>
                         </TableCell>
@@ -433,7 +555,7 @@ export default function NewQuotation() {
                       value={customerNotes}
                       onChange={(e) => setCustomerNotes(e.target.value)}
                       helperText="Will be displayed on the quotation"
-                      sx={{ bgcolor: '#f9fafb', borderRadius: 1, width: 500 }}
+                      sx={{ bgcolor: "#f9fafb", borderRadius: 1, width: 500 }}
                     />
                   </Paper>
                 </Grid>
@@ -443,14 +565,14 @@ export default function NewQuotation() {
                     sx={{
                       p: 3,
                       borderRadius: 2,
-                      bgcolor: '#fafafa',
-                      width: '200%',
+                      bgcolor: "#fafafa",
+                      width: "200%",
                     }}
                   >
                     {[
-                      { label: 'Sub Total', value: `₹${subtotal.toFixed(2)}` },
-                      { label: 'CGST (9%)', value: `₹${gst.toFixed(2)}` },
-                      { label: 'SGST (9%)', value: `₹${gst.toFixed(2)}` },
+                      { label: "Sub Total", value: `₹${subtotal.toFixed(2)}` },
+                      { label: "CGST (9%)", value: `₹${gst.toFixed(2)}` },
+                      { label: "SGST (9%)", value: `₹${gst.toFixed(2)}` },
                     ].map((item, i) => (
                       <Box
                         key={i}
@@ -464,7 +586,11 @@ export default function NewQuotation() {
                       </Box>
                     ))}
                     <Divider sx={{ my: 1 }} />
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
                       <Typography fontWeight="bold" fontSize="1rem">
                         Total (₹)
                       </Typography>
@@ -487,12 +613,19 @@ export default function NewQuotation() {
                 />
                 <Box display="flex" alignItems="center" mt={1}>
                   <Checkbox />
-                  <Typography variant="body2">Use this in future for all quotations</Typography>
+                  <Typography variant="body2">
+                    Use this in future for all quotations
+                  </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6} sx={{ ml: 60 }}>
                 <Typography>Attachment</Typography>
-                <Button variant="outlined" startIcon={<CloudUploadIcon />} sx={{ mt: 1 }} component="label">
+                <Button
+                  variant="outlined"
+                  startIcon={<CloudUploadIcon />}
+                  sx={{ mt: 1 }}
+                  component="label"
+                >
                   Upload File
                   <input type="file" hidden onChange={handleFileChange} />
                 </Button>
@@ -502,11 +635,21 @@ export default function NewQuotation() {
               </Grid>
             </Grid>
 
-            <Box mt={4} display="flex" justifyContent="space-between" flexWrap="wrap" gap={2}>
+            <Box
+              mt={4}
+              display="flex"
+              justifyContent="space-between"
+              flexWrap="wrap"
+              gap={2}
+            >
               <Box display="flex" justifyContent="flex-end" mb={2}>
                 <Button
                   startIcon={<VisibilityOutlinedIcon />}
-                  sx={{ color: '#002D72', textTransform: 'none', fontWeight: 'bold' }}
+                  sx={{
+                    color: "#002D72",
+                    textTransform: "none",
+                    fontWeight: "bold",
+                  }}
                   onClick={() => setPreviewOpen(true)}
                 >
                   Preview Quotation
@@ -519,11 +662,11 @@ export default function NewQuotation() {
                   sx={{
                     px: 1,
                     py: 1,
-                    borderRadius: '15px',
-                    textTransform: 'none',
+                    borderRadius: "15px",
+                    textTransform: "none",
                     fontWeight: 600,
                   }}
-                  onClick={() => navigate('/quotation-list')}
+                  onClick={() => navigate("/quotation-list")}
                 >
                   Cancel
                 </Button>
@@ -532,43 +675,55 @@ export default function NewQuotation() {
                   sx={{
                     px: 1,
                     py: 1,
-                    borderRadius: '15px',
-                    textTransform: 'none',
+                    borderRadius: "15px",
+                    textTransform: "none",
                     fontWeight: 600,
                   }}
                   onClick={() => handleSubmit(true)}
                   disabled={loading}
                 >
-                  {loading ? <CircularProgress size={24} /> : 'Save as Draft'}
+                  {loading ? <CircularProgress size={24} /> : "Save as Draft"}
                 </Button>
                 <Button
                   variant="contained"
                   sx={{
-                    backgroundColor: '#004085',
-                    '&:hover': { backgroundColor: '#003366' },
+                    backgroundColor: "#004085",
+                    "&:hover": { backgroundColor: "#003366" },
                     px: 1,
                     py: 1,
-                    borderRadius: '15px',
-                    textTransform: 'none',
+                    borderRadius: "15px",
+                    textTransform: "none",
                     fontWeight: 600,
-                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
+                    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
                   }}
                   onClick={() => handleSubmit(false)}
                   disabled={loading}
                 >
-                  {loading ? <CircularProgress size={24} /> : 'Save & Send'}
+                  {loading ? <CircularProgress size={24} /> : "Save & Send"}
                 </Button>
               </Box>
             </Box>
           </Paper>
         </Box>
-        <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
-          <Alert onClose={() => setError('')} severity="error">
-            {typeof error === 'string' ? error : error?.sqlMessage || JSON.stringify(error)}
+        <Snackbar
+          open={!!error}
+          autoHideDuration={6000}
+          onClose={() => setError("")}
+        >
+          <Alert onClose={() => setError("")} severity="error">
+            {typeof error === "string"
+              ? error
+              : error?.sqlMessage || JSON.stringify(error)}
           </Alert>
         </Snackbar>
-        <Snackbar open={!!success} autoHideDuration={6000} onClose={() => setSuccess('')}>
-          <Alert onClose={() => setSuccess('')} severity="success">{success}</Alert>
+        <Snackbar
+          open={!!success}
+          autoHideDuration={6000}
+          onClose={() => setSuccess("")}
+        >
+          <Alert onClose={() => setSuccess("")} severity="success">
+            {success}
+          </Alert>
         </Snackbar>
       </Box>
     </Box>
