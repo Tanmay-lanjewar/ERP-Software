@@ -55,29 +55,165 @@ const PurchaseOrderActions = () => {
   };
 
   const handleDownloadPdf = (order) => {
-    import('jspdf').then(({ jsPDF }) => {
-      const doc = new jsPDF();
-      doc.setFontSize(18);
-      doc.text("Purchase Order Document", 105, 20, null, null, "center");
-      doc.line(20, 25, 190, 25);
-      let y = 40;
-      const details = [
-        ['Order #', order.orderNo],
-        ['Vendor', order.vendor],
-        ['Created Date', order.created],
-        ['Delivery Date', order.delivery],
-        ['Status', order.status],
-        ['Amount', order.amount]
-      ];
-      details.forEach(([label, value]) => {
-        doc.setFont("helvetica", "bold");
-        doc.text(`${label}:`, 25, y);
-        doc.setFont("helvetica", "normal");
-        doc.text(`${value}`, 70, y);
-        y += 12;
-      });
-      doc.save(`${order.orderNo}.pdf`);
-    });
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Order</title>
+</head>
+<body style="font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 20px;">
+    <div style="border: 2px solid #000; padding: 10px; width: 600px; margin: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 5px;">
+            <div style="display: flex; align-items: center;">
+                <img src="/static/media/ui.405d9b691b910181ce2e.png" alt="Merraki Expert Logo" style="width: 200px; height: auto; margin-Top: -70px; margin-Bottom: -70px;">
+                 <div style="font-size: 14px; font-weight: bold;"></div>
+            </div>
+            <div style="text-align: right;">
+                <div style="margin-bottom: 2px;"><strong>PO No:</strong> PO/10/2025-26/WWI</div>
+                <div style="margin-bottom: 2px;"><strong>Date:</strong> 11/08/2025</div>
+                <div><strong>JO ID:</strong> N/A</div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 2px solid #000;">
+            <div style="font-size: 10px;"><strong>GSTIN:</strong> 27AKUPY6544R1ZM</div>
+            <div style="font-size: 10px;"><strong>UDYAM-MH-20-0114278</strong></div>
+        </div>
+
+        <div style="border-bottom: 2px solid #000; padding: 5px 0;">
+            <div style="display: flex;">
+                <div style="width: 100px; font-weight: bold;">Billing Address:</div>
+                <div>101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</div>
+            </div>
+            <div style="display: flex;">
+                <div style="width: 100px; font-weight: bold;">Shipping Address:</div>
+                <div>Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</div>
+            </div>
+        </div>
+
+        <div style="text-align: center; font-weight: bold; padding: 5px 0; border-bottom: 2px solid #000;">
+            Purchase Order
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse;">
+            <tbody>
+                <tr>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Vendor:</td>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">Wellworth International</td>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">GSTIN</td>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">27AANPj1949R1ZT</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Address:</td>
+                    <td style="border: 1px solid #000; padding: 3px;">shop no 7, Sukhadada Apartments, Temple Bazar, Pinjari, Gali, Sitabuldi, Nagpur</td>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Kind Attn.</td>
+                    <td style="border: 1px solid #000; padding: 3px;">Mr. Kishor Choudhari</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Mobile No.</td>
+                    <td style="border: 1px solid #000; padding: 3px;">7338729293</td>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Email</td>
+                    <td style="border: 1px solid #000; padding: 3px; color: #00f;">kishor.choudhari@bossproducts.com</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
+            This is referance to our requirement,
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Sr. No.</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 35%;">Item Description</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 10%;">HSN Code</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Qty.</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">MOU</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 15%;">Rate</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 25%;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">1</td>
+                    <td style="border: 1px solid #000; padding: 3px;">Boss GP - Silicon - 250 MI (24 pieces)</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">32149090</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">35.00</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">Box</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">2160</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">75600.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="display: flex; margin-top: 5px;">
+            <div style="width: 50%; border: 1px solid #000; padding: 5px;">
+                <div style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 5px;">Terms & Conditions</div>
+                <div>Payment Terms: 100% After Delivery.</div>
+                <div style="margin-top: 5px;">PO Validity : 4 Month</div>
+                <div>Delivery: 1 to 2 Weeks (Immediate)</div>
+                <div>Document Required: Test Certificate</div>
+            </div>
+            <div style="width: 50%;">
+                <table style="width: 100%; border-collapse: collapse; margin-left: -1px;">
+                    <tbody>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Amount</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">75600.00</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">CGST + SGST</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">13608.00</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">IGST</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">N/A</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Freight Charges</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">Extra at Actual</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Total (Tax Inclusive)</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">89208.00</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2; text-align: right;">ROUNDUP</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">89208.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
+            <strong>Amount (in words) :</strong> Eighty Nine thousand two hundred and eight.
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 5px;">
+            <div style="width: 70%;">
+                <div style="border: 1px solid #000; padding: 3px;">
+                    Email : merakkiexpert@gmail.com | Mobile : +91-8793484326 / +91-9130801011 | www.merakkiexpert.in
+                </div>
+            </div>
+            <div style="width: 30%; text-align: center; margin-left: 10px;">
+                <div style="font-weight: bold;">For MERAKI EXPERT</div>
+                <div style="height: 50px; display: flex; align-items: center; justify-content: center;">
+                    <img src="https://example.com/signature.png" alt="Signature" style="height: 50px;">
+                </div>
+                <div>(Authorized Signatory)</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+`);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   const handlePrintOrder = (order) => {
