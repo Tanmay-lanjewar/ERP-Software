@@ -4,7 +4,9 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Menu, MenuItem, Checkbox, Avatar, InputBase, Tabs, Tab, Breadcrumbs
 } from '@mui/material';
-import { useNavigate } from "react-router-dom";
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable'; // Changed import to named import for reliability
+import { useNavigate } from 'react-router-dom';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchIcon from '@mui/icons-material/Search';
 import Sidebar from './Sidebar';
@@ -21,17 +23,19 @@ const PurchaseOrderActions = () => {
 
   useEffect(() => {
     axios.get('http://localhost:5000/api/purchase')
-        .then(res => {
-            // Group by purchase_order_no so each order appears only once
-            const grouped = {};
-            res.data.forEach(row => {
-                if (!grouped[row.purchase_order_no]) {
-                    grouped[row.purchase_order_no] = row;
-                }
-            });
-            setRows(Object.values(grouped));
-        })
-        .catch(() => setRows([]));
+      .then(res => {
+        const grouped = {};
+        res.data.forEach(row => {
+          if (!grouped[row.purchase_order_no]) {
+            grouped[row.purchase_order_no] = row;
+          }
+        });
+        setRows(Object.values(grouped));
+      })
+      .catch(error => {
+        console.error('Failed to fetch purchase orders:', error);
+        setRows([]);
+      });
   }, []);
 
   const filteredRows = rows.filter(row => {
@@ -50,64 +54,411 @@ const PurchaseOrderActions = () => {
     setAnchorEl(null);
     setMenuIndex(null);
   };
+
   const handleEditPurchase = (id) => {
     navigate(`/edit-purchase/${id}`);
   };
+ 
 
   const handleDownloadPdf = (order) => {
-    import('jspdf').then(({ jsPDF }) => {
+    try {
+      if (!order || typeof order !== 'object') {
+        throw new Error('Invalid order data');
+      }
+
       const doc = new jsPDF();
+
+      // Set fonts and styles
+      doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
-      doc.text("Purchase Order Document", 105, 20, null, null, "center");
+      doc.text('Purchase Order', 105, 20, null, null, 'center');
+      doc.setLineWidth(0.5);
       doc.line(20, 25, 190, 25);
-      let y = 40;
-      const details = [
-        ['Order #', order.orderNo],
-        ['Vendor', order.vendor],
-        ['Created Date', order.created],
-        ['Delivery Date', order.delivery],
-        ['Status', order.status],
-        ['Amount', order.amount]
-      ];
-      details.forEach(([label, value]) => {
-        doc.setFont("helvetica", "bold");
-        doc.text(`${label}:`, 25, y);
-        doc.setFont("helvetica", "normal");
-        doc.text(`${value}`, 70, y);
-        y += 12;
+
+      // Company Header
+      doc.setFontSize(12);
+      doc.text('Wellworth International', 20, 35);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('GSTIN: 27AKUPY6544R1ZM ; UDYAM-MH-20-0114278', 20, 42); // Added semicolon to match PDF
+      doc.text('Shop no 7, Sukhada Apartments, Temple Bazar,', 20, 48);
+      doc.text('Pinjari, Gali, Sitabuldi, Nagpur', 20, 54);
+
+      // PO Details
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('PO No:', 140, 35);
+      doc.text('Date:', 140, 41);
+      doc.text('OS ID:', 140, 47);
+      doc.setFont('helvetica', 'normal');
+      doc.text(order.purchase_order_no || 'PO/10/2025-26/WWI', 160, 35); // Updated fallback to match PDF
+      doc.text(order.purchase_order_date ? order.purchase_order_date.slice(0, 10) : '13/08/2025', 160, 41); // Updated fallback
+      doc.text(order.os_id || 'N/A', 160, 47);
+
+      // Vendor and Address
+      doc.setFont('helvetica', 'bold');
+      doc.text('Vendor:', 20, 70);
+      doc.setFont('helvetica', 'normal');
+      doc.text(order.vendor_name || 'Meraki Expert', 20, 76);
+      doc.text('GSTIN: 27AANPJ3194R1ZT', 20, 82);
+      doc.text('Address:', 20, 88); // Added Address label to match structure
+      doc.text('101, 2nd Floor, Shri Sai Appartment,', 20, 94);
+      doc.text('Near Kachore Lawn, Nagpur - 440015', 20, 100);
+      doc.text('Kind Attn.: Mr. Kishor Choudhari', 20, 106); // Added period
+      doc.text('Mobile No.: 7338729293', 20, 112);
+      doc.text('Email: kishor.choudhari@bossproducts.com', 20, 118);
+
+      // Billing and Shipping Address
+      doc.setFont('helvetica', 'bold');
+      doc.text('Billing Address:', 140, 70);
+      doc.text('Shipping Address:', 140, 90);
+      doc.setFont('helvetica', 'normal');
+      doc.text('101, 2nd Floor, Shri Sai Appartment,', 140, 76);
+      doc.text('Near Kachore Lawn, Nagpur - 440015', 140, 82);
+      doc.text('Meraki Expert, 101, 2nd Floor, Shri Sai Appartment,', 140, 96);
+      doc.text('Near Kachore Lawn, Nagpur - 440015', 140, 102);
+
+      // Item Table Intro
+      doc.setFont('helvetica', 'bold');
+      doc.text('This is referance to our requirement,', 20, 125); // Matched typo 'referance'
+
+      const tableHeaders = ['Sr. No.', 'Item Description', 'HSN Code', 'Qty.', 'MOU', 'Rate', 'Amount'];
+      const tableData = order.items && Array.isArray(order.items)
+        ? order.items.map((item, index) => [
+            (index + 1).toString(),
+            item.description || 'Boss GP - Silicon - 260 Ml (24 pieces)',
+            item.hsnCode || '32149090',
+            item.quantity || '35.00',
+            item.mou || 'Box',
+            item.rate || '2160',
+            item.amount || '75600.00'
+          ])
+        : [['1', 'Boss GP - Silicon - 260 Ml (24 pieces)', '32149090', '35.00', 'Box', '2160', '75600.00']];
+
+      autoTable(doc, { // Changed to use autoTable function
+        startY: 130,
+        head: [tableHeaders],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 64, 133], textColor: [255, 255, 255], fontSize: 10 },
+        bodyStyles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 15 },
+          1: { cellWidth: 60 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 20 },
+          5: { cellWidth: 20 },
+          6: { cellWidth: 25 }
+        }
       });
-      doc.save(`${order.orderNo}.pdf`);
-    });
+
+      // Totals and Taxes
+      let y = doc.lastAutoTable.finalY + 10;
+      doc.setFont('helvetica', 'normal');
+      doc.text('Total', 150, y);
+      doc.text(order.subtotal || '75600.00', 170, y);
+      y += 8;
+      doc.text('CGST + SGST', 150, y);
+      doc.text(order.tax || '13608.00', 170, y);
+      y += 8;
+      doc.text('IGST', 150, y); // Added IGST to match PDF
+      doc.text(order.igst || 'N/A', 170, y);
+      y += 8;
+      doc.text('Freight Charges', 150, y);
+      doc.text(order.freight || 'Extra at Actual', 170, y);
+      y += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total (Tax Inclusive)', 150, y);
+      doc.text(order.total || '89208.00', 170, y);
+      y += 8;
+      doc.text('ROUNDUP', 150, y);
+      doc.text(order.total || '89208.00', 170, y);
+      y += 8;
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Amount (in words) : :${order.total_in_words || 'Eighty Nine thousand two hundred and eight.'}`, 20, y); // Matched double colon
+
+      // Terms and Conditions
+      y += 15;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Terms & Conditions', 20, y);
+      doc.setFont('helvetica', 'normal');
+      y += 8;
+      doc.text('Payment Terms: 100% After Delivery.', 20, y);
+      y += 8;
+      doc.text('Delivery: 1 to 2 Weeks (Immediate)', 20, y);
+      y += 8;
+      doc.text('Document Required: Test Certificate', 20, y);
+      y += 8;
+      doc.text('PO Validity : 4 Month', 20, y); // Matched spacing
+
+      // Authorized Signatory
+      y += 15;
+      doc.setFont('helvetica', 'bold');
+      doc.text('(Authorized Signatory)', 20, y);
+
+      // Footer
+      y += 15;
+      doc.setFont('helvetica', 'italic');
+      doc.text('For MERAKI EXPERT', 20, y);
+      y += 8;
+      doc.text('Email : merakiexpert@gmail.com | Mobile :  +91-8793484326 / +91-9130801011 | www.merrakiexpert.in', 20, y); // Matched footer format
+
+      // Save PDF
+      doc.save(`${order.purchase_order_no || 'purchase_order'}.pdf`);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      alert('Failed to generate PDF. Please check the console for details and try again.');
+    }
   };
 
-  const handlePrintOrder = (order) => {
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <html><head><title>Print Purchase Order</title>
-      <style>body{font-family:Arial;margin:40px;}h1{text-align:center;color:#003366;}p{font-size:16px;}</style>
-      </head><body>
-      <h1>Purchase Order Document</h1>
-      <p><b>Order #:</b> ${order.orderNo}</p>
-      <p><b>Vendor:</b> ${order.vendor}</p>
-      <p><b>Created Date:</b> ${order.created}</p>
-      <p><b>Delivery Date:</b> ${order.delivery}</p>
-      <p><b>Status:</b> ${order.status}</p>
-      <p><b>Amount:</b> ${order.amount}</p>
-      <p style="margin-top:40px;font-style:italic;text-align:center;">Generated by ERP Software</p>
-      </body></html>`);
-    printWindow.document.close();
-    printWindow.print();
-  };
+const handlePrintOrder = (order) => {
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Print Purchase Order</title>
+        <style>
+          body {
+            font-family: Helvetica, Arial, sans-serif;
+            margin: 20px;
+            font-size: 10pt;
+            color: #000;
+            width: 595px; /* A4 width in points */
+            height: 842px; /* A4 height in points */
+            box-sizing: border-box;
+          }
+          .container {
+            width: 100%;
+            max-width: 555px; /* 595px - 20px left margin - 20px right margin */
+            margin: 0 auto;
+          }
+          .logo {
+            text-align: center;
+            margin-bottom: 10px;
+          }
+          h1 {
+            text-align: center;
+            font-size: 18pt;
+            font-weight: bold;
+            margin: 0 0 5px 0;
+          }
+          hr {
+            border: 0.5px solid black;
+            margin: 5px 0;
+          }
+          .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+          }
+          .col-left {
+            width: 48%;
+          }
+          .col-right {
+            width: 48%;
+            text-align: right;
+          }
+          .bold {
+            font-weight: bold;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 9pt;
+          }
+          th, td {
+            border: 1px solid #000; /* Explicit borders on all sides for every cell */
+            padding: 5px;
+            text-align: left;
+          }
+          th {
+            background-color: #004085;
+            color: white;
+            font-weight: bold;
+          }
+          .totals {
+            text-align: right;
+            margin-top: 10px;
+            font-size: 10pt;
+          }
+          .totals p {
+            margin: 2px 0;
+          }
+          .amount-words {
+            margin: 10px 0;
+            font-size: 10pt;
+          }
+          .terms {
+            margin-top: 15px;
+            font-size: 10pt;
+          }
+          .terms p {
+            margin: 2px 0;
+          }
+          .signatory {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 10pt;
+          }
+          .footer {
+            margin-top: 15px;
+            font-style: italic;
+            font-size: 10pt;
+          }
+          .footer p {
+            margin: 2px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <!-- Logo -->
+          <div class="logo">
+            <img src="https://via.placeholder.com/100x50?text=Logo" alt="Company Logo" style="width: 100px; height: 50px;" />
+          </div>
 
+          <!-- Header -->
+          <h1>Purchase Order</h1>
+          <hr>
+
+          <!-- Company and PO Details -->
+          <div class="row">
+            <div class="col-left">
+              <p class="bold">Wellworth International</p>
+              <p>GSTIN: 27AKUPY6544R1ZM ; UDYAM-MH-20-0114278</p>
+              <p>Shop no 7, Sukhada Apartments, Temple Bazar,</p>
+              <p>Pinjari, Gali, Sitabuldi, Nagpur</p>
+            </div>
+            <div class="col-right">
+              <p><span class="bold">PO No:</span> ${order.purchase_order_no || 'PO/10/2025-26/WWI'}</p>
+              <p><span class="bold">Date:</span> ${order.purchase_order_date ? order.purchase_order_date.slice(0, 10) : '13/08/2025'}</p>
+              <p><span class="bold">OS ID:</span> ${order.os_id || 'N/A'}</p>
+            </div>
+          </div>
+
+          <!-- Vendor, Billing, Shipping -->
+          <div class="row">
+            <div class="col-left">
+              <p class="bold">Vendor:</p>
+              <p>${order.vendor_name || 'Meraki Expert'}</p>
+              <p>GSTIN: 27AANPJ3194R1ZT</p>
+              <p>Address:</p>
+              <p>101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</p>
+              <p>Kind Attn.: Mr. Kishor Choudhari</p>
+              <p>Mobile No.: 7338729293</p>
+              <p>Email: kishor.choudhari@bossproducts.com</p>
+            </div>
+            <div class="col-right">
+              <p class="bold">Billing Address:</p>
+              <p>101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</p>
+              <p class="bold" style="margin-top: 10px;">Shipping Address:</p>
+              <p>Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</p>
+            </div>
+          </div>
+
+          <!-- Requirement Text -->
+          <p style="margin: 10px 0;">This is referance to our requirement,</p>
+
+          <!-- Item Table -->
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 8%;">Sr. No.</th>
+                <th style="width: 35%;">Item Description</th>
+                <th style="width: 15%;">HSN Code</th>
+                <th style="width: 10%;">Qty.</th>
+                <th style="width: 10%;">MOU</th>
+                <th style="width: 10%;">Rate</th>
+                <th style="width: 12%;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                order.items && Array.isArray(order.items)
+                  ? order.items.map((item, index) => `
+                      <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.description || 'Boss GP - Silicon - 260 Ml (24 pieces)'}</td>
+                        <td>${item.hsnCode || '32149090'}</td>
+                        <td>${item.quantity || '35.00'}</td>
+                        <td>${item.mou || 'Box'}</td>
+                        <td>${item.rate || '2160'}</td>
+                        <td>${item.amount || '75600.00'}</td>
+                      </tr>
+                    `).join('')
+                  : `
+                      <tr>
+                        <td>1</td>
+                        <td>Boss GP - Silicon - 260 Ml (24 pieces)</td>
+                        <td>32149090</td>
+                        <td>35.00</td>
+                        <td>Box</td>
+                        <td>2160</td>
+                        <td>75600.00</td>
+                      </tr>
+                    `
+              }
+            </tbody>
+          </table>
+
+          <!-- Totals -->
+          <div class="totals">
+            <p>Total: ${order.subtotal || '75600.00'}</p>
+            <p>CGST + SGST: ${order.tax || '13608.00'}</p>
+            <p>IGST: ${order.igst || 'N/A'}</p>
+            <p>Freight Charges: ${order.freight || 'Extra at Actual'}</p>
+            <p class="bold">Total (Tax Inclusive): ${order.total || '89208.00'}</p>
+            <p class="bold">ROUNDUP: ${order.total || '89208.00'}</p>
+          </div>
+
+          <!-- Amount in Words -->
+          <p class="amount-words">Amount (in words) : :${order.total_in_words || 'Eighty Nine thousand two hundred and eight.'}</p>
+
+          <!-- Terms & Conditions -->
+          <div class="terms">
+            <p class="bold">Terms & Conditions</p>
+            <p>Payment Terms: 100% After Delivery.</p>
+            <p>Delivery: 1 to 2 Weeks (Immediate)</p>
+            <p>Document Required: Test Certificate</p>
+            <p>PO Validity : 4 Month</p>
+          </div>
+
+          <!-- Signatory -->
+          <p class="signatory">(Authorized Signatory)</p>
+
+          <!-- Footer -->
+          <div class="footer">
+            <p>For MERAKI EXPERT</p>
+            <p>Email: merakiexpert@gmail.com | Mobile: +91-8793484326 / +91-9130801011 | www.merrakiexpert.in</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.print();
+};
   const handleSendEmail = (order) => {
-    const subject = encodeURIComponent(`Purchase Order ${order.orderNo}`);
-    const body = encodeURIComponent(`Hi,\n\nHere are your purchase order details:\nOrder #: ${order.orderNo}\nVendor: ${order.vendor}\nAmount: ${order.amount}\nDelivery Date: ${order.delivery}`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    try {
+      const subject = encodeURIComponent(`Purchase Order ${order.purchase_order_no || 'N/A'}`);
+      const body = encodeURIComponent(`Hi,\n\nHere are your purchase order details:\nOrder #: ${order.purchase_order_no || 'N/A'}\nVendor: ${order.vendor_name || 'N/A'}\nAmount: ₹${order.total || 'N/A'}\nDelivery Date: ${order.delivery_date ? order.delivery_date.slice(0, 10) : 'N/A'}`);
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    } catch (error) {
+      console.error('Email generation failed:', error);
+      alert('Failed to generate email. Please try again.');
+    }
   };
 
   const handleShareLink = (order) => {
-    navigator.clipboard.writeText(`https://dummy-purchase-order-link/${order.orderNo}`);
-    alert('Purchase order link copied to clipboard!');
+    try {
+      navigator.clipboard.writeText(`https://dummy-purchase-order-link/${order.purchase_order_no || 'unknown'}`);
+      alert('Purchase order link copied to clipboard!');
+    } catch (error) {
+      console.error('Share link failed:', error);
+      alert('Failed to copy link. Please try again.');
+    }
   };
 
   return (
@@ -136,9 +487,7 @@ const PurchaseOrderActions = () => {
           <Paper sx={{ p: 1, borderRadius: 2 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" px={4} py={2} borderBottom="1px solid #e0e0e0">
               <Typography fontWeight="bold" fontSize={18}>Purchase Order</Typography>
-              <Button variant="contained" onClick={()=>
-window.location.href = '/add-purchase-order'
-              } sx={{ textTransform: 'none', borderRadius: 2, bgcolor: '#004085', color: '#fff', '&:hover': { bgcolor: '#003366' } }}>+ New Purchase Order</Button>
+              <Button variant="contained" onClick={() => window.location.href = '/add-purchase-order'} sx={{ textTransform: 'none', borderRadius: 2, bgcolor: '#004085', color: '#fff', '&:hover': { bgcolor: '#003366' } }}>+ New Purchase Order</Button>
             </Box>
             <Box px={4} pt={2} display="flex" justifyContent="space-between" alignItems="center">
               <Tabs value={tab} onChange={(e, newTab) => setTab(newTab)} sx={{ '& .MuiTab-root': { textTransform: 'none', bgcolor: '#f1f1f1', borderRadius: 2, mr: 1 }, '& .Mui-selected': { bgcolor: '#004085', color: 'white !important' }, '& .MuiTabs-indicator': { display: 'none' } }}>
@@ -167,14 +516,14 @@ window.location.href = '/add-purchase-order'
                   {filteredRows.map((row, i) => (
                     <TableRow key={i}>
                       <TableCell><Checkbox /></TableCell>
-                      <TableCell sx={{ color: '#0B5FFF', fontWeight: 500 }}>{row.purchase_order_no}</TableCell>
-                      <TableCell>{row.vendor_name}</TableCell>
-                      <TableCell>{row.purchase_order_date ? row.purchase_order_date.slice(0,10) : ''}</TableCell>
-                      <TableCell>{row.delivery_date ? row.delivery_date.slice(0,10) : ''}</TableCell>
+                      <TableCell sx={{ color: '#0B5FFF', fontWeight: 500 }}>{row.purchase_order_no || 'N/A'}</TableCell>
+                      <TableCell>{row.vendor_name || 'N/A'}</TableCell>
+                      <TableCell>{row.purchase_order_date ? row.purchase_order_date.slice(0, 10) : 'N/A'}</TableCell>
+                      <TableCell>{row.delivery_date ? row.delivery_date.slice(0, 10) : 'N/A'}</TableCell>
                       <TableCell>
-                        <Typography variant="caption" sx={{ backgroundColor: '#F2F4F7', color: '#344054', px: 1.5, py: 0.5, borderRadius: '12px', fontWeight: 600 }}>Draft</Typography>
+                        <Typography variant="caption" sx={{ backgroundColor: '#F2F4F7', color: '#344054', px: 1.5, py: 0.5, borderRadius: '12px', fontWeight: 600 }}>{row.status || 'Draft'}</Typography>
                       </TableCell>
-                      <TableCell>{row.total ? `₹${row.total}` : ''}</TableCell>
+                      <TableCell>{row.total ? `₹${row.total}` : 'N/A'}</TableCell>
                       <TableCell>
                         <IconButton onClick={(e) => handleMenuOpen(e, i)}><MoreVertIcon /></IconButton>
                         <Menu anchorEl={anchorEl} open={Boolean(anchorEl) && menuIndex === i} onClose={handleMenuClose}>
@@ -191,7 +540,7 @@ window.location.href = '/add-purchase-order'
               </Table>
             </TableContainer>
             <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-              <Typography variant="body2">Showing 1 to 10 of 10 entries</Typography>
+              <Typography variant="body2">Showing 1 to {filteredRows.length} of {rows.length} entries</Typography>
               <Box display="flex" gap={1}>
                 {[1, 2, 3].map(page => (
                   <Button key={page} size="small" variant={page === 1 ? 'outlined' : 'text'}>{page}</Button>

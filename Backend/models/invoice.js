@@ -2,11 +2,11 @@ const db = require('../config/db');
 
 const invoice = {
   getAll: (callback) => {
-    db.query('SELECT * FROM invoice', callback);
+    db.query('SELECT invoice_id, invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject, customer_notes, terms_and_conditions, sub_total, cgst, sgst, grand_total, status FROM invoice', callback);
   },
 
   getById: (id, callback) => {
-    db.query('SELECT * FROM invoice WHERE invoice_id = ?', [id], (err, results) => {
+    db.query('SELECT invoice_id, invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject, customer_notes, terms_and_conditions, sub_total, cgst, sgst, grand_total, status FROM invoice WHERE invoice_id = ?', [id], (err, results) => {
       if (err) return callback(err);
       callback(null, results[0]);
     });
@@ -38,13 +38,14 @@ const invoice = {
 
     const invoiceSql = `
       INSERT INTO invoice (
-        customer_name, invoice_date, expiry_date, subject,
+        customer_id, customer_name, invoice_date, expiry_date, subject,
         customer_notes, terms_and_conditions,
         sub_total, cgst, sgst, grand_total, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const invoiceValues = [
+      data.customer_id,
       data.customer_name,
       data.invoice_date,
       data.expiry_date,
@@ -106,4 +107,4 @@ const invoice = {
   }
 };
 
-module.exports = invoice; 
+module.exports = invoice;

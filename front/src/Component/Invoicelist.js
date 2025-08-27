@@ -31,9 +31,6 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-
 
 const statusColor = {
   Paid: "success",
@@ -76,203 +73,256 @@ export default function Invoicelist() {
     navigate(`/edit-invoice/${id}`);
   };
 
+  const handleDownloadPdf = async (invoice) => {
+    try {
+      // Fetch invoice details, items, and customer
+      const response = await axios.get(`http://localhost:5000/api/invoice/${invoice.invoice_id}`);
+      const { invoice: invoiceData, items, customer, sub_total, cgst, sgst, grand_total } = response.data;
 
+      if (!customer) {
+        throw new Error("Customer not found");
+      }
 
-const handleDownloadPdf = (invoice) => {
- const printWindow = window.open("", "_blank");
-  printWindow.document.write(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Tax Invoice</title>
-  <style>
-    @page {
-      size: A4 landscape; /* horizontal print */
-      margin: 10mm;
+      // Helper function to convert number to words (Indian Rupees)
+      const numberToWords = (num) => {
+        const units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+        const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+        const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+        const thousands = ["", "Thousand", "Lakh", "Crore"];
+
+        const convertLessThanThousand = (num) => {
+          if (num === 0) return "";
+          if (num < 10) return units[num];
+          if (num < 20) return teens[num - 10];
+          if (num < 100) return `${tens[Math.floor(num / 10)]} ${units[num % 10]}`.trim();
+          return `${units[Math.floor(num / 100)]} Hundred ${convertLessThanThousand(num % 100)}`.trim();
+        };
+
+        const convert = (num) => {
+          if (num === 0) return "Zero";
+          let result = "";
+          let thousandIndex = 0;
+          while (num > 0) {
+            const chunk = num % 1000;
+            if (chunk > 0) {
+              result = `${convertLessThanThousand(chunk)} ${thousands[thousandIndex]} ${result}`.trim();
+            }
+            num = Math.floor(num / 1000);
+            thousandIndex++;
+          }
+          return result;
+        };
+
+        return `${convert(Math.floor(num))} Rupees Only`;
+      };
+
+      // Generate items table rows
+      const itemsRows = items
+        .map(
+          (item, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${item.item_detail}</td>
+            <td>${item.hsn_sac || "39259010"}</td>
+            <td>${item.quantity}</td>
+            <td>Sq.M</td>
+            <td>${parseFloat(item.rate).toFixed(2)}</td>
+            <td>${(item.quantity * item.rate).toFixed(2)}</td>
+            <td>${item.discount || "-"}</td>
+            <td>${item.amount.toFixed(2)}</td>
+            <td>9%<br>${(item.amount * 0.09).toFixed(2)}</td>
+            <td>9%<br>${(item.amount * 0.09).toFixed(2)}</td>
+            <td>0%</td>
+            <td>${(item.amount + item.amount * 0.18).toFixed(2)}</td>
+          </tr>`
+        )
+        .join("");
+
+      // Construct billing and shipping details
+      const billingDetails = `
+        ${customer.billing_recipient_name || customer.customer_name || "N/A"}<br>
+        ${customer.billing_address1 || ""}${customer.billing_address2 ? `<br>${customer.billing_address2}` : ""}<br>
+        ${customer.billing_city || ""}, ${customer.billing_state || ""} - ${customer.billing_pincode || ""}<br>
+        Pin Code - ${customer.billing_pincode || ""}, ${customer.billing_country || "India"}<br>
+        <b>State Code :</b> ${customer.billing_state ? "27" : ""}<br>
+        <b>GSTIN :</b> ${customer.gst || ""}
+      `;
+
+      const shippingDetails = `
+        ${customer.shipping_recipient_name || customer.customer_name || "N/A"}<br>
+        ${customer.shipping_address1 || ""}${customer.shipping_address2 ? `<br>${customer.shipping_address2}` : ""}<br>
+        ${customer.shipping_city || ""}, ${customer.shipping_state || ""} - ${customer.shipping_pincode || ""}<br>
+        Pin Code - ${customer.shipping_pincode || ""}, ${customer.shipping_country || "India"}<br>
+        <b>State Code :</b> ${customer.shipping_state ? "27" : ""}<br>
+        <b>GSTIN :</b> ${customer.gst || ""}
+      `;
+
+      // Open print window with dynamic data
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <title>Tax Invoice</title>
+          <style>
+            @page {
+              size: A4 landscape;
+              margin: 10mm;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              font-size: 12px;
+              color: #000;
+            }
+            .invoice-box {
+              width: 98%;
+              border: 1px solid #000;
+              padding: 10px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            td, th {
+              border: 1px solid #000;
+              padding: 5px;
+              vertical-align: top;
+            }
+            .logo {
+              height: 270px;
+              width: auto;
+              object-fit: contain;
+              margin-top: -100px;
+              margin-bottom: -90px;
+              margin-left: -60px;
+              margin-right: -70px;
+            }
+            .no-border {
+              height: -80px;
+            }
+            .no-border td {
+              border: none;
+            }
+            .center {
+              text-align: center;
+            }
+            .right {
+              text-align: right;
+            }
+            .bold {
+              font-weight: bold;
+            }
+            .small {
+              font-size: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-box">
+            <!-- Header -->
+            <table class="no-border">
+              <tr>
+                <td style="border:none;">
+                  <img src="/static/media/ui.405d9b691b910181ce2e.png" class="logo" alt="Logo" />
+                </td>
+                <td style="text-align:center; border:none;">
+                  <p class="bold">TAX INVOICE</p>
+                  <p class="small">[Section 31 of the CGST Act, 2017 read with Rule 1 of Revised Invoice Rules, 2017]</p>
+                </td>
+                <td style="border:none;">
+                  <table class="no-border">
+                    <tr><td class="bold">Invoice No.:</td><td>${invoiceData.invoice_number}</td></tr>
+                    <tr><td class="bold">Invoice Date:</td><td>${invoiceData.invoice_date}</td></tr>
+                    <tr><td class="bold">Cust Order Date:</td><td>${invoiceData.expiry_date}</td></tr>
+                    <tr><td class="bold">PO Number:</td><td>${invoiceData.subject || "N/A"}</td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Supplier GST Info -->
+            <table style="margin-top:10px;">
+              <tr>
+                <td>
+                  <p><span class="bold">GSTIN :</span> 27AKUPY6544R1ZM</p>
+                  <p><span class="bold">Name :</span> Meraki Expert</p>
+                  <p><span class="bold">PAN :</span> AKUPY6544R</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Billed / Shipped -->
+            <table style="margin-top:10px;">
+              <tr>
+                <th>Details of Receiver (Billed to)</th>
+                <th>Details of Consignee (Shipped to)</th>
+              </tr>
+              <tr>
+                <td>${billingDetails}</td>
+                <td>${shippingDetails}</td>
+              </tr>
+            </table>
+
+            <!-- Items Table -->
+            <table style="margin-top:10px;">
+              <tr>
+                <th>S.No.</th>
+                <th>Description of Goods</th>
+                <th>HSN / SAC</th>
+                <th>QTY</th>
+                <th>Unit</th>
+                <th>Rate</th>
+                <th>Total Value (Rs.)</th>
+                <th>Disc.</th>
+                <th>Taxable Value (Rs.)</th>
+                <th>CGST</th>
+                <th>SGST</th>
+                <th>IGST</th>
+                <th>Total</th>
+              </tr>
+              ${itemsRows}
+            </table>
+
+            <!-- Totals -->
+            <table style="margin-top:10px;">
+              <tr>
+                <td class="right bold">Grand Total (Inclusive of GST)</td>
+                <td class="bold">${grand_total.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td colspan="2">Invoice Value (In words): ${numberToWords(grand_total)}</td>
+              </tr>
+            </table>
+
+            <!-- Declaration -->
+            <p class="bold" style="margin-top:20px;">Declaration :</p>
+            <p class="small">
+              Certified that the particulars given above are true and correct and the amount indicated represents the Price actually charged
+              and that there is no flow of additional consideration directly or indirectly from the Receiver [Buyer].
+            </p>
+
+            <!-- Footer -->
+            <table class="no-border" style="margin-top:20px;">
+              <tr>
+                <td style="border:none;"></td>
+                <td style="border:none;" class="right">
+                  For MERAKI EXPERT<br><br><br>
+                  Authorized Signatory
+                </td>
+              </tr>
+            </table>
+          </div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
     }
-    body {
-      font-family: Arial, sans-serif;
-      font-size: 12px;
-      color: #000;
-    }
-    .invoice-box {
-      width: 98%;
-      border: 1px solid #000;
-      padding: 10px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    td, th {
-      border: 1px solid #000;
-      padding: 5px;
-      vertical-align: top;
-    }
-    .logo {
-    height: 270px;
-    width: auto;
-    object-fit: contain;
-    margin-Top: -100px;
-    margin-Bottom: -90px; 
-    margin-Left: -60px;
-    margin-Right: -70px;
-    } 
-    .no-border{
-     height: -80px;
-    }
-    .no-border td {
-      border: none;
-    }
-    .center {
-      text-align: center;
-    }
-    .right {
-      text-align: right;
-    }
-    .bold {
-      font-weight: bold;
-    }
-    .small {
-      font-size: 10px;
-    }
-  </style>
-</head>
-<body>
-<div class="invoice-box">
-
-  <!-- Header -->
-  <table class="no-border">
-    <tr>
-      <td style="border:none;">
-       <img src="/static/media/ui.405d9b691b910181ce2e.png" class="logo" alt="Logo" />
-      </td>
-      <td style="text-align:center; border:none;">
-        <p class="bold">TAX INVOICE</p>
-        <p class="small">[Section 31 of the CGST Act, 2017 read with Rule 1 of Revised Invoice Rules, 2017]</p>
-      </td>
-      <td style="border:none;">
-        <table class="no-border">
-          <tr><td class="bold">Invoice No.:</td><td>ME/2025-26/023</td></tr>
-          <tr><td class="bold">Invoice Date:</td><td>11.05.2025</td></tr>
-          <tr><td class="bold">Cust Order Date:</td><td>31.01.2025</td></tr>
-          <tr><td class="bold">PO Number:</td><td>JUPL/2025/09</td></tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-
-  <!-- Supplier GST Info -->
-  <table style="margin-top:10px;">
-    <tr>
-      <td>
-        <p><span class="bold">GSTIN :</span> 27AKUPY6544R1ZM</p>
-        <p><span class="bold">Name :</span> Meraki Expert</p>
-        <p><span class="bold">PAN :</span> AKUPY6544R</p>
-      </td>
-    </tr>
-  </table>
-
-  <!-- Billed / Shipped -->
-  <table style="margin-top:10px;">
-    <tr>
-      <th>Details of Receiver (Billed to)</th>
-      <th>Details of Consignee (Shipped to)</th>
-    </tr>
-    <tr>
-      <td>
-        JUST UNIVERSAL PVT. LTD.<br>
-        Kh. No. 101/1, 101/2, 102, Kapsi Budruk,<br>
-        Tah. Kamptee, Nagpur - 441104.<br>
-        Pin Code - 441104, Maharashtra<br>
-        <b>State Code :</b> 27<br>
-        <b>GSTIN :</b> 27AAFCJ1515K1ZL
-      </td>
-      <td>
-        JUST UNIVERSAL PVT. LTD.<br>
-        Kh. No. 101/1, 101/2, 102, Kapsi Budruk,<br>
-        Tah. Kamptee, Nagpur - 441104.<br>
-        Pin Code - 441104, Maharashtra<br>
-        <b>State Code :</b> 27<br>
-        <b>GSTIN :</b> 27AAFCJ1515K1ZL
-      </td>
-    </tr>
-  </table>
-
-  <!-- Items Table -->
-  <table style="margin-top:10px;">
-    <tr>
-      <th>S.No.</th>
-      <th>Description of Goods</th>
-      <th>HSN / SAC</th>
-      <th>QTY</th>
-      <th>Unit</th>
-      <th>Rate</th>
-      <th>Total Value (Rs.)</th>
-      <th>Disc.</th>
-      <th>Taxable Value (Rs.)</th>
-      <th>CGST</th>
-      <th>SGST</th>
-      <th>IGST</th>
-      <th>Total</th>
-    </tr>
-    <tr>
-      <td>1</td>
-      <td>
-        Supply of Kingspan Jindal Contineous Line, 50 mm THK PUR Wall Panel Both Side 0.5 mm PPGL - 300Mpa - SMP - AZ 150 GSM (RAL9002) Plain Lamination Density: 40 (+-2) Kg/cum. - Panel Cover Width:1000MM
-      </td>
-      <td>39259010</td>
-      <td>680.250</td>
-      <td>Sq.M</td>
-      <td>1430.00</td>
-      <td>9,72,757.50</td>
-      <td>-</td>
-      <td>9,72,757.50</td>
-      <td>9%<br>87,548.18</td>
-      <td>9%<br>87,548.18</td>
-      <td>0%</td>
-      <td>11,47,853.85</td>
-    </tr>
-  </table>
-
-  <!-- Totals -->
-  <table style="margin-top:10px;">
-    <tr>
-      <td class="right bold">Grand Total (Inclusive of GST)</td>
-      <td class="bold">11,47,854</td>
-    </tr>
-    <tr>
-      <td colspan="2">Invoice Value (In words): Eleven Lac Fourty Seven Thousand Eight Hundred and Fifty Four Rupees only</td>
-    </tr>
-  </table>
-
-  <!-- Declaration -->
-  <p class="bold" style="margin-top:20px;">Declaration :</p>
-  <p class="small">
-    Certified that the particulars given above are true and correct and the amount indicated represents the Price actually charged
-    and that there is no flow of additional consideration directly or indirectly from the Receiver [Buyer].
-  </p>
-
-  <!-- Footer -->
-  <table class="no-border" style="margin-top:20px;">
-    <tr>
-      <td style="border:none;"></td>
-      <td style="border:none;" class="right">
-        For MERAKI EXPERT<br><br><br>
-        Authorized Signatory
-      </td>
-    </tr>
-  </table>
-</div>
-</body>
-</html>
-
-`);
-  printWindow.document.close();
-  printWindow.print();
-};
-
-
+  };
 
   const handlePrintInvoice = (invoice) => {
     const printWindow = window.open("", "_blank");
@@ -395,6 +445,8 @@ const handleDownloadPdf = (invoice) => {
                   sx: { bgcolor: "#f9f9f9", borderRadius: "20px", px: 1 },
                 }}
                 sx={{ width: 300 }}
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
               />
             </Box>
 

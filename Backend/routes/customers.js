@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/customers');
+const customerController = require('../controllers/customers');
 
-router.get('/', controller.getAll);
-router.post('/', controller.create);
-router.put('/:id', controller.update);
-router.delete('/:id', controller.remove);
-
-// ✅ New route to update only status
-router.patch('/:id/status', controller.updateStatus);
+router.get('/', customerController.getAll);
+router.get('/:id', customerController.getById);
+router.post('/', customerController.create);
+router.put('/:id', customerController.update);
+router.delete('/:id', customerController.remove);
+router.put('/:id/status', customerController.updateStatus);
 
 module.exports = router;
