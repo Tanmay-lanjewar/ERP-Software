@@ -4,8 +4,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Menu, MenuItem, Checkbox, Avatar, InputBase, Tabs, Tab, Breadcrumbs
 } from '@mui/material';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable'; // Changed import to named import for reliability
+//  // Changed import to named import for reliability
 import { useNavigate } from 'react-router-dom';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchIcon from '@mui/icons-material/Search';
@@ -61,29 +60,316 @@ const PurchaseOrderActions = () => {
  
 
   const handleDownloadPdf = (order) => {
-    import('jspdf').then(({ jsPDF }) => {
-      const doc = new jsPDF();
-      doc.setFontSize(18);
-      doc.text("Purchase Order Document", 105, 20, null, null, "center");
-      doc.line(20, 25, 190, 25);
-      let y = 40;
-      const details = [
-        ['Order #', order.orderNo],
-        ['Vendor', order.vendor],
-        ['Created Date', order.created],
-        ['Delivery Date', order.delivery],
-        ['Status', order.status],
-        ['Amount', order.amount]
-      ];
-      details.forEach(([label, value]) => {
-        doc.setFont("helvetica", "bold");
-        doc.text(`${label}:`, 25, y);
-        doc.setFont("helvetica", "normal");
-        doc.text(`${value}`, 70, y);
-        y += 12;
-      });
-      doc.save(`${order.orderNo}.pdf`);
-    });
+  const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Order</title>
+</head>
+<body style="font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 20px;">
+    <div style="border: 2px solid #000; padding: 10px; width: 600px; margin: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 5px;">
+            <div style="display: flex; align-items: center;">
+                <img src="/static/media/ui.405d9b691b910181ce2e.png" alt="Merraki Expert Logo" style="width: 200px; height: auto; margin-Top: -70px; margin-Bottom: -70px;">
+                 <div style="font-size: 14px; font-weight: bold;"></div>
+            </div>
+            <div style="text-align: right;">
+                <div style="margin-bottom: 2px;"><strong>PO No:</strong> PO/10/2025-26/WWI</div>
+                <div style="margin-bottom: 2px;"><strong>Date:</strong> 11/08/2025</div>
+                <div><strong>JO ID:</strong> N/A</div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 2px solid #000;">
+            <div style="font-size: 10px;"><strong>GSTIN:</strong> 27AKUPY6544R1ZM</div>
+            <div style="font-size: 10px;"><strong>UDYAM-MH-20-0114278</strong></div>
+        </div>
+
+        <div style="border-bottom: 2px solid #000; padding: 5px 0;">
+            <div style="display: flex;">
+                <div style="width: 100px; font-weight: bold;">Billing Address:</div>
+                <div>101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</div>
+            </div>
+            <div style="display: flex;">
+                <div style="width: 100px; font-weight: bold;">Shipping Address:</div>
+                <div>Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</div>
+            </div>
+        </div>
+
+        <div style="text-align: center; font-weight: bold; padding: 5px 0; border-bottom: 2px solid #000;">
+            Purchase Order
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse;">
+            <tbody>
+                <tr>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Vendor:</td>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">Wellworth International</td>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">GSTIN</td>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">27AANPj1949R1ZT</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Address:</td>
+                    <td style="border: 1px solid #000; padding: 3px;">shop no 7, Sukhadada Apartments, Temple Bazar, Pinjari, Gali, Sitabuldi, Nagpur</td>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Kind Attn.</td>
+                    <td style="border: 1px solid #000; padding: 3px;">Mr. Kishor Choudhari</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Mobile No.</td>
+                    <td style="border: 1px solid #000; padding: 3px;">7338729293</td>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Email</td>
+                    <td style="border: 1px solid #000; padding: 3px; color: #00f;">kishor.choudhari@bossproducts.com</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
+            This is referance to our requirement,
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Sr. No.</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 35%;">Item Description</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 10%;">HSN Code</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Qty.</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">MOU</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 15%;">Rate</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 25%;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">1</td>
+                    <td style="border: 1px solid #000; padding: 3px;">Boss GP - Silicon - 250 MI (24 pieces)</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">32149090</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">35.00</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">Box</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">2160</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">75600.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="display: flex; margin-top: 5px;">
+            <div style="width: 50%; border: 1px solid #000; padding: 5px;">
+                <div style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 5px;">Terms & Conditions</div>
+                <div>Payment Terms: 100% After Delivery.</div>
+                <div style="margin-top: 5px;">PO Validity : 4 Month</div>
+                <div>Delivery: 1 to 2 Weeks (Immediate)</div>
+                <div>Document Required: Test Certificate</div>
+            </div>
+            <div style="width: 50%;">
+                <table style="width: 100%; border-collapse: collapse; margin-left: -1px;">
+                    <tbody>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Amount</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">75600.00</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">CGST + SGST</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">13608.00</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">IGST</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">N/A</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Freight Charges</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">Extra at Actual</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Total (Tax Inclusive)</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">89208.00</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2; text-align: right;">ROUNDUP</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">89208.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
+            <strong>Amount (in words) :</strong> Eighty Nine thousand two hundred and eight.
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 5px;">
+            <div style="width: 70%;">
+                <div style="border: 1px solid #000; padding: 3px;">
+                    Email : merakkiexpert@gmail.com | Mobile : +91-8793484326 / +91-9130801011 | www.merakkiexpert.in
+                </div>
+            </div>
+            <div style="width: 30%; text-align: center; margin-left: 10px;">
+                <div style="font-weight: bold;">For MERAKI EXPERT</div>
+                <div style="height: 50px; display: flex; align-items: center; justify-content: center;">
+                    <img src="https://example.com/signature.png" alt="Signature" style="height: 50px;">
+                </div>
+                <div>(Authorized Signatory)</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+`);
+    printWindow.document.close();
+    printWindow.print();
+
+    // try {
+    //   if (!order || typeof order !== 'object') {
+    //     throw new Error('Invalid order data');
+    //   }
+
+    //   const doc = new jsPDF();
+
+    //   // Set fonts and styles
+    //   doc.setFont('helvetica', 'bold');
+    //   doc.setFontSize(18);
+    //   doc.text('Purchase Order', 105, 20, null, null, 'center');
+    //   doc.setLineWidth(0.5);
+    //   doc.line(20, 25, 190, 25);
+
+    //   // Company Header
+    //   doc.setFontSize(12);
+    //   doc.text('Wellworth International', 20, 35);
+    //   doc.setFont('helvetica', 'normal');
+    //   doc.setFontSize(10);
+    //   doc.text('GSTIN: 27AKUPY6544R1ZM ; UDYAM-MH-20-0114278', 20, 42); // Added semicolon to match PDF
+    //   doc.text('Shop no 7, Sukhada Apartments, Temple Bazar,', 20, 48);
+    //   doc.text('Pinjari, Gali, Sitabuldi, Nagpur', 20, 54);
+
+    //   // PO Details
+    //   doc.setFont('helvetica', 'bold');
+    //   doc.setFontSize(10);
+    //   doc.text('PO No:', 140, 35);
+    //   doc.text('Date:', 140, 41);
+    //   doc.text('OS ID:', 140, 47);
+    //   doc.setFont('helvetica', 'normal');
+    //   doc.text(order.purchase_order_no || 'PO/10/2025-26/WWI', 160, 35); // Updated fallback to match PDF
+    //   doc.text(order.purchase_order_date ? order.purchase_order_date.slice(0, 10) : '13/08/2025', 160, 41); // Updated fallback
+    //   doc.text(order.os_id || 'N/A', 160, 47);
+
+    //   // Vendor and Address
+    //   doc.setFont('helvetica', 'bold');
+    //   doc.text('Vendor:', 20, 70);
+    //   doc.setFont('helvetica', 'normal');
+    //   doc.text(order.vendor_name || 'Meraki Expert', 20, 76);
+    //   doc.text('GSTIN: 27AANPJ3194R1ZT', 20, 82);
+    //   doc.text('Address:', 20, 88); // Added Address label to match structure
+    //   doc.text('101, 2nd Floor, Shri Sai Appartment,', 20, 94);
+    //   doc.text('Near Kachore Lawn, Nagpur - 440015', 20, 100);
+    //   doc.text('Kind Attn.: Mr. Kishor Choudhari', 20, 106); // Added period
+    //   doc.text('Mobile No.: 7338729293', 20, 112);
+    //   doc.text('Email: kishor.choudhari@bossproducts.com', 20, 118);
+
+    //   // Billing and Shipping Address
+    //   doc.setFont('helvetica', 'bold');
+    //   doc.text('Billing Address:', 140, 70);
+    //   doc.text('Shipping Address:', 140, 90);
+    //   doc.setFont('helvetica', 'normal');
+    //   doc.text('101, 2nd Floor, Shri Sai Appartment,', 140, 76);
+    //   doc.text('Near Kachore Lawn, Nagpur - 440015', 140, 82);
+    //   doc.text('Meraki Expert, 101, 2nd Floor, Shri Sai Appartment,', 140, 96);
+    //   doc.text('Near Kachore Lawn, Nagpur - 440015', 140, 102);
+
+    //   // Item Table Intro
+    //   doc.setFont('helvetica', 'bold');
+    //   doc.text('This is referance to our requirement,', 20, 125); // Matched typo 'referance'
+
+    //   const tableHeaders = ['Sr. No.', 'Item Description', 'HSN Code', 'Qty.', 'MOU', 'Rate', 'Amount'];
+    //   const tableData = order.items && Array.isArray(order.items)
+    //     ? order.items.map((item, index) => [
+    //         (index + 1).toString(),
+    //         item.description || 'Boss GP - Silicon - 260 Ml (24 pieces)',
+    //         item.hsnCode || '32149090',
+    //         item.quantity || '35.00',
+    //         item.mou || 'Box',
+    //         item.rate || '2160',
+    //         item.amount || '75600.00'
+    //       ])
+    //     : [['1', 'Boss GP - Silicon - 260 Ml (24 pieces)', '32149090', '35.00', 'Box', '2160', '75600.00']];
+
+    //   autoTable(doc, { // Changed to use autoTable function
+    //     startY: 130,
+    //     head: [tableHeaders],
+    //     body: tableData,
+    //     theme: 'grid',
+    //     headStyles: { fillColor: [0, 64, 133], textColor: [255, 255, 255], fontSize: 10 },
+    //     bodyStyles: { fontSize: 9 },
+    //     columnStyles: {
+    //       0: { cellWidth: 15 },
+    //       1: { cellWidth: 60 },
+    //       2: { cellWidth: 30 },
+    //       3: { cellWidth: 20 },
+    //       4: { cellWidth: 20 },
+    //       5: { cellWidth: 20 },
+    //       6: { cellWidth: 25 }
+    //     }
+    //   });
+
+    //   // Totals and Taxes
+    //   let y = doc.lastAutoTable.finalY + 10;
+    //   doc.setFont('helvetica', 'normal');
+    //   doc.text('Total', 150, y);
+    //   doc.text(order.subtotal || '75600.00', 170, y);
+    //   y += 8;
+    //   doc.text('CGST + SGST', 150, y);
+    //   doc.text(order.tax || '13608.00', 170, y);
+    //   y += 8;
+    //   doc.text('IGST', 150, y); // Added IGST to match PDF
+    //   doc.text(order.igst || 'N/A', 170, y);
+    //   y += 8;
+    //   doc.text('Freight Charges', 150, y);
+    //   doc.text(order.freight || 'Extra at Actual', 170, y);
+    //   y += 8;
+    //   doc.setFont('helvetica', 'bold');
+    //   doc.text('Total (Tax Inclusive)', 150, y);
+    //   doc.text(order.total || '89208.00', 170, y);
+    //   y += 8;
+    //   doc.text('ROUNDUP', 150, y);
+    //   doc.text(order.total || '89208.00', 170, y);
+    //   y += 8;
+    //   doc.setFont('helvetica', 'normal');
+    //   doc.text(`Amount (in words) : :${order.total_in_words || 'Eighty Nine thousand two hundred and eight.'}`, 20, y); // Matched double colon
+
+    //   // Terms and Conditions
+    //   y += 15;
+    //   doc.setFont('helvetica', 'bold');
+    //   doc.text('Terms & Conditions', 20, y);
+    //   doc.setFont('helvetica', 'normal');
+    //   y += 8;
+    //   doc.text('Payment Terms: 100% After Delivery.', 20, y);
+    //   y += 8;
+    //   doc.text('Delivery: 1 to 2 Weeks (Immediate)', 20, y);
+    //   y += 8;
+    //   doc.text('Document Required: Test Certificate', 20, y);
+    //   y += 8;
+    //   doc.text('PO Validity : 4 Month', 20, y); // Matched spacing
+
+    //   // Authorized Signatory
+    //   y += 15;
+    //   doc.setFont('helvetica', 'bold');
+    //   doc.text('(Authorized Signatory)', 20, y);
+
+    //   // Footer
+    //   y += 15;
+    //   doc.setFont('helvetica', 'italic');
+    //   doc.text('For MERAKI EXPERT', 20, y);
+    //   y += 8;
+    //   doc.text('Email : merakiexpert@gmail.com | Mobile :  +91-8793484326 / +91-9130801011 | www.merrakiexpert.in', 20, y); // Matched footer format
+
+    //   // Save PDF
+    //   doc.save(`${order.purchase_order_no || 'purchase_order'}.pdf`);
+    // } catch (error) {
+    //   console.error('PDF generation failed:', error);
+    //   alert('Failed to generate PDF. Please check the console for details and try again.');
+    // }
+
   };
 
 const handlePrintOrder = (order) => {
