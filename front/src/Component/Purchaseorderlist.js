@@ -4,7 +4,9 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Menu, MenuItem, Checkbox, Avatar, InputBase, Tabs, Tab, Breadcrumbs
 } from '@mui/material';
-import { useNavigate } from "react-router-dom";
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable'; // Changed import to named import for reliability
+import { useNavigate } from 'react-router-dom';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchIcon from '@mui/icons-material/Search';
 import Sidebar from './Sidebar';
@@ -21,17 +23,19 @@ const PurchaseOrderActions = () => {
 
   useEffect(() => {
     axios.get('http://localhost:5000/api/purchase')
-        .then(res => {
-            // Group by purchase_order_no so each order appears only once
-            const grouped = {};
-            res.data.forEach(row => {
-                if (!grouped[row.purchase_order_no]) {
-                    grouped[row.purchase_order_no] = row;
-                }
-            });
-            setRows(Object.values(grouped));
-        })
-        .catch(() => setRows([]));
+      .then(res => {
+        const grouped = {};
+        res.data.forEach(row => {
+          if (!grouped[row.purchase_order_no]) {
+            grouped[row.purchase_order_no] = row;
+          }
+        });
+        setRows(Object.values(grouped));
+      })
+      .catch(error => {
+        console.error('Failed to fetch purchase orders:', error);
+        setRows([]);
+      });
   }, []);
 
   const filteredRows = rows.filter(row => {
@@ -50,200 +54,285 @@ const PurchaseOrderActions = () => {
     setAnchorEl(null);
     setMenuIndex(null);
   };
+
   const handleEditPurchase = (id) => {
     navigate(`/edit-purchase/${id}`);
   };
+ 
 
   const handleDownloadPdf = (order) => {
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-    <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Order</title>
-</head>
-<body style="font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 20px;">
-    <div style="border: 2px solid #000; padding: 10px; width: 600px; margin: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 5px;">
-            <div style="display: flex; align-items: center;">
-                <img src="/static/media/ui.405d9b691b910181ce2e.png" alt="Merraki Expert Logo" style="width: 200px; height: auto; margin-Top: -70px; margin-Bottom: -70px;">
-                 <div style="font-size: 14px; font-weight: bold;"></div>
+    import('jspdf').then(({ jsPDF }) => {
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text("Purchase Order Document", 105, 20, null, null, "center");
+      doc.line(20, 25, 190, 25);
+      let y = 40;
+      const details = [
+        ['Order #', order.orderNo],
+        ['Vendor', order.vendor],
+        ['Created Date', order.created],
+        ['Delivery Date', order.delivery],
+        ['Status', order.status],
+        ['Amount', order.amount]
+      ];
+      details.forEach(([label, value]) => {
+        doc.setFont("helvetica", "bold");
+        doc.text(`${label}:`, 25, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(`${value}`, 70, y);
+        y += 12;
+      });
+      doc.save(`${order.orderNo}.pdf`);
+    });
+  };
+
+const handlePrintOrder = (order) => {
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Print Purchase Order</title>
+        <style>
+          body {
+            font-family: Helvetica, Arial, sans-serif;
+            margin: 20px;
+            font-size: 10pt;
+            color: #000;
+            width: 595px; /* A4 width in points */
+            height: 842px; /* A4 height in points */
+            box-sizing: border-box;
+          }
+          .container {
+            width: 100%;
+            max-width: 555px; /* 595px - 20px left margin - 20px right margin */
+            margin: 0 auto;
+          }
+          .logo {
+            text-align: center;
+            margin-bottom: 10px;
+          }
+          h1 {
+            text-align: center;
+            font-size: 18pt;
+            font-weight: bold;
+            margin: 0 0 5px 0;
+          }
+          hr {
+            border: 0.5px solid black;
+            margin: 5px 0;
+          }
+          .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+          }
+          .col-left {
+            width: 48%;
+          }
+          .col-right {
+            width: 48%;
+            text-align: right;
+          }
+          .bold {
+            font-weight: bold;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 9pt;
+          }
+          th, td {
+            border: 1px solid #000; /* Explicit borders on all sides for every cell */
+            padding: 5px;
+            text-align: left;
+          }
+          th {
+            background-color: #004085;
+            color: white;
+            font-weight: bold;
+          }
+          .totals {
+            text-align: right;
+            margin-top: 10px;
+            font-size: 10pt;
+          }
+          .totals p {
+            margin: 2px 0;
+          }
+          .amount-words {
+            margin: 10px 0;
+            font-size: 10pt;
+          }
+          .terms {
+            margin-top: 15px;
+            font-size: 10pt;
+          }
+          .terms p {
+            margin: 2px 0;
+          }
+          .signatory {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 10pt;
+          }
+          .footer {
+            margin-top: 15px;
+            font-style: italic;
+            font-size: 10pt;
+          }
+          .footer p {
+            margin: 2px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <!-- Logo -->
+          <div class="logo">
+            <img src="https://via.placeholder.com/100x50?text=Logo" alt="Company Logo" style="width: 100px; height: 50px;" />
+          </div>
+
+          <!-- Header -->
+          <h1>Purchase Order</h1>
+          <hr>
+
+          <!-- Company and PO Details -->
+          <div class="row">
+            <div class="col-left">
+              <p class="bold">Wellworth International</p>
+              <p>GSTIN: 27AKUPY6544R1ZM ; UDYAM-MH-20-0114278</p>
+              <p>Shop no 7, Sukhada Apartments, Temple Bazar,</p>
+              <p>Pinjari, Gali, Sitabuldi, Nagpur</p>
             </div>
-            <div style="text-align: right;">
-                <div style="margin-bottom: 2px;"><strong>PO No:</strong> PO/10/2025-26/WWI</div>
-                <div style="margin-bottom: 2px;"><strong>Date:</strong> 11/08/2025</div>
-                <div><strong>JO ID:</strong> N/A</div>
+            <div class="col-right">
+              <p><span class="bold">PO No:</span> ${order.purchase_order_no || 'PO/10/2025-26/WWI'}</p>
+              <p><span class="bold">Date:</span> ${order.purchase_order_date ? order.purchase_order_date.slice(0, 10) : '13/08/2025'}</p>
+              <p><span class="bold">OS ID:</span> ${order.os_id || 'N/A'}</p>
             </div>
-        </div>
+          </div>
 
-        <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 2px solid #000;">
-            <div style="font-size: 10px;"><strong>GSTIN:</strong> 27AKUPY6544R1ZM</div>
-            <div style="font-size: 10px;"><strong>UDYAM-MH-20-0114278</strong></div>
-        </div>
-
-        <div style="border-bottom: 2px solid #000; padding: 5px 0;">
-            <div style="display: flex;">
-                <div style="width: 100px; font-weight: bold;">Billing Address:</div>
-                <div>101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</div>
+          <!-- Vendor, Billing, Shipping -->
+          <div class="row">
+            <div class="col-left">
+              <p class="bold">Vendor:</p>
+              <p>${order.vendor_name || 'Meraki Expert'}</p>
+              <p>GSTIN: 27AANPJ3194R1ZT</p>
+              <p>Address:</p>
+              <p>101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</p>
+              <p>Kind Attn.: Mr. Kishor Choudhari</p>
+              <p>Mobile No.: 7338729293</p>
+              <p>Email: kishor.choudhari@bossproducts.com</p>
             </div>
-            <div style="display: flex;">
-                <div style="width: 100px; font-weight: bold;">Shipping Address:</div>
-                <div>Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</div>
+            <div class="col-right">
+              <p class="bold">Billing Address:</p>
+              <p>101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</p>
+              <p class="bold" style="margin-top: 10px;">Shipping Address:</p>
+              <p>Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</p>
             </div>
-        </div>
+          </div>
 
-        <div style="text-align: center; font-weight: bold; padding: 5px 0; border-bottom: 2px solid #000;">
-            Purchase Order
-        </div>
+          <!-- Requirement Text -->
+          <p style="margin: 10px 0;">This is referance to our requirement,</p>
 
-        <table style="width: 100%; border-collapse: collapse;">
-            <tbody>
-                <tr>
-                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Vendor:</td>
-                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">Wellworth International</td>
-                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">GSTIN</td>
-                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">27AANPj1949R1ZT</td>
-                </tr>
-                <tr>
-                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Address:</td>
-                    <td style="border: 1px solid #000; padding: 3px;">shop no 7, Sukhadada Apartments, Temple Bazar, Pinjari, Gali, Sitabuldi, Nagpur</td>
-                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Kind Attn.</td>
-                    <td style="border: 1px solid #000; padding: 3px;">Mr. Kishor Choudhari</td>
-                </tr>
-                <tr>
-                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Mobile No.</td>
-                    <td style="border: 1px solid #000; padding: 3px;">7338729293</td>
-                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Email</td>
-                    <td style="border: 1px solid #000; padding: 3px; color: #00f;">kishor.choudhari@bossproducts.com</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
-            This is referance to our requirement,
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+          <!-- Item Table -->
+          <table>
             <thead>
-                <tr style="background-color: #f2f2f2;">
-                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Sr. No.</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 35%;">Item Description</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 10%;">HSN Code</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Qty.</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">MOU</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 15%;">Rate</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 25%;">Amount</th>
-                </tr>
+              <tr>
+                <th style="width: 8%;">Sr. No.</th>
+                <th style="width: 35%;">Item Description</th>
+                <th style="width: 15%;">HSN Code</th>
+                <th style="width: 10%;">Qty.</th>
+                <th style="width: 10%;">MOU</th>
+                <th style="width: 10%;">Rate</th>
+                <th style="width: 12%;">Amount</th>
+              </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">1</td>
-                    <td style="border: 1px solid #000; padding: 3px;">Boss GP - Silicon - 250 MI (24 pieces)</td>
-                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">32149090</td>
-                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">35.00</td>
-                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">Box</td>
-                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">2160</td>
-                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">75600.00</td>
-                </tr>
+              ${
+                order.items && Array.isArray(order.items)
+                  ? order.items.map((item, index) => `
+                      <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.description || 'Boss GP - Silicon - 260 Ml (24 pieces)'}</td>
+                        <td>${item.hsnCode || '32149090'}</td>
+                        <td>${item.quantity || '35.00'}</td>
+                        <td>${item.mou || 'Box'}</td>
+                        <td>${item.rate || '2160'}</td>
+                        <td>${item.amount || '75600.00'}</td>
+                      </tr>
+                    `).join('')
+                  : `
+                      <tr>
+                        <td>1</td>
+                        <td>Boss GP - Silicon - 260 Ml (24 pieces)</td>
+                        <td>32149090</td>
+                        <td>35.00</td>
+                        <td>Box</td>
+                        <td>2160</td>
+                        <td>75600.00</td>
+                      </tr>
+                    `
+              }
             </tbody>
-        </table>
+          </table>
 
-        <div style="display: flex; margin-top: 5px;">
-            <div style="width: 50%; border: 1px solid #000; padding: 5px;">
-                <div style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 5px;">Terms & Conditions</div>
-                <div>Payment Terms: 100% After Delivery.</div>
-                <div style="margin-top: 5px;">PO Validity : 4 Month</div>
-                <div>Delivery: 1 to 2 Weeks (Immediate)</div>
-                <div>Document Required: Test Certificate</div>
-            </div>
-            <div style="width: 50%;">
-                <table style="width: 100%; border-collapse: collapse; margin-left: -1px;">
-                    <tbody>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Amount</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">75600.00</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">CGST + SGST</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">13608.00</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">IGST</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">N/A</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Freight Charges</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">Extra at Actual</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Total (Tax Inclusive)</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">89208.00</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2; text-align: right;">ROUNDUP</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">89208.00</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+          <!-- Totals -->
+          <div class="totals">
+            <p>Total: ${order.subtotal || '75600.00'}</p>
+            <p>CGST + SGST: ${order.tax || '13608.00'}</p>
+            <p>IGST: ${order.igst || 'N/A'}</p>
+            <p>Freight Charges: ${order.freight || 'Extra at Actual'}</p>
+            <p class="bold">Total (Tax Inclusive): ${order.total || '89208.00'}</p>
+            <p class="bold">ROUNDUP: ${order.total || '89208.00'}</p>
+          </div>
+
+          <!-- Amount in Words -->
+          <p class="amount-words">Amount (in words) : :${order.total_in_words || 'Eighty Nine thousand two hundred and eight.'}</p>
+
+          <!-- Terms & Conditions -->
+          <div class="terms">
+            <p class="bold">Terms & Conditions</p>
+            <p>Payment Terms: 100% After Delivery.</p>
+            <p>Delivery: 1 to 2 Weeks (Immediate)</p>
+            <p>Document Required: Test Certificate</p>
+            <p>PO Validity : 4 Month</p>
+          </div>
+
+          <!-- Signatory -->
+          <p class="signatory">(Authorized Signatory)</p>
+
+          <!-- Footer -->
+          <div class="footer">
+            <p>For MERAKI EXPERT</p>
+            <p>Email: merakiexpert@gmail.com | Mobile: +91-8793484326 / +91-9130801011 | www.merrakiexpert.in</p>
+          </div>
         </div>
-
-        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
-            <strong>Amount (in words) :</strong> Eighty Nine thousand two hundred and eight.
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 5px;">
-            <div style="width: 70%;">
-                <div style="border: 1px solid #000; padding: 3px;">
-                    Email : merakkiexpert@gmail.com | Mobile : +91-8793484326 / +91-9130801011 | www.merakkiexpert.in
-                </div>
-            </div>
-            <div style="width: 30%; text-align: center; margin-left: 10px;">
-                <div style="font-weight: bold;">For MERAKI EXPERT</div>
-                <div style="height: 50px; display: flex; align-items: center; justify-content: center;">
-                    <img src="https://example.com/signature.png" alt="Signature" style="height: 50px;">
-                </div>
-                <div>(Authorized Signatory)</div>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-`);
-    printWindow.document.close();
-    printWindow.print();
-  };
-
-  const handlePrintOrder = (order) => {
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <html><head><title>Print Purchase Order</title>
-      <style>body{font-family:Arial;margin:40px;}h1{text-align:center;color:#003366;}p{font-size:16px;}</style>
-      </head><body>
-      <h1>Purchase Order Document</h1>
-      <p><b>Order #:</b> ${order.orderNo}</p>
-      <p><b>Vendor:</b> ${order.vendor}</p>
-      <p><b>Created Date:</b> ${order.created}</p>
-      <p><b>Delivery Date:</b> ${order.delivery}</p>
-      <p><b>Status:</b> ${order.status}</p>
-      <p><b>Amount:</b> ${order.amount}</p>
-      <p style="margin-top:40px;font-style:italic;text-align:center;">Generated by ERP Software</p>
-      </body></html>`);
-    printWindow.document.close();
-    printWindow.print();
-  };
-
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.print();
+};
   const handleSendEmail = (order) => {
-    const subject = encodeURIComponent(`Purchase Order ${order.orderNo}`);
-    const body = encodeURIComponent(`Hi,\n\nHere are your purchase order details:\nOrder #: ${order.orderNo}\nVendor: ${order.vendor}\nAmount: ${order.amount}\nDelivery Date: ${order.delivery}`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    try {
+      const subject = encodeURIComponent(`Purchase Order ${order.purchase_order_no || 'N/A'}`);
+      const body = encodeURIComponent(`Hi,\n\nHere are your purchase order details:\nOrder #: ${order.purchase_order_no || 'N/A'}\nVendor: ${order.vendor_name || 'N/A'}\nAmount: ₹${order.total || 'N/A'}\nDelivery Date: ${order.delivery_date ? order.delivery_date.slice(0, 10) : 'N/A'}`);
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    } catch (error) {
+      console.error('Email generation failed:', error);
+      alert('Failed to generate email. Please try again.');
+    }
   };
 
   const handleShareLink = (order) => {
-    navigator.clipboard.writeText(`https://dummy-purchase-order-link/${order.orderNo}`);
-    alert('Purchase order link copied to clipboard!');
+    try {
+      navigator.clipboard.writeText(`https://dummy-purchase-order-link/${order.purchase_order_no || 'unknown'}`);
+      alert('Purchase order link copied to clipboard!');
+    } catch (error) {
+      console.error('Share link failed:', error);
+      alert('Failed to copy link. Please try again.');
+    }
   };
 
   return (
@@ -272,9 +361,7 @@ const PurchaseOrderActions = () => {
           <Paper sx={{ p: 1, borderRadius: 2 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" px={4} py={2} borderBottom="1px solid #e0e0e0">
               <Typography fontWeight="bold" fontSize={18}>Purchase Order</Typography>
-              <Button variant="contained" onClick={()=>
-window.location.href = '/add-purchase-order'
-              } sx={{ textTransform: 'none', borderRadius: 2, bgcolor: '#004085', color: '#fff', '&:hover': { bgcolor: '#003366' } }}>+ New Purchase Order</Button>
+              <Button variant="contained" onClick={() => window.location.href = '/add-purchase-order'} sx={{ textTransform: 'none', borderRadius: 2, bgcolor: '#004085', color: '#fff', '&:hover': { bgcolor: '#003366' } }}>+ New Purchase Order</Button>
             </Box>
             <Box px={4} pt={2} display="flex" justifyContent="space-between" alignItems="center">
               <Tabs value={tab} onChange={(e, newTab) => setTab(newTab)} sx={{ '& .MuiTab-root': { textTransform: 'none', bgcolor: '#f1f1f1', borderRadius: 2, mr: 1 }, '& .Mui-selected': { bgcolor: '#004085', color: 'white !important' }, '& .MuiTabs-indicator': { display: 'none' } }}>
@@ -303,14 +390,14 @@ window.location.href = '/add-purchase-order'
                   {filteredRows.map((row, i) => (
                     <TableRow key={i}>
                       <TableCell><Checkbox /></TableCell>
-                      <TableCell sx={{ color: '#0B5FFF', fontWeight: 500 }}>{row.purchase_order_no}</TableCell>
-                      <TableCell>{row.vendor_name}</TableCell>
-                      <TableCell>{row.purchase_order_date ? row.purchase_order_date.slice(0,10) : ''}</TableCell>
-                      <TableCell>{row.delivery_date ? row.delivery_date.slice(0,10) : ''}</TableCell>
+                      <TableCell sx={{ color: '#0B5FFF', fontWeight: 500 }}>{row.purchase_order_no || 'N/A'}</TableCell>
+                      <TableCell>{row.vendor_name || 'N/A'}</TableCell>
+                      <TableCell>{row.purchase_order_date ? row.purchase_order_date.slice(0, 10) : 'N/A'}</TableCell>
+                      <TableCell>{row.delivery_date ? row.delivery_date.slice(0, 10) : 'N/A'}</TableCell>
                       <TableCell>
-                        <Typography variant="caption" sx={{ backgroundColor: '#F2F4F7', color: '#344054', px: 1.5, py: 0.5, borderRadius: '12px', fontWeight: 600 }}>Draft</Typography>
+                        <Typography variant="caption" sx={{ backgroundColor: '#F2F4F7', color: '#344054', px: 1.5, py: 0.5, borderRadius: '12px', fontWeight: 600 }}>{row.status || 'Draft'}</Typography>
                       </TableCell>
-                      <TableCell>{row.total ? `₹${row.total}` : ''}</TableCell>
+                      <TableCell>{row.total ? `₹${row.total}` : 'N/A'}</TableCell>
                       <TableCell>
                         <IconButton onClick={(e) => handleMenuOpen(e, i)}><MoreVertIcon /></IconButton>
                         <Menu anchorEl={anchorEl} open={Boolean(anchorEl) && menuIndex === i} onClose={handleMenuClose}>
@@ -327,7 +414,7 @@ window.location.href = '/add-purchase-order'
               </Table>
             </TableContainer>
             <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-              <Typography variant="body2">Showing 1 to 10 of 10 entries</Typography>
+              <Typography variant="body2">Showing 1 to {filteredRows.length} of {rows.length} entries</Typography>
               <Box display="flex" gap={1}>
                 {[1, 2, 3].map(page => (
                   <Button key={page} size="small" variant={page === 1 ? 'outlined' : 'text'}>{page}</Button>

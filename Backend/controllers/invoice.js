@@ -1,4 +1,5 @@
 const invoice = require('../models/invoice');
+const Customer = require('../models/customers');
 const db = require('../config/db');
 
 exports.getAll = (req, res) => {
@@ -15,17 +16,22 @@ exports.getOne = (req, res) => {
     if (!invoiceData) return res.status(404).json({ message: 'Invoice not found' });
     invoice.getItemsByInvoiceId(id, (itemErr, items) => {
       if (itemErr) return res.status(500).json({ error: itemErr });
-      const sub_total = items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-      const cgst = parseFloat((sub_total * 0.09).toFixed(2));
-      const sgst = parseFloat((sub_total * 0.09).toFixed(2));
-      const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
-      res.json({
-        invoice: invoiceData,
-        items,
-        sub_total,
-        cgst,
-        sgst,
-        grand_total
+      Customer.getById(invoiceData.customer_id, (custErr, customer) => {
+        if (custErr) return res.status(500).json({ error: custErr });
+        if (!customer) return res.status(404).json({ message: 'Customer not found' });
+        const sub_total = items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+        const cgst = parseFloat((sub_total * 0.09).toFixed(2));
+        const sgst = parseFloat((sub_total * 0.09).toFixed(2));
+        const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
+        res.json({
+          invoice: invoiceData,
+          items,
+          customer,
+          sub_total,
+          cgst,
+          sgst,
+          grand_total
+        });
       });
     });
   });
@@ -33,8 +39,8 @@ exports.getOne = (req, res) => {
 
 exports.create = (req, res) => {
   const { invoice: invoiceData, items = [] } = req.body;
-  if (!invoiceData || typeof invoiceData !== 'object' || !invoiceData.customer_name) {
-    return res.status(400).json({ error: "Missing or invalid invoice data (customer_name required)" });
+  if (!invoiceData || typeof invoiceData !== 'object' || !invoiceData.customer_id || !invoiceData.customer_name) {
+    return res.status(400).json({ error: "Missing or invalid invoice data (customer_id and customer_name required)" });
   }
   if (!invoiceData.status) {
     invoiceData.status = 'Draft';
@@ -65,6 +71,7 @@ exports.update = (req, res) => {
   const id = req.params.id;
   const data = req.body;
   const fields = [
+    'customer_id',
     'customer_name',
     'invoice_date',
     'expiry_date',
@@ -90,4 +97,4 @@ exports.update = (req, res) => {
     if (err) return res.status(500).json({ error: err });
     res.json({ message: 'Invoice updated successfully' });
   });
-}; 
+};

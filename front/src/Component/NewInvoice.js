@@ -116,20 +116,25 @@ const NewInvoicePage = () => {
   const gst = subtotal * 0.09;
   const total = subtotal + gst * 2;
 
-  const handleSubmit = async () => {
-    const customerObj = customers.find((c) => c.customer_id === selectedCustomer);
+  const handleSubmit = async (saveAsDraft = false) => {
+    const customerObj = customers.find((c) => c.id === selectedCustomer);
+    if (!customerObj) {
+      alert("Please select a customer");
+      return;
+    }
     const invoiceData = {
-      customer_name: customerObj ? customerObj.customer_name : "",
+      customer_id: selectedCustomer,
+      customer_name: customerObj.customer_name,
       invoice_date: invoiceDate,
       expiry_date: expiryDate,
       subject: subject,
       customer_notes: customerNotes,
       terms_and_conditions: termsAndConditions,
-      status: status,
+      status: saveAsDraft ? "Draft" : status,
       sub_total: subtotal,
       cgst: gst,
       sgst: gst,
-      total_amount: total,
+      grand_total: total,
       items: rows.map((row) => ({
         item_detail: row.item,
         quantity: row.qty,
@@ -144,7 +149,7 @@ const NewInvoicePage = () => {
         "http://localhost:5000/api/invoice",
         {
           invoice: invoiceData,
-          items: rows,
+          items: invoiceData.items,
         },
         {
           headers: { "Content-Type": "application/json" },
@@ -152,6 +157,7 @@ const NewInvoicePage = () => {
       );
       navigate("/invoice-list");
     } catch (err) {
+      console.error("Error saving invoice:", err);
       alert("Failed to save invoice");
     }
   };
@@ -262,7 +268,7 @@ const NewInvoicePage = () => {
                       <MenuItem disabled>No result found</MenuItem>
                     ) : (
                       customers.map((customer) => (
-                        <MenuItem key={customer.customer_id} value={customer.customer_id}>
+                        <MenuItem key={customer.id} value={customer.id}>
                           {customer.customer_name}
                         </MenuItem>
                       ))
@@ -682,18 +688,26 @@ const NewInvoicePage = () => {
                       Bill To
                     </Typography>
                     <Typography fontSize={13}>
-                      {customers.find((c) => c.customer_id === selectedCustomer)?.customer_name || "N/A"}
+                      {customers.find((c) => c.id === selectedCustomer)?.billing_recipient_name || customers.find((c) => c.id === selectedCustomer)?.customer_name || "N/A"}
                     </Typography>
-                    <Typography fontSize={13}>Delhi, India - 000000</Typography>
-                    <Typography fontSize={13}>+91 92483-64327</Typography>
+                    <Typography fontSize={13}>
+                      {customers.find((c) => c.id === selectedCustomer)?.billing_address1 || ""}{customers.find((c) => c.id === selectedCustomer)?.billing_address2 ? `, ${customers.find((c) => c.id === selectedCustomer)?.billing_address2}` : ""}
+                    </Typography>
+                    <Typography fontSize={13}>
+                      {customers.find((c) => c.id === selectedCustomer)?.billing_city || ""}, {customers.find((c) => c.id === selectedCustomer)?.billing_state || ""} - {customers.find((c) => c.id === selectedCustomer)?.billing_pincode || ""}
+                    </Typography>
+                    <Typography fontSize={13}>
+                      GSTIN: {customers.find((c) => c.id === selectedCustomer)?.gst || "N/A"}
+                    </Typography>
                   </Box>
                   <Box>
                     <Typography fontSize={12} fontWeight={500}>
                       From
                     </Typography>
-                    <Typography fontSize={13}>Ramesh, Inc</Typography>
-                    <Typography fontSize={13}>Dudu, India - 303008</Typography>
+                    <Typography fontSize={13}>Meraki Expert</Typography>
+                    <Typography fontSize={13}>Nagpur, Maharashtra - 441104</Typography>
                     <Typography fontSize={13}>IN +91 83028-29003</Typography>
+                    <Typography fontSize={13}>GSTIN: 27AKUPY6544R1ZM</Typography>
                   </Box>
                 </Box>
                 <Box
