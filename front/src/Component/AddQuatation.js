@@ -51,7 +51,7 @@ export default function NewQuotation() {
   const [termsAndConditions, setTermsAndConditions] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [rows, setRows] = useState([
-    { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0 },
+    { id: Date.now(), itemId: "", item: "", qty: 0, rate: 0, discount: 0, amount: 0 },
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -99,6 +99,7 @@ export default function NewQuotation() {
       ...rows,
       {
         id: Date.now(),
+        itemId: "",
         item: "",
         qty: 0,
         rate: 0,
@@ -152,7 +153,7 @@ export default function NewQuotation() {
       setError("Expiry date is required");
       return;
     }
-    if (rows.length === 0 || rows.every((row) => !row.item)) {
+    if (rows.length === 0 || rows.every((row) => !row.itemId)) {
       setError("At least one item with details is required");
       return;
     }
@@ -192,7 +193,8 @@ export default function NewQuotation() {
         "http://localhost:5000/api/quotation",
         {
           quotation: quotationData,
-          items: rows,
+          // Send items in the shape the backend expects (item_detail, quantity, rate, discount, amount)
+          items: quotationData.items,
         },
         {
           headers: { "Content-Type": "application/json" },
@@ -450,15 +452,16 @@ export default function NewQuotation() {
                         <TableCell>
                           <Select
                             fullWidth
-                            value={row.item}
+                            value={row.itemId}
                             onChange={(e) => {
                               const selectedProductId = e.target.value;
-                              updateRow(index, "item", selectedProductId);
+                              updateRow(index, "itemId", selectedProductId);
                               fetch(
                                 `http://localhost:5000/api/products/${selectedProductId}`
                               )
                                 .then((res) => res.json())
                                 .then((product) => {
+                                  updateRow(index, "item", product.product_name || "");
                                   updateRow(
                                     index,
                                     "rate",

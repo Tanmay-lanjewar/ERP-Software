@@ -5,21 +5,21 @@ const WorkOrder = {
     const {
       work_order_number, customer_name, work_order_date, due_date, payment_terms,
       subject, customer_notes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status
+      sub_total, cgst, sgst, grand_total, status , purchase_order_number, purchase_order_date
     } = data;
 
     const sql = `
       INSERT INTO work_orders (
         work_order_number, customer_name, work_order_date, due_date, payment_terms,
         subject, customer_notes, terms_and_conditions, attachment_url,
-        sub_total, cgst, sgst, grand_total, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        sub_total, cgst, sgst, grand_total, status , purchase_order_number, purchase_order_date
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ?)
     `;
 
     db.query(sql, [
       work_order_number, customer_name, work_order_date, due_date, payment_terms,
       subject, customer_notes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status
+      sub_total, cgst, sgst, grand_total, status , purchase_order_number, purchase_order_date
     ], callback);
   },
 
@@ -35,21 +35,21 @@ const WorkOrder = {
     const {
       customer_name, work_order_date, due_date, payment_terms,
       subject, customer_notes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status
+      sub_total, cgst, sgst, grand_total, status 
     } = data;
 
     const sql = `
       UPDATE work_orders SET
         customer_name = ?, work_order_date = ?, due_date = ?, payment_terms = ?,
         subject = ?, customer_notes = ?, terms_and_conditions = ?, attachment_url = ?,
-        sub_total = ?, cgst = ?, sgst = ?, grand_total = ?, status = ?
+        sub_total = ?, cgst = ?, sgst = ?, grand_total = ?, status = ? 
       WHERE work_order_id = ?
     `;
 
     db.query(sql, [
       customer_name, work_order_date, due_date, payment_terms,
       subject, customer_notes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status, id
+      sub_total, cgst, sgst, grand_total, status, id 
     ], callback);
   },
 
