@@ -234,7 +234,7 @@ export default function NewVendorForm() {
                     },
                   }}
                   fullWidth
-                  label="Display Name"
+                  label="Designation"
                   onChange={(e) => setDisplayName(e.target.value)}
                 />
               </Grid>

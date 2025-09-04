@@ -60,6 +60,7 @@ export default function QuotationListPage() {
   }, []);
 
   
+// Download PDF
 const handleDownloadPdf = async () => {
   if (!selectedQuote) return;
   try {
@@ -338,27 +339,6 @@ const handleDownloadPdf = async () => {
 
 
 const handlePrintQuotation = () => {
-  if (!selectedQuote) {
-    alert('Please select a quotation first');
-    return;
-  }
-
-  console.log("=== Print Quotation Started ===");
-  console.log("Selected quote for printing:", selectedQuote);
-  
-  // Extract data from selectedQuote
-  const quoteData = {
-    quotation_id: selectedQuote.quotation_id || "QT-001",
-    quote_number: selectedQuote.quote_number || selectedQuote.quotation_id || "QT-001",
-    quotation_date: selectedQuote.quotation_date ? selectedQuote.quotation_date.slice(0, 10) : "2025-01-01",
-    customer_name: selectedQuote.customer_name || "Sample Customer",
-    subject: selectedQuote.subject || "Sample Quotation Subject",
-    grand_total: selectedQuote.grand_total || "0.00",
-    sub_total: selectedQuote.sub_total || "0.00",
-    cgst: selectedQuote.cgst || "0.00",
-    sgst: selectedQuote.sgst || "0.00"
-  };
-
   const printWindow = window.open("", "_blank");
   printWindow.document.write(`
     <!DOCTYPE html>
@@ -377,42 +357,42 @@ const handlePrintQuotation = () => {
         </div>
 
         <div style="text-align: center; border-bottom: 2px solid #000; padding: 5px 0;">
-            <div style="font-size: 10px;"><strong>GSTIN:</strong> 27AKUPY6544R1ZM | <strong>UDYAM-MH-20-0114278</strong> | <strong>ISO 9001-2015</strong></div>
+            <div style="font-size: 10px;"><strong>GSTIN:</strong> ${gstin} | <strong>${udyam}</strong> | <strong>${iso}</strong></div>
             <div style="font-size: 10px;">101, 2nd Floor, Shree Sai Apartment, Near Kachore Lawn, Manish Nagar, Nagpur - 440015 (MH)</div>
-            <div style="font-size: 10px; margin-top: 5px;"><strong>Quotation Ref. No. ${quoteData.quote_number}</strong></div>
+            <div style="font-size: 10px; margin-top: 5px;"><strong>Quotation Ref. No. ME/BESPL/1057/2025-26</strong></div>
         </div>
 
         <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
             <tbody>
                 <tr>
                     <td style="width: 15%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Company</td>
-                    <td style="width: 35%; border: 1px solid #000; padding: 3px;">${quoteData.customer_name}</td>
+                    <td style="width: 35%; border: 1px solid #000; padding: 3px;">M/S Blueladder EPC Solutions Pvt. Ltd</td>
                     <td style="width: 20%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Date</td>
-                    <td style="width: 30%; border: 1px solid #000; padding: 3px;">${quoteData.quotation_date}</td>
+                    <td style="width: 30%; border: 1px solid #000; padding: 3px;">25-Aug-25</td>
                 </tr>
                 <tr>
                     <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Contact Person</td>
-                    <td style="border: 1px solid #000; padding: 3px;">Customer Representative</td>
+                    <td style="border: 1px solid #000; padding: 3px;">Ms. Komal</td>
                     <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Location</td>
-                    <td style="border: 1px solid #000; padding: 3px;">Customer Location</td>
+                    <td style="border: 1px solid #000; padding: 3px;">6th Floor, Landmark building, Ramdaspeth, Nagpur, Maharashtra 440010</td>
                 </tr>
                 <tr>
                     <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Contact Number</td>
-                    <td style="border: 1px solid #000; padding: 3px;">Customer Phone</td>
+                    <td style="border: 1px solid #000; padding: 3px;">7666900371</td>
                     <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Meraki Expert</td>
-                    <td style="border: 1px solid #000; padding: 3px;">7722005969</td>
+                    <td style="border: 1px solid #000; padding: 3px;">${merakiExpert}</td>
                 </tr>
                 <tr>
                     <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">E-mail</td>
-                    <td style="border: 1px solid #000; padding: 3px;"><a href="mailto:customer@example.com" style="color: #00f;">customer@example.com</a></td>
+                    <td style="border: 1px solid #000; padding: 3px;"><a href="mailto:komal.e@blueladderepc.com" style="color: #00f;">komal.e@blueladderepc.com</a></td>
                     <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">E-mail</td>
-                    <td style="border: 1px solid #000; padding: 3px;"><a href="mailto:piral.k@merakkiexpert.in" style="color: #00f;">piral.k@merakkiexpert.in</a></td>
+                    <td style="border: 1px solid #000; padding: 3px;"><a href="mailto:${merakiEmail}" style="color: #00f;">${merakiEmail}</a></td>
                 </tr>
             </tbody>
         </table>
 
         <div style="text-align: center; font-weight: bold; padding: 5px 0; border-top: 2px solid #000; border-bottom: 2px solid #000; margin-top: 5px;">
-            ${quoteData.subject || 'Quotation - Supply & Installation of PUR Panel.'}
+            Quotation - Supply & Installation of PUR Panel.
         </div>
 
         <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
@@ -428,23 +408,39 @@ const handlePrintQuotation = () => {
             </thead>
             <tbody>
                 <tr style="background-color: #f2f2f2;">
-                    <td colspan="6" style="border: 1px solid #000; padding: 3px; font-weight: bold;">Sample Items</td>
+                    <td colspan="6" style="border: 1px solid #000; padding: 3px; font-weight: bold;">PUR Panel with accessories</td>
                 </tr>
                 <tr>
                     <td style="border: 1px solid #000; padding: 3px; text-align: center;">1</td>
-                    <td style="border: 1px solid #000; padding: 3px;">Sample Item Description</td>
-                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">1</td>
-                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">Unit</td>
-                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">100</td>
-                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">100.00</td>
+                    <td style="border: 1px solid #000; padding: 3px;">Supply of Continuous Line - 40mm thick PUR Wall Panel Both side 0.5mm PPGI lamination - Density: 40(+/-2) Kg/Cum - RAL-9002, Panel Cover Width: 1000mm.</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">792.29</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">Sq.M</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">1501</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">11,89,227.29</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">2</td>
+                    <td style="border: 1px solid #000; padding: 3px;">Supply of PPGI Falshings such as Bottom-U Channel, Inside/Outside Flashings, Top outside Flashing, Flat Strip etc.</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">350.00</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">Kgs.</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">160</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">56,000.00</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">3</td>
+                    <td style="border: 1px solid #000; padding: 3px;">Supply of Panel fixing Accessories like Silicon Sealant,SDS, ALU. POP Rivet, Sleeve with Screw, etc.</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">792.29</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">Sq.M</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">120</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">95,074.80</td>
                 </tr>
                 <tr>
                     <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Total Basic</td>
-                    <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹ ${quoteData.sub_total}</td>
+                    <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹ 13,40,302.09</td>
                 </tr>
                 <tr>
                     <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">GST @18%</td>
-                    <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹ ${parseFloat(quoteData.cgst || 0) + parseFloat(quoteData.sgst || 0)}</td>
+                    <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹ 2,41,254.38</td>
                 </tr>
                 <tr>
                     <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Freight</td>
@@ -452,52 +448,87 @@ const handlePrintQuotation = () => {
                 </tr>
                 <tr>
                     <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Grand Total</td>
-                    <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹ ${quoteData.grand_total}</td>
+                    <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹ 15,81,557.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Sr. No.</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 50%;">Description</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 10%;">Qty.</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 10%;">UOM</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 15%;">Rate</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 15%;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">1</td>
+                    <td style="border: 1px solid #000; padding: 3px;">Installation labour Charges for PUR Panels with accessories.</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">792.29</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">Sq.Mtr</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">250.00</td>
+                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">1,98,072.50</td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Total Basic</td>
+                    <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹ 1,98,072.50</td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">GST @18%</td>
+                    <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹ 35,653.05</td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Grand Total</td>
+                    <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹ 2,33,725.55</td>
                 </tr>
             </tbody>
         </table>
 
         <div style="border: 2px solid #000; margin-top: 10px; padding: 5px;">
-            <div style="text-align: center; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 5px;">COMMERCIAL TERMS & CONDITIONS</div>
+            <div style="text-align: center; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 5px; color: #073d82 ;">COMMERCIAL TERMS & CONDITIONS</div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Delivery Period</div>
-                <div style="width: 75%;">: 3 to 4 weeks from the date of technically and commercially clear order.</div>
+                <div style="width: 75%;">: ${quotation.delivery_period || '3 to 4 weeks from the date of technically and commercially clear order.'}</div>
             </div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Installation Period</div>
-                <div style="width: 75%;">: 2 to 3 weeks</div>
+                <div style="width: 75%;">: ${quotation.installation_period || '2 to 3 weeks'}</div>
             </div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Transportation</div>
-                <div style="width: 75%;">: Extra at Actual</div>
+                <div style="width: 75%;">: ${quotation.transportation || 'Extra at Actual'}</div>
             </div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Payment Terms</div>
-                <div style="width: 75%;">: Supply/Installation Terms<br>a) 50% Advance along with Purchase order<br>b) 45% Against performing invoice prior to dispatch<br>c) 5% after successfull Installation and commissioning</div>
+                <div style="width: 75%;">: ${quotation.payment_terms_html || 'Supply/Installation Terms<br>a) 50% Advance along with Purchase order<br>b) 45% Against performing invoice prior to dispatch<br>c) 5% after successfull Installation and commissioning'}</div>
             </div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Warranty</div>
-                <div style="width: 75%;">: Offer a standard warranty of 15 months from date of dispatch or 12 months from date of satisfactory installation whichever is earlier</div>
+                <div style="width: 75%;">: ${quotation.warranty || 'Offer a standard warranty of 15 months from date of dispatch or 12 months from date of satisfactory installation whichever is earlier'}</div>
             </div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Validity</div>
-                <div style="width: 75%;">: Our offer shall remain valid for 15 days</div>
+                <div style="width: 75%;">: ${quotation.validity || 'Our offer shall remain valid for 15 days'}</div>
             </div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Exclusions</div>
-                <div style="width: 75%;">: Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting arrangement for installation activities, Scrap folding, Scissor lift.</div>
+                <div style="width: 75%;">: ${quotation.exclusions || 'Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting arrangement for installation activities, Scrap folding, Scissor lift.'}</div>
             </div>
         </div>
         
         <div style="text-align: right; margin-top: 10px;">
             <div style="font-weight: bold; margin-bottom: 20px;">Best Regards,</div>
-            <div style="font-weight: bold; margin-bottom: 5px;">Niraj Khicher</div>
-            <div>Mob. No. 7722005969</div>
+            <div style="font-weight: bold; margin-bottom: 5px;">${quotation.sales_person || 'Niraj Khicher'}</div>
+            <div>Mob. No. ${quotation.sales_person_mobile || merakiPhone}</div>
         </div>
 
         <div style="text-align: center; border-top: 1px solid #000; padding-top: 5px; margin-top: 10px;">
             <div style="font-size: 10px;">
-                Email: merakiexpert@gmail.com | Mobile: 8793484326, 9130801011 | www.merakkiexpert.in
+                Email: merakkiexpert@gmail.com | Mobile: 8793484326, 9130801011 | www.merakkiexpert.in
             </div>
         </div>
     </div>
@@ -505,12 +536,7 @@ const handlePrintQuotation = () => {
 </html>
   `);
   printWindow.document.close();
-  console.log("=== Print Quotation Completed ===");
-  
-  // Auto print the window
-  setTimeout(() => {
-    printWindow.print();
-  }, 500);
+  printWindow.print();
 };
 
   const handleTabChange = (_, newVal) => setTab(newVal);

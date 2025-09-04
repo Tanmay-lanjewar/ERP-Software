@@ -57,6 +57,8 @@ const NewWorkOrder = () => {
   const [termsConditions, setTermsConditions] = useState('');
   const [attachmentUrl, setAttachmentUrl] = useState('');
   const [status, setStatus] = useState('Draft');
+  const [purchaseordernumber, setpurchaseordernumber] = useState('');
+  const [purchaseorderdate, setpurchaseorderdate] = useState('');
 
   const [products, setProducts] = useState([]);
 
@@ -155,6 +157,8 @@ const NewWorkOrder = () => {
       sgst: gst,
       grand_total: total,
       status: status,
+      purchase_order_number: purchaseordernumber,
+      purchase_order_date: purchaseorderdate,
       items: rows.map((row) => ({
         item_detail: row.item,
         quantity: row.qty,
@@ -262,7 +266,46 @@ const NewWorkOrder = () => {
             New Work Order
           </Typography>
 
-          <Grid container spacing={1}>
+          
+         
+            <Grid container spacing={2}>
+             <Grid item xs={12} sm={6} md={2}>
+                <TextField
+                  fullWidth
+                  label="purchase order number"
+                  
+                  
+                  value={purchaseordernumber}
+                  onChange={(e) => setpurchaseordernumber(e.target.value)}
+                   sx={{
+                  width: 300,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '22px',
+                    bgcolor: '#f9fafb',
+                  },
+                }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={2}>
+                <TextField
+                  fullWidth
+                  required
+                  label="purchase order date"
+                  type="date"
+                  value={purchaseorderdate}
+                  onChange={(e) => setpurchaseorderdate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  InputProps={{
+                    sx: {
+                      bgcolor: '#f9fafb',
+                      borderRadius: '12px',
+                      width: 300,
+                    },
+                  }}
+                />
+              </Grid>
+
             <Grid item xs={12} sm={6} md={1}>
               <TextField
                 required
