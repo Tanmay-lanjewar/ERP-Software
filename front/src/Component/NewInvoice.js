@@ -60,14 +60,26 @@ const NewInvoicePage = () => {
     // Fetch customers
     axios
       .get("http://localhost:5000/api/customers")
-      .then((res) => setCustomers(res.data))
-      .catch(() => setCustomers([]));
+      .then((res) => {
+        console.log('Customers response:', res.data);
+        setCustomers(res.data);
+      })
+      .catch((err) => {
+        console.error('Error fetching customers:', err);
+        setCustomers([]);
+      });
 
     // Fetch invoice number
     axios
       .get("http://localhost:5000/api/invoice/next-number")
-      .then((res) => setInvoiceNumber(res.data.nextQuoteNumber))
-      .catch(() => setInvoiceNumber(""));
+      .then((res) => {
+        console.log('Invoice number response:', res.data);
+        setInvoiceNumber(res.data.nextInvoiceNumber || 'Error: No invoice number');
+      })
+      .catch((err) => {
+        console.error('Error fetching invoice number:', err);
+        setInvoiceNumber('');
+      });
 
     // Fetch products
     fetch("http://localhost:5000/api/products")
@@ -78,6 +90,7 @@ const NewInvoicePage = () => {
         return response.json();
       })
       .then((data) => {
+        console.log('Products response:', data);
         setProducts(data);
       })
       .catch((error) => {

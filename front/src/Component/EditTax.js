@@ -16,8 +16,7 @@ const EditTax = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     tax_name: '',
-    tax_rate: '',
-    tax_code: '',
+    tax_rate: '',    tax_code: '',
     details: '',
     status: 'Active',
     effective_date: new Date()

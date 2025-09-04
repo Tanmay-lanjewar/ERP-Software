@@ -1,5 +1,4 @@
 const quotation = require('../models/quotation');
-const db = require('../config/db');
 
 // Get all quotations
 exports.getAll = (req, res) => {
@@ -56,6 +55,7 @@ exports.create = (req, res) => {
     res.status(201).json({
       message: 'Quotation created successfully',
       quotationId: result.quotationId,
+      quoteNumber: result.quoteNumber,
       itemsInserted: result.itemsInserted,
       sub_total: result.sub_total,
       cgst: result.cgst,
@@ -100,6 +100,7 @@ exports.addItems = (req, res) => {
     ) VALUES ?
   `;
 
+  const db = require('../config/db');
   db.query(itemSql, [itemValues], (err, result) => {
     if (err) return res.status(500).json({ error: err });
 
@@ -113,7 +114,7 @@ exports.addItems = (req, res) => {
       const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
 
       const updateSql = `
-        UPDATE quotations
+        UPDATE quotation
         SET sub_total = ?, cgst = ?, sgst = ?, grand_total = ?
         WHERE quotation_id = ?
       `;
@@ -139,7 +140,6 @@ exports.addItems = (req, res) => {
 exports.update = (req, res) => {
   const id = req.params.id;
   const data = req.body;
-  // Only allow updating main fields, not items here
   const fields = [
     'customer_name',
     'quotation_date',
@@ -147,7 +147,7 @@ exports.update = (req, res) => {
     'subject',
     'customer_notes',
     'terms_and_conditions',
-    'status' // allow status update
+    'status'
   ];
   const updates = [];
   const values = [];
@@ -169,12 +169,10 @@ exports.update = (req, res) => {
   });
 };
 
+// Get next quotation number
 exports.getNextQuoteNumber = (req, res) => {
-  const db = require('../config/db');
-  db.query('SELECT MAX(quotation_id) as maxId FROM quotation', (err, result) => {
-    if (err) return res.status(500).json({ error: err });
-    const nextId = (result[0].maxId || 0) + 1;
-    const nextQuoteNumber = `QT-${String(nextId).padStart(6, '0')}`;
-    res.json({ nextQuoteNumber });
+  quotation.getNextQuoteNumber((err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(result);
   });
 };

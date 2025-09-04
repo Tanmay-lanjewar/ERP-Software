@@ -1,32 +1,93 @@
+// models/invoice.js
 const db = require('../config/db');
+
+// Utility to promisify db.query
+function query(sql, values = []) {
+  return new Promise((resolve, reject) => {
+    db.query(sql, values, (err, results) => {
+      if (err) reject(err);
+      else resolve(results);
+    });
+  });
+}
 
 const invoice = {
   getAll: (callback) => {
-    db.query('SELECT invoice_id, invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject, customer_notes, terms_and_conditions, sub_total, cgst, sgst, grand_total, status FROM invoice', callback);
+    db.query(
+      'SELECT invoice_id, invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject, customer_notes, terms_and_conditions, sub_total, cgst, sgst, grand_total, status FROM invoice',
+      callback
+    );
   },
 
   getById: (id, callback) => {
-    db.query('SELECT invoice_id, invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject, customer_notes, terms_and_conditions, sub_total, cgst, sgst, grand_total, status FROM invoice WHERE invoice_id = ?', [id], (err, results) => {
-      if (err) return callback(err);
-      callback(null, results[0]);
-    });
+    db.query(
+      'SELECT invoice_id, invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject, customer_notes, terms_and_conditions, sub_total, cgst, sgst, grand_total, status FROM invoice WHERE invoice_id = ?',
+      [id],
+      (err, results) => {
+        if (err) return callback(err);
+        callback(null, results[0]);
+      }
+    );
   },
 
   getItemsByInvoiceId: (invoiceId, callback) => {
     db.query('SELECT * FROM invoice_items WHERE invoice_id = ?', [invoiceId], callback);
   },
 
+  // Get the next invoice number based on active financial year
+  getNextInvoiceNumber: async (callback) => {
+    try {
+      // Fetch the active financial year
+      const financialYears = await query(
+        'SELECT start_date FROM financial_years WHERE is_active = TRUE'
+      );
+
+      if (financialYears.length === 0) {
+        return callback(new Error('No active financial year found'));
+      }
+
+      // Extract year from start_date (e.g., '2025-04-01' -> '2025-26')
+      const startDate = new Date(financialYears[0].start_date);
+      const startYear = startDate.getFullYear();
+      const endYear = (startYear + 1) % 100; // e.g., 2025 -> 26
+      const financialYear = `${startYear}-${endYear.toString().padStart(2, '0')}`; // e.g., '2025-26'
+
+      const counterId = `invoice_${financialYear}`; // e.g., 'invoice_2025-26'
+
+      // Fetch or initialize the counter
+      const counterResult = await query('SELECT seq FROM counters WHERE id = ?', [counterId]);
+
+      let nextSeq;
+      if (counterResult.length === 0) {
+        // Initialize counter for the new financial year
+        nextSeq = 1;
+        await query('INSERT INTO counters (id, seq) VALUES (?, ?)', [counterId, nextSeq]);
+      } else {
+        // Increment existing counter
+        nextSeq = counterResult[0].seq + 1;
+        await query('UPDATE counters SET seq = ? WHERE id = ?', [nextSeq, counterId]);
+      }
+
+      // Generate invoice number (e.g., ME/2025-26/001)
+      const invoiceNumber = `ME/${financialYear}/${nextSeq.toString().padStart(3, '0')}`;
+      callback(null, { nextInvoiceNumber: invoiceNumber });
+    } catch (err) {
+      callback(err);
+    }
+  },
+
   create: (data, items = [], callback) => {
     if (!Array.isArray(items) || items.length === 0) {
-      return callback(new Error("At least one item is required"));
+      return callback(new Error('At least one item is required'));
     }
 
+    // Calculate totals
     let sub_total = 0;
-    items.forEach(item => {
+    items.forEach((item) => {
       const quantity = parseFloat(item.quantity) || 0;
       const rate = parseFloat(item.rate) || 0;
       const discount = parseFloat(item.discount) || 0;
-      const amount = (quantity * rate) - discount;
+      const amount = quantity * rate - discount;
       item.amount = parseFloat(amount.toFixed(2));
       sub_total += amount;
     });
@@ -36,37 +97,39 @@ const invoice = {
     const sgst = parseFloat((sub_total * 0.09).toFixed(2));
     const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
 
-    const invoiceSql = `
-      INSERT INTO invoice (
-        customer_id, customer_name, invoice_date, expiry_date, subject,
-        customer_notes, terms_and_conditions,
-        sub_total, cgst, sgst, grand_total, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const invoiceValues = [
-      data.customer_id,
-      data.customer_name,
-      data.invoice_date,
-      data.expiry_date,
-      data.subject,
-      data.customer_notes,
-      data.terms_and_conditions,
-      sub_total,
-      cgst,
-      sgst,
-      grand_total,
-      data.status || 'Draft'
-    ];
-
-    db.query(invoiceSql, invoiceValues, (err, result) => {
+    // Get the next invoice number
+    invoice.getNextInvoiceNumber((err, result) => {
       if (err) return callback(err);
 
-      const invoiceId = result.insertId;
-      const invoiceNumber = `INV-${String(invoiceId).padStart(6, '0')}`;
+      const invoiceNumber = result.nextInvoiceNumber;
 
-      db.query('UPDATE invoice SET invoice_number = ? WHERE invoice_id = ?', [invoiceNumber, invoiceId], (err2) => {
-        if (err2) return callback(err2);
+      const invoiceSql = `
+        INSERT INTO invoice (
+          invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject,
+          customer_notes, terms_and_conditions, sub_total, cgst, sgst, grand_total, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const invoiceValues = [
+        invoiceNumber,
+        data.customer_id,
+        data.customer_name,
+        data.invoice_date,
+        data.expiry_date,
+        data.subject,
+        data.customer_notes,
+        data.terms_and_conditions,
+        sub_total,
+        cgst,
+        sgst,
+        grand_total,
+        data.status || 'Draft',
+      ];
+
+      db.query(invoiceSql, invoiceValues, (err, result) => {
+        if (err) return callback(err);
+
+        const invoiceId = result.insertId;
 
         const itemSql = `
           INSERT INTO invoice_items (
@@ -74,13 +137,13 @@ const invoice = {
           ) VALUES ?
         `;
 
-        const itemValues = items.map(item => [
+        const itemValues = items.map((item) => [
           invoiceId,
           item.item_detail,
           item.quantity,
           item.rate,
           item.discount,
-          item.amount
+          item.amount,
         ]);
 
         db.query(itemSql, [itemValues], (itemErr, itemResult) => {
@@ -92,7 +155,7 @@ const invoice = {
             sub_total,
             cgst,
             sgst,
-            grand_total
+            grand_total,
           });
         });
       });
@@ -104,7 +167,7 @@ const invoice = {
       if (err) return callback(err);
       db.query('DELETE FROM invoice WHERE invoice_id = ?', [id], callback);
     });
-  }
+  },
 };
 
 module.exports = invoice;

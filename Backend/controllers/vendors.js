@@ -2,8 +2,27 @@ const Vendor = require('../models/vendors');
 
 exports.getAll = (req, res) => {
   Vendor.getAll((err, rows) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
+  });
+};
+
+exports.getById = (req, res) => {
+  const id = req.params.id;
+  Vendor.getById(id, (err, vendor) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
+    res.json(vendor);
+  });
+};
+
+exports.getByName = (req, res) => {
+  const { name } = req.query;
+  if (!name) return res.status(400).json({ error: 'Vendor name is required' });
+  Vendor.getByName(name, (err, vendor) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
+    res.json(vendor);
   });
 };
 
@@ -32,13 +51,5 @@ exports.updateStatus = (req, res) => {
   Vendor.updateStatus(req.params.id, req.body.status, (err) => {
     if (err) return res.status(500).json({ error: err });
     res.json({ success: true });
-  });
-};
-// In controllers/vendors.js
-exports.getById = (req, res) => {
-  Vendor.getById(req.params.id, (err, vendor) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
-    res.json(vendor);
   });
 };

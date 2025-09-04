@@ -138,14 +138,14 @@ export default function Invoicelist() {
         )
         .join("");
 
-      // Construct billing and shipping details
+      // Construct billing and shipping details with fallback
       const billingDetails = `
         ${customer.billing_recipient_name || customer.customer_name || "N/A"}<br>
         ${customer.billing_address1 || ""}${customer.billing_address2 ? `<br>${customer.billing_address2}` : ""}<br>
         ${customer.billing_city || ""}, ${customer.billing_state || ""} - ${customer.billing_pincode || ""}<br>
         Pin Code - ${customer.billing_pincode || ""}, ${customer.billing_country || "India"}<br>
-        <b>State Code :</b> ${customer.billing_state ? "27" : ""}<br>
-        <b>GSTIN :</b> ${customer.gst || ""}
+        <b>State Code :</b> ${customer.billing_state ? "27" : "N/A"}<br>
+        <b>GSTIN :</b> ${customer.gst || "N/A"}
       `;
 
       const shippingDetails = `
@@ -153,8 +153,8 @@ export default function Invoicelist() {
         ${customer.shipping_address1 || ""}${customer.shipping_address2 ? `<br>${customer.shipping_address2}` : ""}<br>
         ${customer.shipping_city || ""}, ${customer.shipping_state || ""} - ${customer.shipping_pincode || ""}<br>
         Pin Code - ${customer.shipping_pincode || ""}, ${customer.shipping_country || "India"}<br>
-        <b>State Code :</b> ${customer.shipping_state ? "27" : ""}<br>
-        <b>GSTIN :</b> ${customer.gst || ""}
+        <b>State Code :</b> ${customer.shipping_state ? "27" : "N/A"}<br>
+        <b>GSTIN :</b> ${customer.gst || "N/A"}
       `;
 
       // Open print window with dynamic data

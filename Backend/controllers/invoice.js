@@ -1,10 +1,10 @@
+// controllers/invoice.js
 const invoice = require('../models/invoice');
 const Customer = require('../models/customers');
-const db = require('../config/db');
 
 exports.getAll = (req, res) => {
   invoice.getAll((err, result) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) return res.status(500).json({ error: err.message });
     res.json(result);
   });
 };
@@ -12,12 +12,12 @@ exports.getAll = (req, res) => {
 exports.getOne = (req, res) => {
   const id = req.params.id;
   invoice.getById(id, (err, invoiceData) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) return res.status(500).json({ error: err.message });
     if (!invoiceData) return res.status(404).json({ message: 'Invoice not found' });
     invoice.getItemsByInvoiceId(id, (itemErr, items) => {
-      if (itemErr) return res.status(500).json({ error: itemErr });
+      if (itemErr) return res.status(500).json({ error: itemErr.message });
       Customer.getById(invoiceData.customer_id, (custErr, customer) => {
-        if (custErr) return res.status(500).json({ error: custErr });
+        if (custErr) return res.status(500).json({ error: custErr.message });
         if (!customer) return res.status(404).json({ message: 'Customer not found' });
         const sub_total = items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
         const cgst = parseFloat((sub_total * 0.09).toFixed(2));
@@ -30,23 +30,30 @@ exports.getOne = (req, res) => {
           sub_total,
           cgst,
           sgst,
-          grand_total
+          grand_total,
         });
       });
     });
   });
 };
 
+exports.getNextInvoiceNumber = (req, res) => {
+  invoice.getNextInvoiceNumber((err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(result);
+  });
+};
+
 exports.create = (req, res) => {
   const { invoice: invoiceData, items = [] } = req.body;
   if (!invoiceData || typeof invoiceData !== 'object' || !invoiceData.customer_id || !invoiceData.customer_name) {
-    return res.status(400).json({ error: "Missing or invalid invoice data (customer_id and customer_name required)" });
+    return res.status(400).json({ error: 'Missing or invalid invoice data (customer_id and customer_name required)' });
   }
   if (!invoiceData.status) {
     invoiceData.status = 'Draft';
   }
   invoice.create(invoiceData, items, (err, result) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) return res.status(500).json({ error: err.message });
     res.status(201).json({
       message: 'Invoice created successfully',
       invoiceId: result.invoiceId,
@@ -55,14 +62,14 @@ exports.create = (req, res) => {
       sub_total: result.sub_total,
       cgst: result.cgst,
       sgst: result.sgst,
-      grand_total: result.grand_total
+      grand_total: result.grand_total,
     });
   });
 };
 
 exports.remove = (req, res) => {
   invoice.remove(req.params.id, (err) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Invoice and related items deleted successfully' });
   });
 };
@@ -78,11 +85,11 @@ exports.update = (req, res) => {
     'subject',
     'customer_notes',
     'terms_and_conditions',
-    'status'
+    'status',
   ];
   const updates = [];
   const values = [];
-  fields.forEach(field => {
+  fields.forEach((field) => {
     if (data[field] !== undefined) {
       updates.push(`${field} = ?`);
       values.push(data[field]);
@@ -94,7 +101,9 @@ exports.update = (req, res) => {
   const sql = `UPDATE invoice SET ${updates.join(', ')} WHERE invoice_id = ?`;
   values.push(id);
   db.query(sql, values, (err, result) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Invoice updated successfully' });
   });
 };
+
+module.exports = exports;
