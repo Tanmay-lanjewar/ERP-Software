@@ -766,7 +766,7 @@ const handleDeleteQuotation = async () => {
 
               <Box mt={3} display="flex" justifyContent="space-between">
                 <Typography variant="body2">
-                  Showing 1 to 15 of 100 entries
+                  Showing 1 to 15 of 100 entries.
                 </Typography>
                 <Box display="flex" justifyContent="space-between">
                   <Pagination
