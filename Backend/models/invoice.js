@@ -1,5 +1,6 @@
 // models/invoice.js
 const db = require('../config/db');
+const product = require('./products')
 
 // Utility to promisify db.query
 function query(sql, values = []) {
@@ -10,6 +11,8 @@ function query(sql, values = []) {
     });
   });
 }
+
+
 
 const invoice = {
   getAll: (callback) => {
@@ -76,21 +79,24 @@ const invoice = {
     }
   },
 
-  create: (data, items = [], callback) => {
+  create: async (data, items = [], callback) => {
     if (!Array.isArray(items) || items.length === 0) {
       return callback(new Error('At least one item is required'));
     }
 
     // Calculate totals
     let sub_total = 0;
-    items.forEach((item) => {
+    for (const item of items) {
       const quantity = parseFloat(item.quantity) || 0;
       const rate = parseFloat(item.rate) || 0;
       const discount = parseFloat(item.discount) || 0;
       const amount = quantity * rate - discount;
       item.amount = parseFloat(amount.toFixed(2));
       sub_total += amount;
-    });
+      if (item.item_detail && !isNaN(item.item_detail)) {
+        item.item_detail = await getProductNameById(item.item_detail);
+      }
+    };
 
     sub_total = parseFloat(sub_total.toFixed(2));
     const cgst = parseFloat((sub_total * 0.09).toFixed(2));
