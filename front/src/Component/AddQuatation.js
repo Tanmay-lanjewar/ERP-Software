@@ -48,10 +48,30 @@ export default function NewQuotation() {
   const [customerNotes, setCustomerNotes] = useState(
     "Thanks for your business."
   );
-  const [termsAndConditions, setTermsAndConditions] = useState("");
+  const [termsAndConditions, setTermsAndConditions] = useState(
+    "Delivery Period: 3 to 4 weeks from the date of technically and commercially clear order.\n" +
+      "Installation Period: 2 to 3 weeks\n" +
+      "Transportation: Extra at Actual\n" +
+      "Payment Terms:\n" +
+      "a) 30% Advance along with Purchase order\n" +
+      "b) 65% Against proforma invoice prior to dispatch\n" +
+      "c) 5% after successfull Installation and commissioning\n" +
+      "Warranty: Offer a standard warranty of 15 months from date of dispatch or 12 months from date of satisfactory installation whichever is earlier\n" +
+      "Validity: Our offer shall remain valid for 15 days\n" +
+      "Exclusions: Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting arrangement for installation activities, Scrap folding, Scissor lift."
+  );
+
   const [attachment, setAttachment] = useState(null);
   const [rows, setRows] = useState([
-    { id: Date.now(), itemId: "", item: "", qty: 0, rate: 0, discount: 0, amount: 0 },
+    {
+      id: Date.now(),
+      itemId: "",
+      item: "",
+      qty: 0,
+      rate: 0,
+      discount: 0,
+      amount: 0,
+    },
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -303,7 +323,7 @@ export default function NewQuotation() {
                 <TextField
                   label="Quote"
                   fullWidth
-                  value={quoteNumber ? quoteNumber : "Number Was Generated" }
+                  value={quoteNumber ? quoteNumber : "Number Was Generated"}
                   InputProps={{ readOnly: true }}
                   sx={{
                     width: { xs: "100%", sm: "100%", md: 400 },
@@ -461,7 +481,11 @@ export default function NewQuotation() {
                               )
                                 .then((res) => res.json())
                                 .then((product) => {
-                                  updateRow(index, "item", product.product_name || "");
+                                  updateRow(
+                                    index,
+                                    "item",
+                                    product.product_name || ""
+                                  );
                                   updateRow(
                                     index,
                                     "rate",
@@ -607,18 +631,41 @@ export default function NewQuotation() {
             </Box>
 
             <Grid container spacing={2} mt={3}>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
                   label="Terms & Conditions"
                   value={termsAndConditions}
                   onChange={(e) => setTermsAndConditions(e.target.value)}
+                  multiline
+                  rows={12}
+                  placeholder="Enter terms and conditions here..."
+                  variant="outlined"
+                  sx={{
+                    minHeight: 200,
+                    bgcolor: "#f9fafb",
+                    borderRadius: 1,
+                    width: "100%", // Take full width
+                    "& .MuiOutlinedInput-root": {
+                      fontSize: 15,
+                    },
+                  }}
                 />
-                <Box display="flex" alignItems="center" mt={1}>
-                  <Checkbox />
-                  <Typography variant="body2">
-                    Use this in future for all quotations
-                  </Typography>
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  mt={1}
+                  justifyContent="space-between"
+                >
+                  <Box display="flex" alignItems="center">
+                    <Checkbox />
+                    <Typography variant="body2">
+                      Use this in future for all quotations
+                    </Typography>
+                  </Box>
+                  <Box display="flex" gap={1}>
+                    <FormControl size="small"></FormControl>
+                  </Box>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6} sx={{ ml: 60 }}>
