@@ -700,7 +700,7 @@ const handleDeleteQuotation = async () => {
                             <Checkbox />
                           </TableCell>
                           <TableCell sx={{ color: "#007bff", fontWeight: 500 }}>
-                            {q.quotation_id}
+                            {q.quote_number}
                           </TableCell>
                           <TableCell>{q.customer_name}</TableCell>
                           <TableCell>{q.quotation_date}</TableCell>

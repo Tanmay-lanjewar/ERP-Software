@@ -301,9 +301,9 @@ export default function NewQuotation() {
             <Grid container spacing={2} mb={2}>
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
-                  label="Quote#"
+                  label="Quote"
                   fullWidth
-                  value={quoteNumber}
+                  value={quoteNumber ? quoteNumber : "Number Was Generated" }
                   InputProps={{ readOnly: true }}
                   sx={{
                     width: { xs: "100%", sm: "100%", md: 400 },
