@@ -120,72 +120,102 @@ const PurchaseOrderActions = () => {
       const printWindow = window.open('', '_blank');
       printWindow.document.write(`
         <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Purchase Order - ${poData.purchase_order_no}</title>
-        </head>
-        <body style="font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 20px;">
-            <div style="border: 2px solid #000; padding: 10px; width: 600px; margin: auto;">
-                <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 5px;">
-                    <img src="/logo192.png" alt="Company Logo" style="width: 50px; height: auto;">
-                    <div style="font-size: 14px; font-weight: bold;">MERRAKI EXPERT</div>
-                    <div style="font-size: 10px;">A Cool Reality...</div>
-                </div>
-  
-                <div style="text-align: center; border-bottom: 2px solid #000; padding: 5px 0;">
-                    <div style="font-size: 10px;"><strong>GSTIN:</strong> 27AKUPY6544R1ZM | <strong>UDYAM-MH-20-0114278</strong> | <strong>ISO 9001-2015</strong></div>
-                    <div style="font-size: 10px;">101, 2nd Floor, Shree Sai Apartment, Near Kachore Lawn, Manish Nagar, Nagpur - 440015 (MH)</div>
-                    <div style="font-size: 10px; margin-top: 5px;"><strong>Purchase Order No. ${poData.purchase_order_no}</strong></div>
-                </div>
-  
-                <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Order - ${poData.purchase_order_no}</title>
+</head>
+<body style="font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 20px;">
+    <div style="border: 2px solid #000; padding: 10px; width: 600px; margin: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 5px;">
+            <div style="display: flex; align-items: center;">
+                <img src="/static/media/ui.405d9b691b910181ce2e.png" alt="Merraki Expert Logo" style="width: 200px; height: auto; margin-top: -70px; margin-bottom: -70px;">
+        
+            </div>
+            <div style="text-align: right;">
+                <div style="margin-bottom: 2px;"><strong>PO No:</strong> ${poData.purchase_order_no}</div>
+                <div style="margin-bottom: 2px; margin-right: 9px;"><strong>Date:</strong> ${formatDate(poData.purchase_order_date)}</div>
+                <div style="margin-right: 17px;"><strong>JO ID:</strong> ${poData.jo_id || 'N/A'}</div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 2px solid #000;">
+            <div style="font-size: 10px;"><strong>GSTIN:</strong> 27AKUPY6544R1ZM</div>
+            <div style="font-size: 10px;"><strong>UDYAM-MH-20-0114278</strong></div>
+        </div>
+
+        <div style="border-bottom: 2px solid #000; padding: 5px 0;">
+            <div style="display: flex;">
+                <div style="width: 100px; font-weight: bold;">Billing Address:</div>
+                <div>101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</div>
+            </div>
+            <div style="display: flex;">
+                <div style="width: 100px; font-weight: bold;">Shipping Address:</div>
+                <div>${poData.shipping_address || 'Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015'}</div>
+            </div>
+        </div>
+
+        <div style="text-align: center; font-weight: bold; padding: 5px 0; border-bottom: 2px solid #000;">
+            Purchase Order
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse;">
+            <tbody>
+                <tr>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Vendor:</td>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">${vendor.company_name || vendor.vendor_name}</td>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">GSTIN</td>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">${vendor.gst || 'N/A'}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Address:</td>
+                    <td style="border: 1px solid #000; padding: 3px;">${vendor.billing_address}</td>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Kind Attn.</td>
+                    <td style="border: 1px solid #000; padding: 3px;">${vendor.contact_name}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Mobile No.</td>
+                    <td style="border: 1px solid #000; padding: 3px;">${vendor.mobile_no}</td>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Email</td>
+                    <td style="border: 1px solid #000; padding: 3px; color: #00f;"><a href="mailto:${vendor.email}">${vendor.email}</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
+            This is reference to our requirement,
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Sr. No.</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 35%;">Item Description</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 10%;">HSN Code</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Qty.</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">MOU</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 15%;">Rate</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 25%;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${itemsHtml}
+            </tbody>
+        </table>
+
+        <div style="display: flex; margin-top: 5px;">
+            <div style="width: 50%; border: 1px solid #000; padding: 5px;">
+                <div style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 5px;">Terms & Conditions</div>
+                <div>Payment Terms: ${poData.payment_terms || '100% After Delivery'}</div>
+                <div style="margin-top: 5px;">PO Validity: ${poData.po_validity || '4 Month'}</div>
+                <div>Delivery: ${poData.delivery_time || '1 to 2 Weeks (Immediate)'}</div>
+                <div>Document Required: ${poData.required_docs || 'Test Certificate'}</div>
+            </div>
+            <div style="width: 50%;">
+                <table style="width: 100%; border-collapse: collapse; margin-left: -1px;">
                     <tbody>
-                        <tr>
-                            <td style="width: 15%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Vendor</td>
-                            <td style="width: 35%; border: 1px solid #000; padding: 3px;">${vendor.company_name || vendor.vendor_name}</td>
-                            <td style="width: 20%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">PO Date</td>
-                            <td style="width: 30%; border: 1px solid #000; padding: 3px;">${formatDate(poData.purchase_order_date)}</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Contact Person</td>
-                            <td style="border: 1px solid #000; padding: 3px;">${vendor.contact_name}</td>
-                            <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Delivery Date</td>
-                            <td style="border: 1px solid #000; padding: 3px;">${formatDate(poData.delivery_date)}</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Contact Number</td>
-                            <td style="border: 1px solid #000; padding: 3px;">${vendor.mobile_no}</td>
-                            <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">GSTIN</td>
-                            <td style="border: 1px solid #000; padding: 3px;">${vendor.gst || 'N/A'}</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">E-mail</td>
-                            <td style="border: 1px solid #000; padding: 3px;"><a href="mailto:${vendor.email}" style="color: #00f;">${vendor.email}</a></td>
-                            <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Address</td>
-                            <td style="border: 1px solid #000; padding: 3px;">${vendor.billing_address}</td>
-                        </tr>
-                    </tbody>
-                </table>
-  
-                <div style="text-align: center; font-weight: bold; padding: 5px 0; border-top: 2px solid #000; border-bottom: 2px solid #000; margin-top: 5px;">
-                    Purchase Order Items
-                </div>
-  
-                <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
-                    <thead>
-                        <tr style="background-color: #f2f2f2;">
-                            <th style="border: 1px solid #000; padding: 3px; width: 5%;">Sr. No.</th>
-                            <th style="border: 1px solid #000; padding: 3px; width: 50%;">Description</th>
-                            <th style="border: 1px solid #000; padding: 3px; width: 10%;">Qty.</th>
-                            <th style="border: 1px solid #000; padding: 3px; width: 10%;">UOM</th>
-                            <th style="border: 1px solid #000; padding: 3px; width: 15%;">Rate</th>
-                            <th style="border: 1px solid #000; padding: 3px; width: 15%;">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${itemsHtml}
                         <tr>
                             <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Sub Total</td>
                             <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(poData.sub_total)}</td>
@@ -208,17 +238,30 @@ const PurchaseOrderActions = () => {
                         </tr>
                     </tbody>
                 </table>
-  
-                <div style="margin-top: 10px; padding: 5px; border-top: 2px solid #000;">
-                    <div style="font-weight: bold; margin-bottom: 5px;">Terms & Conditions:</div>
-                    <div>${poData.payment_terms || 'Payment terms as per agreement'}</div>
-                    <div style="margin-top: 5px;">Delivery Time: ${poData.delivery_time}</div>
-                    <div>Required Documents: ${poData.required_docs}</div>
-                    <div>PO Validity: ${poData.po_validity}</div>
+            </div>
+        </div>
+
+        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
+            <strong>Amount (in words):</strong> ${poData.total_in_words}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 5px;">
+            <div style="width: 70%;">
+                <div style="border: 1px solid #000; padding: 3px;">
+                    Email: merakkiexpert@gmail.com | Mobile: +91-8793484326 / +91-9130801011 | www.merakkiexpert.in
                 </div>
             </div>
-        </body>
-        </html>
+            <div style="width: 30%; text-align: center; margin-left: 10px;">
+                <div style="font-weight: bold;">For MERAKI EXPERT</div>
+                <div style="height: 50px; display: flex; align-items: center; justify-content: center;">
+                    <img src="https://example.com/signature.png" alt="Signature" style="height: 50px;">
+                </div>
+                <div>(Authorized Signatory)</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
       `);
       
       printWindow.document.close();
