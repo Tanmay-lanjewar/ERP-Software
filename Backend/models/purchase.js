@@ -90,4 +90,4 @@ exports.update = (id, data, callback) => {
   ];
 
   db.query(updateQuery, values, callback);
-};
+};;
