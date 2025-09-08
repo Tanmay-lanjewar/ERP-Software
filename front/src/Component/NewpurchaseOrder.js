@@ -153,7 +153,7 @@ const PurchaseOrderForm = () => {
       total: total,
       attachment: attachment ? attachment.name : "",
       items: rows.map((row) => ({
-        item_detail: row.item,
+        item_name: row.item,
         qty: row.qty,
         rate: row.rate,
         discount: row.discount,
@@ -474,7 +474,8 @@ const PurchaseOrderForm = () => {
                               <em>Select Item</em>
                             </MenuItem>
                             {products.map((product) => (
-                              <MenuItem key={product.id} value={product.id}>
+                              <MenuItem key={product.id} 
+                                   value={product.id}>
                                 {product.product_name}
                               </MenuItem>
                             ))}
