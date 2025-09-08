@@ -36,6 +36,7 @@ import Sidebar from "./Sidebar";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+
 const PurchaseOrderForm = () => {
   const navigate = useNavigate();
   const [vendors, setVendors] = useState([]);
@@ -80,7 +81,8 @@ const PurchaseOrderForm = () => {
     // Fetch purchase order number (assuming a similar endpoint exists)
     axios
       .get("http://localhost:5000/api/purchase/next-number")
-      .then((res) => setPurchaseOrderNo(res.data.nextPurchaseOrderNo || ""))
+      // changed line
+      .then((res) => setPurchaseOrderNo(res.data.nextPurchaseOrderNumber || ""))
       .catch(() => setPurchaseOrderNo(""));
   }, []);
 
@@ -141,6 +143,7 @@ const PurchaseOrderForm = () => {
       delivery_to: "organization",
       delivery_address: `Laxmi Enterprises,\nNagpur, Maharashtra, 200145`,
       vendor_name: vendorObj ? vendorObj.vendor_name : selectedVendor,
+      vendor_id: vendorObj ? vendorObj.vendor_id : null,
       purchase_order_date: purchaseOrderDate,
       delivery_date: deliveryDate,
       payment_terms: paymentTerms,
@@ -153,7 +156,7 @@ const PurchaseOrderForm = () => {
       total: total,
       attachment: attachment ? attachment.name : "",
       items: rows.map((row) => ({
-        item_detail: row.item,
+        item_name: row.item_name || row.item,
         qty: row.qty,
         rate: row.rate,
         discount: row.discount,
@@ -245,9 +248,8 @@ const PurchaseOrderForm = () => {
               <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
-                  label="Purchase Order*"
+                  label="Purchase Order"
                   value={purchaseOrderNo}
-                  onChange={(e) => setPurchaseOrderNo(e.target.value)}
                   sx={{
                     width: 500,
                     "& .MuiOutlinedInput-root": {
@@ -447,7 +449,7 @@ const PurchaseOrderForm = () => {
                             value={row.item}
                             onChange={(e) => {
                               const selectedProductId = e.target.value;
-                              updateRow(index, "item", selectedProductId);
+                              updateRow(index, "item_name", selectedProductId);
                               fetch(
                                 `http://localhost:5000/api/products/${selectedProductId}`
                               )

@@ -1,6 +1,6 @@
 // models/invoice.js
 const db = require('../config/db');
-const product = require('./products')
+
 
 // Utility to promisify db.query
 function query(sql, values = []) {
