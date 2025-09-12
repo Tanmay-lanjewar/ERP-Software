@@ -77,6 +77,7 @@ exports.getById = (id, callback) => {
     LEFT JOIN purchase_order_items poi ON po.id = poi.purchase_order_id
     LEFT JOIN vendors v ON LOWER(po.vendor_name) = LOWER(v.vendor_name)
     WHERE po.id = ? OR po.purchase_order_no = ?
+    GROUP BY poi.id
   `;
   db.query(query, [id, id], callback);
 };
@@ -142,4 +143,4 @@ exports.update = (id, data, callback) => {
   ];
 
   db.query(updateQuery, values, callback);
-};
+};;

@@ -156,7 +156,7 @@ const PurchaseOrderForm = () => {
       total: total,
       attachment: attachment ? attachment.name : "",
       items: rows.map((row) => ({
-        item_name: row.item_name || row.item,
+        item_detail: row.item,
         qty: row.qty,
         rate: row.rate,
         discount: row.discount,
@@ -449,16 +449,24 @@ const PurchaseOrderForm = () => {
                             value={row.item}
                             onChange={(e) => {
                               const selectedProductId = e.target.value;
-                              // store selected product id
-                              updateRow(index, "item", selectedProductId);
-                              // also store product name for easier payload
-                              const selProd = products.find((p) => p.id === selectedProductId);
-                              if (selProd) {
-                                updateRow(index, "item_name", selProd.product_name);
-                                updateRow(index, "rate", selProd.sale_price || 0);
-                              } else {
-                                updateRow(index, "rate", 0);
-                              }
+                              updateRow(index, "item_name", selectedProductId);
+                              fetch(
+                                `http://localhost:5000/api/products/${selectedProductId}`
+                              )
+                                .then((res) => res.json())
+                                .then((product) => {
+                                  updateRow(
+                                    index,
+                                    "rate",
+                                    product.sale_price || 0
+                                  );
+                                })
+                                .catch((err) => {
+                                  console.error(
+                                    "Error fetching product details:",
+                                    err
+                                  );
+                                });
                             }}
                             size="small"
                             displayEmpty
@@ -468,7 +476,8 @@ const PurchaseOrderForm = () => {
                               <em>Select Item</em>
                             </MenuItem>
                             {products.map((product) => (
-                              <MenuItem key={product.id} value={product.id}>
+                              <MenuItem key={product.id} 
+                                   value={product.product_name}>
                                 {product.product_name}
                               </MenuItem>
                             ))}
@@ -883,4 +892,4 @@ const PurchaseOrderForm = () => {
   );
 };
 
-export default PurchaseOrderForm;
+export default PurchaseOrderForm;;
