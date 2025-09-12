@@ -287,31 +287,31 @@ const handlePrintQuotation = async () => {
             <div style="text-align: center; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 5px; color: #073d82 ;">COMMERCIAL TERMS & CONDITIONS</div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Delivery Period</div>
-                <div style="width: 75%;">: ${quotation.delivery_period || '3 to 4 weeks from the date of technically and commercially clear order.'}</div>
+                <div style="width: 75%;">: ${quotation.delivery_period || (quotation.terms_and_conditions ? quotation.terms_and_conditions.split('\n').find(line => line.startsWith('Delivery Period'))?.replace('Delivery Period:', '') : '3 to 4 weeks from the date of technically and commercially clear order.')}</div>
             </div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Installation Period</div>
-                <div style="width: 75%;">: ${quotation.installation_period || '2 to 3 weeks'}</div>
+                <div style="width: 75%;">: ${quotation.installation_period || (quotation.terms_and_conditions ? quotation.terms_and_conditions.split('\n').find(line => line.startsWith('Installation Period'))?.replace('Installation Period:', '') : '2 to 3 weeks')}</div>
             </div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Transportation</div>
-                <div style="width: 75%;">: ${quotation.transportation || 'Extra at Actual'}</div>
+                <div style="width: 75%;">: ${quotation.transportation || (quotation.terms_and_conditions ? quotation.terms_and_conditions.split('\n').find(line => line.startsWith('Transportation'))?.replace('Transportation:', '') : 'Extra at Actual')}</div>
             </div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Payment Terms</div>
-                <div style="width: 75%;">: ${quotation.payment_terms_html || 'Supply/Installation Terms<br>a) 50% Advance along with Purchase order<br>b) 45% Against performing invoice prior to dispatch<br>c) 5% after successfull Installation and commissioning'}</div>
+                <div style="width: 75%;">: ${quotation.payment_terms_html || (quotation.terms_and_conditions ? quotation.terms_and_conditions.split('\n').filter(line => line.startsWith('a)') || line.startsWith('b)') || line.startsWith('c)')).join('<br>') : 'Supply/Installation Terms<br>a) 30% Advance along with Purchase order<br>b) 65% Against proforma invoice prior to dispatch<br>c) 5% after successfull Installation and commissioning')}</div>
             </div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Warranty</div>
-                <div style="width: 75%;">: ${quotation.warranty || 'Offer a standard warranty of 15 months from date of dispatch or 12 months from date of satisfactory installation whichever is earlier'}</div>
+                <div style="width: 75%;">: ${quotation.warranty || (quotation.terms_and_conditions ? quotation.terms_and_conditions.split('\n').find(line => line.startsWith('Warranty'))?.replace('Warranty:', '') : 'Offer a standard warranty of 15 months from date of dispatch or 12 months from date of satisfactory installation whichever is earlier')}</div>
             </div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Validity</div>
-                <div style="width: 75%;">: ${quotation.validity || 'Our offer shall remain valid for 15 days'}</div>
+                <div style="width: 75%;">: ${quotation.validity || (quotation.terms_and_conditions ? quotation.terms_and_conditions.split('\n').find(line => line.startsWith('Validity'))?.replace('Validity:', '') : 'Our offer shall remain valid for 15 days')}</div>
             </div>
             <div style="display: flex;">
                 <div style="width: 25%; font-weight: bold;">Exclusions</div>
-                <div style="width: 75%;">: ${quotation.exclusions || 'Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting arrangement for installation activities, Scrap folding, Scissor lift.'}</div>
+                <div style="width: 75%;">: ${quotation.exclusions || (quotation.terms_and_conditions ? quotation.terms_and_conditions.split('\n').find(line => line.startsWith('Exclusions'))?.replace('Exclusions:', '') : 'Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting arrangement for installation activities, Scrap folding, Scissor lift.')}</div>
             </div>
         </div>
         
@@ -700,7 +700,7 @@ const handleDeleteQuotation = async () => {
                             <Checkbox />
                           </TableCell>
                           <TableCell sx={{ color: "#007bff", fontWeight: 500 }}>
-                            {q.quotation_id}
+                            {q.quote_number}
                           </TableCell>
                           <TableCell>{q.customer_name}</TableCell>
                           <TableCell>{q.quotation_date}</TableCell>

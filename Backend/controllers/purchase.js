@@ -49,6 +49,13 @@ exports.getAllPurchaseOrders = (req, res) => {
   });
 };
 
+exports.getNextPurchaseOrderNumber = (req, res) => {
+  PurchaseOrder.getNextPurchaseOrderNo((err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(result);
+  });
+};
+
 // Get one
 exports.getPurchaseOrderById = (req, res) => {
   const id = req.params.id;
@@ -100,9 +107,28 @@ exports.getPurchaseOrderById = (req, res) => {
 
 // Create
 exports.createPurchaseOrder = (req, res) => {
-  PurchaseOrder.create(req.body, (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ message: 'Purchase order created', id: results.insertId });
+  PurchaseOrder.getNextPurchaseOrderNo((err, result) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    const purchaseOrderNumber = result.nextPurchaseOrderNumber;
+    const financialYear = purchaseOrderNumber.split('/')[1] || '';
+
+    const newPurchaseOrder = {
+      purchase_order_no: purchaseOrderNumber,
+      financial_year: financialYear,
+      ...req.body
+    };
+
+    PurchaseOrder.create(newPurchaseOrder, (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({
+        message: 'Purchase order created',
+        id: results.insertId,
+        purchase_order_no: purchaseOrderNumber
+      });
+    });
   });
 };
 

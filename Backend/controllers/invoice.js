@@ -1,6 +1,7 @@
 // controllers/invoice.js
 const invoice = require('../models/invoice');
 const Customer = require('../models/customers');
+const db = require('../config/db');
 
 exports.getAll = (req, res) => {
   invoice.getAll((err, result) => {

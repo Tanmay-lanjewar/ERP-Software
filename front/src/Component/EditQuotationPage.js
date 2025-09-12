@@ -20,7 +20,7 @@ export default function EditQuotationPage() {
     customer_name: '',
     quotation_date: '',
     expiry_date: '',
-    status: '',
+    status: 'Draft',
     grand_total: '',
   });
   const [loading, setLoading] = useState(true);
@@ -39,7 +39,7 @@ export default function EditQuotationPage() {
           customer_name: q.customer_name,
           quotation_date: q.quotation_date,
           expiry_date: q.expiry_date,
-          status: q.status || '',
+          status: q.status || 'Draft',
           grand_total: res.data.grand_total || '',
         });
       } catch (err) {
@@ -136,14 +136,19 @@ export default function EditQuotationPage() {
               onChange={handleChange}
               margin="normal"
             />
-            <TextField
-              fullWidth
-              name="status"
-              label="Status"
-              value={formData.status}
-              onChange={handleChange}
-              margin="normal"
-            />
+            
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Status</InputLabel>
+              <Select
+                name="status"
+                value={formData.status}
+                label="Status"
+                onChange={handleChange}
+              >
+                <MenuItem value="Sent">Sent</MenuItem>
+                <MenuItem value="Draft">Draft</MenuItem>
+              </Select>
+            </FormControl>
             <TextField
               fullWidth
               name="grand_total"
