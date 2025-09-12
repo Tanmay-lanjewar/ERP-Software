@@ -77,7 +77,7 @@ export default function CustomerList() {
 
     const handleSelectAll = (e) => {
         if (e.target.checked) {
-            setSelectedCustomers(customers.map((c) => c._id));
+            setSelectedCustomers(customers.map((c) => c.id));
         } else {
             setSelectedCustomers([]);
         }
@@ -100,15 +100,13 @@ export default function CustomerList() {
     };
 
     const toggleCustomerStatus = async (customer) => {
-        console.log(customer)
         const newStatus = customer.status === 'Active' ? 'Inactive' : 'Active';
         try {
             const response = await fetch(`http://localhost:5000/api/customers/${customer.id}/status`, {
-                method: 'PATCH',
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...customer, status: newStatus })
+                body: JSON.stringify({ status: newStatus })
             });
-            console.log(response)
             await fetchCustomers(); // refresh list
         } catch (err) {
             console.error('Failed to toggle status', err);
@@ -380,11 +378,11 @@ export default function CustomerList() {
                                     </TableHead>
                                     <TableBody>
                                         {customers.map((row) => (
-                                            <TableRow key={row._id} hover>
+                                            <TableRow key={row.id} hover>
                                                 <TableCell padding="checkbox">
                                                     <Checkbox
-                                                        checked={selectedCustomers.includes(row._id)}
-                                                        onChange={() => handleSelectOne(row._id)}
+                                                        checked={selectedCustomers.includes(row.id)}
+                                                        onChange={() => handleSelectOne(row.id)}
                                                     />
                                                 </TableCell>
                                                 <TableCell>

@@ -51,7 +51,7 @@ const PurchaseOrderForm = () => {
   const [vendorModalOpen, setVendorModalOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [rows, setRows] = useState([
-    { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0 },
+    { id: Date.now(), item: "", item_name: "", qty: 0, rate: 0, discount: 0, amount: 0 },
   ]);
   const [attachment, setAttachment] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -103,7 +103,7 @@ const PurchaseOrderForm = () => {
   const addNewRow = () => {
     setRows([
       ...rows,
-      { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0 },
+      { id: Date.now(), item: "", item_name: "", qty: 0, rate: 0, discount: 0, amount: 0 },
     ]);
   };
 
@@ -449,24 +449,16 @@ const PurchaseOrderForm = () => {
                             value={row.item}
                             onChange={(e) => {
                               const selectedProductId = e.target.value;
-                              updateRow(index, "item_name", selectedProductId);
-                              fetch(
-                                `http://localhost:5000/api/products/${selectedProductId}`
-                              )
-                                .then((res) => res.json())
-                                .then((product) => {
-                                  updateRow(
-                                    index,
-                                    "rate",
-                                    product.sale_price || 0
-                                  );
-                                })
-                                .catch((err) => {
-                                  console.error(
-                                    "Error fetching product details:",
-                                    err
-                                  );
-                                });
+                              // store selected product id
+                              updateRow(index, "item", selectedProductId);
+                              // also store product name for easier payload
+                              const selProd = products.find((p) => p.id === selectedProductId);
+                              if (selProd) {
+                                updateRow(index, "item_name", selProd.product_name);
+                                updateRow(index, "rate", selProd.sale_price || 0);
+                              } else {
+                                updateRow(index, "rate", 0);
+                              }
                             }}
                             size="small"
                             displayEmpty

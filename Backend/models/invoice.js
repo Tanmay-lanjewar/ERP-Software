@@ -177,3 +177,17 @@ const invoice = {
 };
 
 module.exports = invoice;
+
+
+// Helper to fetch product name by id
+async function getProductNameById(productId) {
+  if (!productId) return '';
+  try {
+    const rows = await query('SELECT product_name FROM products_services WHERE id = ?', [productId]);
+    return rows.length ? rows[0].product_name : '';
+  } catch (err) {
+    // In case of error, return empty string so that invoice creation can proceed
+    console.error('Error fetching product name:', err);
+    return '';
+  }
+}

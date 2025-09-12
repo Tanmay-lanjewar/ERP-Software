@@ -43,7 +43,12 @@ const PurchaseOrderActions = () => {
       .get("http://localhost:5000/api/purchase")
       .then((res) => {
         console.log("Purchase Orders API Response:", res.data);
-        setRows(res.data);
+        const sorted = [...res.data].sort((a, b) => {
+          const dateA = new Date(a.purchase_order_date || a.created_at || 0);
+          const dateB = new Date(b.purchase_order_date || b.created_at || 0);
+          return dateB - dateA;
+        });
+        setRows(sorted);
       })
       .catch((error) => {
         console.error("Failed to fetch purchase orders:", error);
@@ -81,6 +86,7 @@ const PurchaseOrderActions = () => {
         return;
       }
       const poResponse = await axios.get(`http://localhost:5000/api/purchase/${idOrNo}`);
+      console.log('PO Full Response:', poResponse.data);
       const { purchase_order = {}, vendor = {} } = poResponse.data || {};
       const items = Array.isArray(purchase_order.items) ? purchase_order.items : [];
 
@@ -93,6 +99,9 @@ const PurchaseOrderActions = () => {
           .filter((t) => t && t.toLowerCase() !== 'n/a')
           .join(', ');
       };
+
+      // choose the most meaningful vendor name (display_name > company_name > vendor_name)
+      const pickVendorName = (v) => v.display_name || v.company_name || v.vendor_name || '';
 
       // Prepare safe data from backend only (no dummy constants)
       const safeOrderData = {
@@ -110,19 +119,20 @@ const PurchaseOrderActions = () => {
         delivery_time: purchase_order.delivery_time || order.delivery_time || '',
         required_docs: purchase_order.required_docs || order.required_docs || '',
         po_validity: purchase_order.po_validity || order.po_validity || '',
-        gstin: purchase_order.gstin || '27AKUPY6544R1ZM',
+        gstin: purchase_order.gstin || purchase_order.gst || order.gstin || 'N/A',
         udyam: purchase_order.udyam || 'UDYAM-MH-20-0114278',
         status: purchase_order.status || order.status || ''
       };
 
       const safeVendorDetails = {
-        vendor_name: vendor.vendor_name || order.vendor_name || '',
+        vendor_name: pickVendorName(vendor),
         billing_address: normalizeAddress(vendor.billing_address || ''),
         shipping_address: normalizeAddress(vendor.shipping_address || vendor.billing_address || ''),
-        gst: vendor.gst || '',
-        contact_name: vendor.contact_name || '',
+        gst: vendor.gst || vendor.gstin || '',
+        contact_name: vendor.contact_name || vendor.display_name || '',
         mobile_no: vendor.mobile_no || vendor.phone || '',
         email: vendor.email || '',
+        model_no: vendor.model_no || '',
       };
 
       // Build HTML using backend data

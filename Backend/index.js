@@ -60,9 +60,6 @@ const workOrderRoutes = require('./routes/workOrders');
 app.use('/api/work-orders', workOrderRoutes);
 
 
-
-
-
 app.get('/', (req, res) => {
   res.send('✅ Server is running and MySQL should be connected');
 });
