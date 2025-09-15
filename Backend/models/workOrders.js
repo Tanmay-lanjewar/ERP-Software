@@ -2,11 +2,17 @@ const db = require('../config/db'); // assumes db is your MySQL connection
 
 const WorkOrder = {
   create: (data, callback) => {
-    const {
-      work_order_number, customer_name, work_order_date, due_date, payment_terms,
-      subject, customer_notes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status , purchase_order_number, purchase_order_date
-    } = data;
+    try {
+      const {
+        work_order_number, customer_name, work_order_date, due_date, payment_terms,
+        subject, customer_notes, terms_and_conditions, attachment_url,
+        sub_total, cgst, sgst, grand_total, status , purchase_order_number, purchase_order_date
+      } = data;
+
+      // Validate required fields
+      if (!work_order_number || !customer_name || !work_order_date) {
+        return callback(new Error('Missing required fields: work_order_number, customer_name, work_order_date'), null);
+      }
 
     const sql = `
       INSERT INTO work_orders (
@@ -20,7 +26,17 @@ const WorkOrder = {
       work_order_number, customer_name, work_order_date, due_date, payment_terms,
       subject, customer_notes, terms_and_conditions, attachment_url,
       sub_total, cgst, sgst, grand_total, status , purchase_order_number, purchase_order_date
-    ], callback);
+    ], (err, result) => {
+      if (err) {
+        console.error('Database error:', err);
+        return callback(err);
+      }
+      callback(null, result);
+    });
+    } catch (error) {
+      console.error('Work order creation failed:', error);
+      callback(error);
+    }
   },
 
   getAll: (callback) => {

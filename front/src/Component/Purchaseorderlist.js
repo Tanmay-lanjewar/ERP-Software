@@ -139,7 +139,7 @@ const PurchaseOrderActions = () => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Order - ${poData.purchase_order_no}</title>
+    <title>Purchase Order - ${safeOrderData.purchase_order_no || 'N/A'}</title>
 </head>
 <body style="font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 20px;">
     <div style="border: 2px solid #000; padding: 10px; width: 600px; margin: auto;">
@@ -149,9 +149,9 @@ const PurchaseOrderActions = () => {
         
             </div>
             <div style="text-align: right;">
-                <div style="margin-bottom: 2px;"><strong>PO No:</strong> ${poData.purchase_order_no}</div>
-                <div style="margin-bottom: 2px; margin-right: 9px;"><strong>Date:</strong> ${formatDate(poData.purchase_order_date)}</div>
-                <div style="margin-right: 17px;"><strong>JO ID:</strong> ${poData.jo_id || 'N/A'}</div>
+                <div style="margin-bottom: 2px;"><strong>PO No:</strong> ${safeOrderData.purchase_order_no || 'N/A'}</div>
+                <div style="margin-bottom: 2px; margin-right: 9px;"><strong>Date:</strong> ${new Date(safeOrderData.purchase_order_date).toLocaleDateString() || 'N/A'}</div>
+                <div style="margin-right: 17px;"><strong>JO ID:</strong> ${safeOrderData.jo_id || 'N/A'}</div>
             </div>
         </div>
 
@@ -167,7 +167,7 @@ const PurchaseOrderActions = () => {
             </div>
             <div style="display: flex;">
                 <div style="width: 100px; font-weight: bold;">Shipping Address:</div>
-                <div>${poData.shipping_address || 'Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015'}</div>
+                <div>${safeVendorDetails.shipping_address || 'Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015'}</div>
             </div>
         </div>
 
@@ -215,40 +215,49 @@ const PurchaseOrderActions = () => {
                 </tr>
             </thead>
             <tbody>
-                ${itemsHtml}
+                ${safeOrderData.items?.map(item => `
+<tr>
+<td>${item.sr_no}</td>
+<td>${item.description}</td>
+<td>${item.hsn_code}</td>
+<td>${item.quantity}</td>
+<td>${item.uom}</td>
+<td>₹${item.rate || 0}</td>
+<td>₹${item.amount || 0}</td>
+</tr>`).join('') || ''}
             </tbody>
         </table>
 
         <div style="display: flex; margin-top: 5px;">
             <div style="width: 50%; border: 1px solid #000; padding: 5px;">
                 <div style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 5px;">Terms & Conditions</div>
-                <div>Payment Terms: ${poData.payment_terms || '100% After Delivery'}</div>
-                <div style="margin-top: 5px;">PO Validity: ${poData.po_validity || '4 Month'}</div>
-                <div>Delivery: ${poData.delivery_time || '1 to 2 Weeks (Immediate)'}</div>
-                <div>Document Required: ${poData.required_docs || 'Test Certificate'}</div>
+                <div>Payment Terms: ${safeOrderData.payment_terms || '100% After Delivery'}</div>
+                <div style="margin-top: 5px;">PO Validity: ${safeOrderData.po_validity || '4 Month'}</div>
+                <div>Delivery: ${safeOrderData.delivery_time || '1 to 2 Weeks (Immediate)'}</div>
+                <div>Document Required: ${safeOrderData.required_docs || 'Test Certificate'}</div>
             </div>
             <div style="width: 50%;">
                 <table style="width: 100%; border-collapse: collapse; margin-left: -1px;">
                     <tbody>
                         <tr>
                             <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Sub Total</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(poData.sub_total)}</td>
+                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹${safeOrderData.sub_total || 0}</td>
                         </tr>
                         <tr>
-                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">CGST @${(poData.cgst / poData.sub_total * 100).toFixed(2)}%</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(poData.cgst)}</td>
+                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">CGST @${(safeOrderData.cgst / (safeOrderData.subtotal || 1) * 100).toFixed(2)}%</td>
+                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹${safeOrderData.cgst || 0}</td>
                         </tr>
                         <tr>
-                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">SGST @${(poData.sgst / poData.sub_total * 100).toFixed(2)}%</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(poData.sgst)}</td>
+                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">SGST @${(safeOrderData.sgst / (safeOrderData.subtotal || 1) * 100).toFixed(2)}%</td>
+                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹${safeOrderData.sgst || 0}</td>
                         </tr>
                         <tr>
                             <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Grand Total</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(poData.total)}</td>
+                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹${safeOrderData.total || 0}</td>
                         </tr>
                         <tr>
                             <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Total in Words</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: left;">${poData.total_in_words}</td>
+                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: left;">${safeOrderData.total_in_words || 'N/A'}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -256,7 +265,7 @@ const PurchaseOrderActions = () => {
         </div>
 
         <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
-            <strong>Amount (in words):</strong> ${poData.total_in_words}
+            <strong>Amount (in words):</strong> ${safeOrderData.total_in_words || 'N/A'}
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 5px;">
@@ -268,7 +277,7 @@ const PurchaseOrderActions = () => {
             <div style="width: 30%; text-align: center; margin-left: 10px;">
                 <div style="font-weight: bold;">For MERAKI EXPERT</div>
                 <div style="height: 50px; display: flex; align-items: center; justify-content: center;">
-                    <img src="https://example.com/signature.png" alt="Signature" style="height: 50px;">
+                    <!-- Signature placeholder removed for reliability -->
                 </div>
                 <div>(Authorized Signatory)</div>
             </div>
@@ -278,14 +287,18 @@ const PurchaseOrderActions = () => {
 </html>
       `);
       
-      printWindow.document.close();
-      printWindow.focus();
+      printWindow.onload = () => {
+        try {
+          printWindow.print();
+        } catch (error) {
+          console.error('Print failed:', error);
+          alert('Failed to generate PDF. Please allow popups and try again.');
+        } finally {
+          setTimeout(() => printWindow.close(), 1000);
+        }
+      };
       
-      // Wait for content to load then print
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 500);
+      printWindow.document.close();
       
     } catch (error) {
       console.error('Error downloading PDF:', error);

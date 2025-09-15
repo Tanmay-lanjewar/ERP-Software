@@ -75,7 +75,7 @@ exports.getById = (id, callback) => {
            v.shipping_recipient_name, v.shipping_fax, v.shipping_phone
     FROM purchase_orders po
     LEFT JOIN purchase_order_items poi ON po.id = poi.purchase_order_id
-    LEFT JOIN vendors v ON LOWER(po.vendor_name) = LOWER(v.vendor_name)
+    LEFT JOIN vendors v ON po.vendor_id = v.id
     WHERE po.id = ? OR po.purchase_order_no = ?
     GROUP BY poi.id
   `;

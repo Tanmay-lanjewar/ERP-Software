@@ -449,17 +449,13 @@ const PurchaseOrderForm = () => {
                             value={row.item}
                             onChange={(e) => {
                               const selectedProductId = e.target.value;
-                              updateRow(index, "item_name", selectedProductId);
                               fetch(
                                 `http://localhost:5000/api/products/${selectedProductId}`
                               )
                                 .then((res) => res.json())
                                 .then((product) => {
-                                  updateRow(
-                                    index,
-                                    "rate",
-                                    product.sale_price || 0
-                                  );
+                                  updateRow(index, "item_name", product.product_name);
+                                  updateRow(index, "rate", product.sale_price || 0);
                                 })
                                 .catch((err) => {
                                   console.error(
@@ -477,7 +473,7 @@ const PurchaseOrderForm = () => {
                             </MenuItem>
                             {products.map((product) => (
                               <MenuItem key={product.id} 
-                                   value={product.product_name}>
+                                   value={product.id}>
                                 {product.product_name}
                               </MenuItem>
                             ))}
