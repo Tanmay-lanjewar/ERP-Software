@@ -72,7 +72,8 @@ exports.getById = (id, callback) => {
            v.billing_address1, v.billing_address2, v.billing_city, v.billing_state, v.billing_pincode,
            v.billing_recipient_name, v.billing_fax, v.billing_phone,
            v.shipping_address1, v.shipping_address2, v.shipping_city, v.shipping_state, v.shipping_pincode,
-           v.shipping_recipient_name, v.shipping_fax, v.shipping_phone
+           v.shipping_recipient_name, v.shipping_fax, v.shipping_phone,
+           poi.item_id
     FROM purchase_orders po
     LEFT JOIN purchase_order_items poi ON po.id = poi.purchase_order_id
     LEFT JOIN vendors v ON po.vendor_id = v.id
@@ -114,12 +115,13 @@ exports.create = (data, callback) => {
       item.qty,
       item.rate,
       item.discount,
-      item.amount
+      item.amount,
+      item.item_id // Add item_id
     ]);
 
     db.query(`
       INSERT INTO purchase_order_items 
-      (purchase_order_id, item_name, qty, rate, discount, amount) 
+      (purchase_order_id, item_name, qty, rate, discount, amount, item_id) 
       VALUES ?
     `, [items], callback);
   });
@@ -127,20 +129,51 @@ exports.create = (data, callback) => {
 
 // Update purchase order
 exports.update = (id, data, callback) => {
-  const updateQuery = `
-    UPDATE purchase_orders SET 
-      purchase_order_no = ?, financial_year = ?, delivery_to = ?, delivery_address = ?, vendor_name = ?, vendor_id = ?,
-      purchase_order_date = ?, delivery_date = ?, payment_terms = ?, due_date = ?,
-      customer_notes = ?, terms_and_conditions = ?, sub_total = ?, cgst = ?, sgst = ?, total = ?, attachment = ?
-    WHERE id = ?
-  `;
+  const poData = {
+    purchase_order_no: data.purchase_order_no,
+    delivery_to: data.delivery_to,
+    delivery_address: data.delivery_address,
+    vendor_name: data.vendor_name,
+    vendor_id: data.vendor_id,
+    purchase_order_date: data.purchase_order_date,
+    delivery_date: data.delivery_date,
+    payment_terms: data.payment_terms,
+    due_date: data.due_date,
+    customer_notes: data.customer_notes,
+    terms_and_conditions: data.terms_and_conditions,
+    sub_total: data.sub_total,
+    cgst: data.cgst,
+    sgst: data.sgst,
+    total: data.total,
+    attachment: data.attachment
+  };
 
-  const values = [
-    data.purchase_order_no, data.financial_year, data.delivery_to, data.delivery_address, data.vendor_name, data.vendor_id,
-    data.purchase_order_date, data.delivery_date, data.payment_terms, data.due_date,
-    data.customer_notes, data.terms_and_conditions, data.sub_total,
-    data.cgst, data.sgst, data.total, data.attachment, id
-  ];
+  db.query('UPDATE purchase_orders SET ? WHERE id = ?', [poData, id], (err, result) => {
+    if (err) return callback(err);
 
-  db.query(updateQuery, values, callback);
-};;
+    // Delete existing items
+    db.query('DELETE FROM purchase_order_items WHERE purchase_order_id = ?', [id], (err) => {
+      if (err) return callback(err);
+
+      // Insert new items
+      if (data.items && data.items.length > 0) {
+        const items = data.items.map(item => [
+          id,
+          item.item_name,
+          item.qty,
+          item.rate,
+          item.discount,
+          item.amount,
+          item.item_id
+        ]);
+        db.query(`
+          INSERT INTO purchase_order_items 
+          (purchase_order_id, item_name, qty, rate, discount, amount, item_id) 
+          VALUES ?
+        `, [items], callback);
+      } else {
+        callback(null, result); // No items to insert
+      }
+    });
+  });
+};

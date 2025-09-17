@@ -156,7 +156,7 @@ const PurchaseOrderForm = () => {
       total: total,
       attachment: attachment ? attachment.name : "",
       items: rows.map((row) => ({
-        item_detail: row.item,
+        item_name: row.item_name,
         qty: row.qty,
         rate: row.rate,
         discount: row.discount,
@@ -456,6 +456,7 @@ const PurchaseOrderForm = () => {
                                 .then((product) => {
                                   updateRow(index, "item_name", product.product_name);
                                   updateRow(index, "rate", product.sale_price || 0);
+                                  updateRow(index, "item", selectedProductId);
                                 })
                                 .catch((err) => {
                                   console.error(
