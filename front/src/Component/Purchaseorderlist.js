@@ -4,7 +4,8 @@ import {
   Button,
   Typography,
   TextField,
-  IconButton,  InputAdornment,
+  IconButton,
+  InputAdornment,
   Paper,
   Table,
   TableBody,
@@ -27,14 +28,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import Sidebar from "./Sidebar";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import ui from "../assets/mera.png";
-import axios from "axios";
 
-// Company constants used in PDF header
-const COMPANY = {
-  gstin: "27AKUPY6544R1ZM",
-  name: "Meraki Expert",
-};
+import axios from "axios";
 
 const PurchaseOrderActions = () => {
   const navigate = useNavigate();
@@ -79,58 +74,49 @@ const PurchaseOrderActions = () => {
 
   const handleDownloadPdf = async (order) => {
     try {
-      // Fetch full purchase order with items and vendor
-      const idOrNo = order.id || order.purchase_order_no;
-      if (!idOrNo) {
-        alert('Purchase order identifier missing');
-        return;
-      }
-      const poResponse = await axios.get(`http://localhost:5000/api/purchase/${idOrNo}`);
-      const { purchase_order = {}, vendor = {} } = poResponse.data || {};
-      const items = Array.isArray(purchase_order.items) ? purchase_order.items : [];
-
-      // Helper to normalize addresses like ', , ,' -> '...'
-      const normalizeAddress = (s) => {
-        if (!s) return '';
-        return s
-          .split(',')
-          .map((t) => t.trim())
-          .filter((t) => t && t.toLowerCase() !== 'n/a')
-          .join(', ');
+      // Test if backend is reachable
+      console.log('Testing API endpoint...');
+      const testResponse = await axios.get('http://localhost:5000/api/purchase');
+      console.log('API test successful:', testResponse.status);
+      
+      // Fetch purchase order data from backend API using purchase order number instead of ID
+      const response = await axios.get(`http://localhost:5000/api/purchase/${order.purchase_order_no}`);
+      console.log('Purchase order data fetched:', response.data);
+      
+      const { purchase_order: poData, vendor } = response.data;
+  
+      // Format date
+      const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
       };
-
-      // Prepare safe data from backend only (no dummy constants)
-      const safeOrderData = {
-        purchase_order_no: purchase_order.purchase_order_no || order.purchase_order_no || '',
-        purchase_order_date: (purchase_order.purchase_order_date || order.purchase_order_date || '').slice(0, 10),
-        os_id: purchase_order.os_id || order.os_id || '',
-        subtotal: typeof purchase_order.sub_total !== 'undefined' ? purchase_order.sub_total : order.sub_total || '',
-        cgst: typeof purchase_order.cgst !== 'undefined' ? purchase_order.cgst : order.cgst || '',
-        sgst: typeof purchase_order.sgst !== 'undefined' ? purchase_order.sgst : order.sgst || '',
-        igst: typeof purchase_order.igst !== 'undefined' ? purchase_order.igst : order.igst || '',
-        freight: typeof purchase_order.freight !== 'undefined' ? purchase_order.freight : order.freight || '',
-        total: typeof purchase_order.total !== 'undefined' ? purchase_order.total : order.total || '',
-        total_in_words: purchase_order.total_in_words || order.total_in_words || '',
-        payment_terms: purchase_order.payment_terms || order.payment_terms || '',
-        delivery_time: purchase_order.delivery_time || order.delivery_time || '',
-        required_docs: purchase_order.required_docs || order.required_docs || '',
-        po_validity: purchase_order.po_validity || order.po_validity || '',
-        gstin: purchase_order.gstin || '27AKUPY6544R1ZM',
-        udyam: purchase_order.udyam || 'UDYAM-MH-20-0114278',
-        status: purchase_order.status || order.status || ''
+  
+      // Format currency
+      const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+          minimumFractionDigits: 2
+        }).format(amount);
       };
-
-      const safeVendorDetails = {
-        vendor_name: vendor.vendor_name || order.vendor_name || '',
-        billing_address: normalizeAddress(vendor.billing_address || ''),
-        shipping_address: normalizeAddress(vendor.shipping_address || vendor.billing_address || ''),
-        gst: vendor.gst || '',
-        contact_name: vendor.contact_name || '',
-        mobile_no: vendor.mobile_no || vendor.phone || '',
-        email: vendor.email || '',
-      };
-
-      // Build HTML using backend data
+  
+      // Generate items HTML
+      const itemsHtml = poData.items.map((item, index) => `
+        <tr>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${index + 1}</td>
+          <td style="border: 1px solid #000; padding: 3px;">${item.description}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.quantity}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.mou}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(item.rate)}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(item.amount)}</td>
+        </tr>
+      `).join('');
+  
+      // Build HTML using dynamic data
       const printWindow = window.open('', '_blank');
       printWindow.document.write(`
         <!DOCTYPE html>
@@ -139,7 +125,7 @@ const PurchaseOrderActions = () => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Order - ${safeOrderData.purchase_order_no || 'N/A'}</title>
+    <title>Purchase Order - ${poData.purchase_order_no}</title>
 </head>
 <body style="font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 20px;">
     <div style="border: 2px solid #000; padding: 10px; width: 600px; margin: auto;">
@@ -149,9 +135,9 @@ const PurchaseOrderActions = () => {
         
             </div>
             <div style="text-align: right;">
-                <div style="margin-bottom: 2px;"><strong>PO No:</strong> ${safeOrderData.purchase_order_no || 'N/A'}</div>
-                <div style="margin-bottom: 2px; margin-right: 9px;"><strong>Date:</strong> ${new Date(safeOrderData.purchase_order_date).toLocaleDateString() || 'N/A'}</div>
-                <div style="margin-right: 17px;"><strong>JO ID:</strong> ${safeOrderData.jo_id || 'N/A'}</div>
+                <div style="margin-bottom: 2px;"><strong>PO No:</strong> ${poData.purchase_order_no}</div>
+                <div style="margin-bottom: 2px; margin-right: 9px;"><strong>Date:</strong> ${formatDate(poData.purchase_order_date)}</div>
+                <div style="margin-right: 17px;"><strong>JO ID:</strong> ${poData.jo_id || 'N/A'}</div>
             </div>
         </div>
 
@@ -167,7 +153,7 @@ const PurchaseOrderActions = () => {
             </div>
             <div style="display: flex;">
                 <div style="width: 100px; font-weight: bold;">Shipping Address:</div>
-                <div>${safeVendorDetails.shipping_address || 'Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015'}</div>
+                <div>${poData.shipping_address || 'Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015'}</div>
             </div>
         </div>
 
@@ -198,63 +184,57 @@ const PurchaseOrderActions = () => {
             </tbody>
         </table>
 
-            <!-- Items Table -->
-            <table>
-              <thead>
-                <tr>
-                  <th>Sr.</th>
-                  <th>Description</th>
-                  <th>HSN</th>
-                  <th>Qty</th>
-                  <th>UOM</th>
-                  <th>Rate</th>
-                  <th>Amount</th>
+        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
+            This is reference to our requirement,
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Sr. No.</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 35%;">Item Description</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 10%;">HSN Code</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Qty.</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">MOU</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 15%;">Rate</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 25%;">Amount</th>
                 </tr>
             </thead>
             <tbody>
-                ${safeOrderData.items?.map(item => `
-<tr>
-<td>${item.sr_no}</td>
-<td>${item.description}</td>
-<td>${item.hsn_code}</td>
-<td>${item.quantity}</td>
-<td>${item.uom}</td>
-<td>₹${item.rate || 0}</td>
-<td>₹${item.amount || 0}</td>
-</tr>`).join('') || ''}
+                ${itemsHtml}
             </tbody>
         </table>
 
         <div style="display: flex; margin-top: 5px;">
             <div style="width: 50%; border: 1px solid #000; padding: 5px;">
                 <div style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 5px;">Terms & Conditions</div>
-                <div>Payment Terms: ${safeOrderData.payment_terms || '100% After Delivery'}</div>
-                <div style="margin-top: 5px;">PO Validity: ${safeOrderData.po_validity || '4 Month'}</div>
-                <div>Delivery: ${safeOrderData.delivery_time || '1 to 2 Weeks (Immediate)'}</div>
-                <div>Document Required: ${safeOrderData.required_docs || 'Test Certificate'}</div>
+                <div>Payment Terms: ${poData.payment_terms || '100% After Delivery'}</div>
+                <div style="margin-top: 5px;">PO Validity: ${poData.po_validity || '4 Month'}</div>
+                <div>Delivery: ${poData.delivery_time || '1 to 2 Weeks (Immediate)'}</div>
+                <div>Document Required: ${poData.required_docs || 'Test Certificate'}</div>
             </div>
             <div style="width: 50%;">
                 <table style="width: 100%; border-collapse: collapse; margin-left: -1px;">
                     <tbody>
                         <tr>
                             <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Sub Total</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹${safeOrderData.sub_total || 0}</td>
+                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(poData.sub_total)}</td>
                         </tr>
                         <tr>
-                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">CGST @${(safeOrderData.cgst / (safeOrderData.subtotal || 1) * 100).toFixed(2)}%</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹${safeOrderData.cgst || 0}</td>
+                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">CGST @${(poData.cgst / poData.sub_total * 100).toFixed(2)}%</td>
+                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(poData.cgst)}</td>
                         </tr>
                         <tr>
-                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">SGST @${(safeOrderData.sgst / (safeOrderData.subtotal || 1) * 100).toFixed(2)}%</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹${safeOrderData.sgst || 0}</td>
+                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">SGST @${(poData.sgst / poData.sub_total * 100).toFixed(2)}%</td>
+                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(poData.sgst)}</td>
                         </tr>
                         <tr>
                             <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Grand Total</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹${safeOrderData.total || 0}</td>
+                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(poData.total)}</td>
                         </tr>
                         <tr>
                             <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Total in Words</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: left;">${safeOrderData.total_in_words || 'N/A'}</td>
+                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: left;">${poData.total_in_words}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -262,7 +242,7 @@ const PurchaseOrderActions = () => {
         </div>
 
         <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
-            <strong>Amount (in words):</strong> ${safeOrderData.total_in_words || 'N/A'}
+            <strong>Amount (in words):</strong> ${poData.total_in_words}
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 5px;">
@@ -274,7 +254,7 @@ const PurchaseOrderActions = () => {
             <div style="width: 30%; text-align: center; margin-left: 10px;">
                 <div style="font-weight: bold;">For MERAKI EXPERT</div>
                 <div style="height: 50px; display: flex; align-items: center; justify-content: center;">
-                    <!-- Signature placeholder removed for reliability -->
+                    <img src="https://example.com/signature.png" alt="Signature" style="height: 50px;">
                 </div>
                 <div>(Authorized Signatory)</div>
             </div>
@@ -284,23 +264,19 @@ const PurchaseOrderActions = () => {
 </html>
       `);
       
-      printWindow.onload = () => {
-        try {
-          printWindow.print();
-        } catch (error) {
-          console.error('Print failed:', error);
-          alert('Failed to generate PDF. Please allow popups and try again.');
-        } finally {
-          setTimeout(() => printWindow.close(), 1000);
-        }
-      };
-      
       printWindow.document.close();
+      printWindow.focus();
+      
+      // Wait for content to load then print
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
       
     } catch (error) {
-      console.error("Error downloading PDF:", error);
-      console.error("Error details:", error.response?.data || error.message);
-      alert("Failed to download PDF. Please check console for details.");
+      console.error('Error downloading PDF:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      alert('Failed to download PDF. Please check console for details.');
     }
   };
 
