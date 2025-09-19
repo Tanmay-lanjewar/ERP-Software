@@ -36,7 +36,6 @@ import Sidebar from "./Sidebar";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-
 const PurchaseOrderForm = () => {
   const navigate = useNavigate();
   const [vendors, setVendors] = useState([]);
@@ -47,11 +46,13 @@ const PurchaseOrderForm = () => {
   const [paymentTerms, setPaymentTerms] = useState("Due end of the month");
   const [dueDate, setDueDate] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
-  const [termsAndConditions, setTermsAndConditions] = useState("");
+  const [termsAndConditions, setTermsAndConditions] = useState(
+        
+                );
   const [vendorModalOpen, setVendorModalOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [rows, setRows] = useState([
-    { id: Date.now(), item: "", item_name: "", qty: 0, rate: 0, discount: 0, amount: 0 },
+    { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0 },
   ]);
   const [attachment, setAttachment] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -81,8 +82,7 @@ const PurchaseOrderForm = () => {
     // Fetch purchase order number (assuming a similar endpoint exists)
     axios
       .get("http://localhost:5000/api/purchase/next-number")
-      // changed line
-      .then((res) => setPurchaseOrderNo(res.data.nextPurchaseOrderNumber || ""))
+      .then((res) => setPurchaseOrderNo(res.data.nextPurchaseOrderNo || ""))
       .catch(() => setPurchaseOrderNo(""));
   }, []);
 
@@ -103,7 +103,7 @@ const PurchaseOrderForm = () => {
   const addNewRow = () => {
     setRows([
       ...rows,
-      { id: Date.now(), item: "", item_name: "", qty: 0, rate: 0, discount: 0, amount: 0 },
+      { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0 },
     ]);
   };
 
@@ -143,7 +143,6 @@ const PurchaseOrderForm = () => {
       delivery_to: "organization",
       delivery_address: `Laxmi Enterprises,\nNagpur, Maharashtra, 200145`,
       vendor_name: vendorObj ? vendorObj.vendor_name : selectedVendor,
-      vendor_id: vendorObj ? vendorObj.vendor_id : null,
       purchase_order_date: purchaseOrderDate,
       delivery_date: deliveryDate,
       payment_terms: paymentTerms,
@@ -156,7 +155,7 @@ const PurchaseOrderForm = () => {
       total: total,
       attachment: attachment ? attachment.name : "",
       items: rows.map((row) => ({
-        item_detail: row.item_name, // Changed to item_name
+        item_detail: row.item,
         qty: row.qty,
         rate: row.rate,
         discount: row.discount,
@@ -248,8 +247,9 @@ const PurchaseOrderForm = () => {
               <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
-                  label="Purchase Order"
+                  label="Purchase Order*"
                   value={purchaseOrderNo}
+                  onChange={(e) => setPurchaseOrderNo(e.target.value)}
                   sx={{
                     width: 500,
                     "& .MuiOutlinedInput-root": {
@@ -449,15 +449,16 @@ const PurchaseOrderForm = () => {
                             value={row.item}
                             onChange={(e) => {
                               const selectedProductId = e.target.value;
-                              // store selected product id in row.item
-                              updateRow(index, "item", selectedProductId);
                               fetch(
                                 `http://localhost:5000/api/products/${selectedProductId}`
                               )
                                 .then((res) => res.json())
                                 .then((product) => {
-                                  updateRow(index, "item_name", product.product_name);
-                                  updateRow(index, "rate", product.sale_price || 0);
+                                  updateRow(
+                                    index,
+                                    "rate",
+                                    product.sale_price || 0
+                                  );
                                 })
                                 .catch((err) => {
                                   console.error(
@@ -890,4 +891,4 @@ const PurchaseOrderForm = () => {
   );
 };
 
-export default PurchaseOrderForm;;
+export default PurchaseOrderForm;
