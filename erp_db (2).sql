@@ -459,7 +459,7 @@ CREATE TABLE `work_orders` (
   `cgst` decimal(10,2) NOT NULL DEFAULT 0.00,
   `sgst` decimal(10,2) NOT NULL DEFAULT 0.00,
   `grand_total` decimal(10,2) NOT NULL DEFAULT 0.00,
-  `status` varchar(50) DEFAULT 'Draft',
+  `status` enum('Draft','In Progress','Completed','Cancelled') DEFAULT 'Draft',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -474,6 +474,37 @@ INSERT INTO `work_orders` (`work_order_id`, `work_order_number`, `customer_name`
 (3, 'INV-000001', 'Dr. Rahul Mehra', '2025-06-21', '2025-06-30', 'Net 15', 'hello work done', 'Thanks for your business.', 'ok', '', 10063.00, 905.67, 905.67, 11874.34, 'Draft', '2025-07-28 17:17:27', '2025-07-28 17:17:27'),
 (8, 'INV-000003', 'Dr. Rahul Mehra', '2025-06-21', '2025-06-30', 'Net 15', 'ok', 'Thanks for your business.', 'ok', '', 427.00, 38.43, 38.43, 503.86, 'Draft', '2025-08-14 09:06:05', '2025-08-14 09:06:05'),
 (9, 'INV-000008', 'Dr. Rahul Mehra', '2025-06-21', '2025-06-30', 'Net 30', 'done', 'Thanks for your business.', 'ok', '', 25.00, 2.25, 2.25, 29.50, 'Draft', '2025-08-14 10:02:11', '2025-08-14 10:02:11');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `work_order_items`
+--
+
+CREATE TABLE `work_order_items` (
+  `item_id` int(11) NOT NULL,
+  `work_order_id` int(11) DEFAULT NULL,
+  `item_name` varchar(255) DEFAULT NULL,
+  `hsn_sac` varchar(50) DEFAULT NULL,
+  `quantity` int(11) DEFAULT NULL,
+  `unit` varchar(50) DEFAULT NULL,
+  `rate` double DEFAULT NULL,
+  `discount` float DEFAULT NULL,
+  `amount` float DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `work_order_items`
+--
+
+INSERT INTO `work_order_items` (`item_id`, `work_order_id`, `item_name`, `hsn_sac`, `quantity`, `unit`, `rate`, `discount`, `amount`) VALUES
+(1, 1, 'Product A', '8471', 2, 'Pcs', 1000.00, 0.00, 2000.00),
+(2, 1, 'Service B', '9983', 1, 'Hrs', 5000.00, 5.00, 4750.00),
+(3, 2, 'Organic Fertilizers', '3101', 50, 'Kg', 600.00, 0.00, 30000.00),
+(4, 3, 'Test Item 1', '1234', 10, 'Unit', 500.00, 0.00, 5000.00),
+(5, 3, 'Test Item 2', '5678', 5, 'Unit', 1000.00, 0.00, 5000.00),
+(6, 8, 'soap', '1234', 4, 'kg', 100, 5, 380),
+(7, 9, 'Mini', '1234', 5, 'pc', 5, 0, 25);
 
 --
 -- Indexes for dumped tables
@@ -558,6 +589,13 @@ ALTER TABLE `work_orders`
   ADD UNIQUE KEY `work_order_number` (`work_order_number`);
 
 --
+-- Indexes for table `work_order_items`
+--
+ALTER TABLE `work_order_items`
+  ADD PRIMARY KEY (`item_id`),
+  ADD KEY `work_order_id` (`work_order_id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -634,6 +672,12 @@ ALTER TABLE `work_orders`
   MODIFY `work_order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
+-- AUTO_INCREMENT for table `work_order_items`
+--
+ALTER TABLE `work_order_items`
+  MODIFY `item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
 -- Constraints for dumped tables
 --
 
@@ -654,6 +698,13 @@ ALTER TABLE `purchase_order_items`
 --
 ALTER TABLE `quotation_items`
   ADD CONSTRAINT `quotation_items_ibfk_1` FOREIGN KEY (`quotation_id`) REFERENCES `quotation` (`quotation_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `work_order_items`
+--
+ALTER TABLE `work_order_items`
+  ADD CONSTRAINT `work_order_items_ibfk_1` FOREIGN KEY (`work_order_id`) REFERENCES `work_orders` (`work_order_id`) ON DELETE CASCADE;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -44,7 +44,19 @@ const WorkOrder = {
   },
 
   getById: (id, callback) => {
-    db.query('SELECT * FROM work_orders WHERE work_order_id = ?', [id], callback);
+    const sql = `
+      SELECT
+        wo.*,      
+        c.customer_name, c.billing_recipient_name, c.billing_address1, c.billing_address2, c.billing_city, c.billing_state, c.billing_pincode, c.billing_country, c.gst,
+        c.shipping_recipient_name, c.shipping_address1, c.shipping_address2, c.shipping_city, c.shipping_state, c.shipping_pincode, c.shipping_country
+      FROM
+        work_orders wo
+      LEFT JOIN
+        customers c ON wo.customer_name = c.customer_name
+      WHERE
+        wo.work_order_id = ?
+    `;
+    db.query(sql, [id], callback);
   },
 
   update: (id, data, callback) => {

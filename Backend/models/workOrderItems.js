@@ -7,8 +7,10 @@ exports.createItems = (workOrderId, items, cb) => {
 
   const values = items.map(item => [
     workOrderId,
-    item.item_detail,
+    item.item_name,
+    item.hsn_sac,
     item.quantity,
+    item.unit,
     item.rate,
     item.discount,
     item.amount
@@ -16,7 +18,7 @@ exports.createItems = (workOrderId, items, cb) => {
 
   const sql = `
     INSERT INTO work_order_items
-    (work_order_id, item_detail, quantity, rate, discount, amount)
+    (work_order_id, item_name, hsn_sac, quantity, unit, rate, discount, amount)
     VALUES ?
   `;
 

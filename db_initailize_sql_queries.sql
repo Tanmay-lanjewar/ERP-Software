@@ -170,3 +170,39 @@ CREATE TABLE IF NOT EXISTS quotation_items (
   amount FLOAT,
   FOREIGN KEY (quotation_id) REFERENCES quotation(quotation_id) ON DELETE CASCADE
 );
+
+-- Create table for work_orders
+CREATE TABLE IF NOT EXISTS work_orders (
+  work_order_id INT AUTO_INCREMENT PRIMARY KEY,
+  work_order_number VARCHAR(255) NOT NULL,
+  customer_name VARCHAR(255) NOT NULL,
+  work_order_date DATE NOT NULL,
+  due_date DATE,
+  payment_terms TEXT,
+  subject VARCHAR(255),
+  customer_notes TEXT,
+  terms_and_conditions TEXT,
+  attachment_url VARCHAR(500),
+  sub_total DOUBLE,
+  cgst DOUBLE,
+  sgst DOUBLE,
+  grand_total DOUBLE,
+  status ENUM('Draft', 'In Progress', 'Completed', 'Cancelled') DEFAULT 'Draft',
+  purchase_order_number VARCHAR(255),
+  purchase_order_date DATE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create table for work_order_items
+CREATE TABLE IF NOT EXISTS work_order_items (
+  item_id INT AUTO_INCREMENT PRIMARY KEY,
+  work_order_id INT,
+  item_name VARCHAR(255),
+  hsn_sac VARCHAR(50),
+  quantity INT,
+  unit VARCHAR(50),
+  rate DOUBLE,
+  discount FLOAT,
+  amount FLOAT,
+  FOREIGN KEY (work_order_id) REFERENCES work_orders(work_order_id) ON DELETE CASCADE
+);
