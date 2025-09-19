@@ -209,8 +209,8 @@ const PurchaseOrderActions = () => {
             <div style="width: 50%; border: 1px solid #000; padding: 5px;">
                 <div style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 5px;">Terms & Conditions</div>
                 <div>Payment Terms: ${poData.payment_terms || '100% After Delivery'}</div>
-                <div style="margin-top: 5px;">PO Validity: ${poData.po_validity || '4 Month'}</div>
-                <div>Delivery: ${poData.delivery_time || '1 to 2 Weeks (Immediate)'}</div>
+                <div style="margin-top: 5px;">PO Validity: ${poData.po_validity }</div>
+                <div>Delivery: ${poData.delivery_time || '(Immediate)'}</div>
                 <div>Document Required: ${poData.required_docs || 'Test Certificate'}</div>
             </div>
             <div style="width: 50%;">

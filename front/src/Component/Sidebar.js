@@ -116,12 +116,12 @@ const othersItems = [
     path: '/payment-settings',
     matchPaths: ['/payment-settings','/add-payment-settings']
   },
-  {
-    text: 'Settings',
-    icon: <Settings />,
-    path: '/settings',
-    matchPaths: ['/settings'],
-  },
+  // {
+  //   text: 'Settings',
+  //   icon: <Settings />,
+  //   path: '/settings',
+  //   matchPaths: ['/settings'],
+  // },
 ];
 
 

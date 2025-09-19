@@ -46,7 +46,9 @@ const PurchaseOrderForm = () => {
   const [paymentTerms, setPaymentTerms] = useState("Due end of the month");
   const [dueDate, setDueDate] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
-  const [termsAndConditions, setTermsAndConditions] = useState( "");
+  const [termsAndConditions, setTermsAndConditions] = useState(
+        
+                );
   const [vendorModalOpen, setVendorModalOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [rows, setRows] = useState([

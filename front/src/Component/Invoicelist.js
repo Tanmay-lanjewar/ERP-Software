@@ -31,7 +31,7 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
-
+import ui from "../assets/mera.png"
 const statusColor = {
   Paid: "success",
   Draft: "default",
@@ -223,9 +223,12 @@ export default function Invoicelist() {
             <!-- Header -->
             <table class="no-border">
               <tr>
-                <td style="border:none;">
-                  <img src="/static/media/ui.405d9b691b910181ce2e.png" class="logo" alt="Logo" />
-                </td>
+                
+                 <div style="display: flex; align-items: center;">
+                                 <img src=${ui} alt="Merraki Expert Logo" style="width: 200px; height: auto; margin-top: -70px; margin-bottom: -70px;">
+                         
+                             </div>
+                
                 <td style="text-align:center; border:none;">
                   <p class="bold">TAX INVOICE</p>
                   <p class="small">[Section 31 of the CGST Act, 2017 read with Rule 1 of Revised Invoice Rules, 2017]</p>
