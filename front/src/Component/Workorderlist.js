@@ -278,7 +278,7 @@ const WorkOrderlist = () => {
             <table class="no-border">
               <tr>
                 <td style="border:none;">
-                  <img src=${ui} class="logo" alt="Logo" />
+                  <img src= class="logo" alt="Logo" />
                 </td>
                 <td style="text-align:center; border:none;">
                   <p class="bold">WORK ORDER</p>
