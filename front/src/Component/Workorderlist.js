@@ -13,7 +13,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import Sidebar from './Sidebar';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import ui from '../assets/mera.png';
+
 
 const statusColorMap = {
   Draft: { bg: '#E6F4EA', color: '#333' },
