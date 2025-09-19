@@ -156,7 +156,7 @@ const PurchaseOrderForm = () => {
       total: total,
       attachment: attachment ? attachment.name : "",
       items: rows.map((row) => ({
-        item_detail: row.item,
+        item_detail: row.item_name, // Changed to item_name
         qty: row.qty,
         rate: row.rate,
         discount: row.discount,
@@ -449,6 +449,8 @@ const PurchaseOrderForm = () => {
                             value={row.item}
                             onChange={(e) => {
                               const selectedProductId = e.target.value;
+                              // store selected product id in row.item
+                              updateRow(index, "item", selectedProductId);
                               fetch(
                                 `http://localhost:5000/api/products/${selectedProductId}`
                               )

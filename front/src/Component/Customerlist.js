@@ -38,19 +38,11 @@ export default function CustomerList() {
     const [printCustomer, setPrintCustomer] = useState(null);
 
 
-
-
-
     const handlePrintStatement = (customer) => {
         setPrintCustomer(customer);
         setPrintDialogOpen(true);
         handleMenuClose();
     };
-
-
-
-
-
 
 
     const fetchCustomers = async () => {

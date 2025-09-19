@@ -45,6 +45,7 @@ export default function NewQuotation() {
   const [expiryDate, setExpiryDate] = useState("2025-09-21");
   const [customerName, setCustomerName] = useState("");
   const [subject, setSubject] = useState("");
+  const [freight, setFreight] = useState(0);
   const [customerNotes, setCustomerNotes] = useState(
     "Thanks for your business."
   );
@@ -585,6 +586,17 @@ export default function NewQuotation() {
                       sx={{ bgcolor: "#f9fafb", borderRadius: 1, width: 500 }}
                     />
                   </Paper>
+                  <Paper variant="outlined" sx={{ p: 2 }}>
+                    <TextField
+                      multiline
+                      rows={1}
+                      label="Add: Freigh"
+                      value={freight}
+                      onChange={(e) => setFreight(e.target.value)}
+        
+                      sx={{ bgcolor: "#f9fafb", borderRadius: 1, width: 500 }}
+                    />
+                  </Paper>
                 </Grid>
                 <Grid item xs={12} sm={6} md={4} sx={{ ml: 15 }}>
                   <Paper
@@ -651,6 +663,7 @@ export default function NewQuotation() {
                     },
                   }}
                 />
+                
                 <Box
                   display="flex"
                   alignItems="center"

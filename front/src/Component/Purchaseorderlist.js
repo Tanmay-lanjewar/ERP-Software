@@ -4,8 +4,7 @@ import {
   Button,
   Typography,
   TextField,
-  IconButton,
-  InputAdornment,
+  IconButton,  InputAdornment,
   Paper,
   Table,
   TableBody,
@@ -30,6 +29,12 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 
 import axios from "axios";
+
+// Company constants used in PDF header
+const COMPANY = {
+  gstin: "27AKUPY6544R1ZM",
+  name: "Meraki Expert",
+};
 
 const PurchaseOrderActions = () => {
   const navigate = useNavigate();
@@ -79,231 +84,219 @@ const PurchaseOrderActions = () => {
 
   const handleDownloadPdf = async (order) => {
     try {
-      // Fetch full purchase order with items and vendor
-      const idOrNo = order.id || order.purchase_order_no;
+      const idOrNo = order.id ;
       if (!idOrNo) {
-        alert('Purchase order identifier missing');
+        alert("Purchase order identifier missing");
         return;
       }
-      const poResponse = await axios.get(`http://localhost:5000/api/purchase/${idOrNo}`);
-      const { purchase_order = {}, vendor = {} } = poResponse.data || {};
-      const items = Array.isArray(purchase_order.items) ? purchase_order.items : [];
 
-      // Helper to normalize addresses like ', , ,' -> '...'
-      const normalizeAddress = (s) => {
-        if (!s) return '';
-        return s
-          .split(',')
-          .map((t) => t.trim())
-          .filter((t) => t && t.toLowerCase() !== 'n/a')
-          .join(', ');
+      const { data } = await axios.get(
+        `http://localhost:5000/api/purchase/${idOrNo}`
+      );
+      const purchaseOrder = data?.purchase_order || {};
+      const vendor = data?.vendor || {};
+
+      // Normalize / fallback values
+      const poNo =  order.purchase_order_no || "";
+      const poDate = (purchaseOrder.purchase_order_date || order.purchase_order_date || "").slice(0, 10);
+      const subTotal = Number(purchaseOrder.sub_total ?? order.sub_total ?? 0);
+      const cgst = Number(purchaseOrder.cgst ?? order.cgst ?? 0);
+      const sgst = Number(purchaseOrder.sgst ?? order.sgst ?? 0);
+      const total = Number(purchaseOrder.total ?? order.total ?? 0);
+      const totalInWords = purchaseOrder.total_in_words || order.total_in_words || "";
+      const paymentTerms = purchaseOrder.payment_terms || order.payment_terms || "";
+      const poValidity = purchaseOrder.po_validity || order.po_validity || "";
+      const deliveryTime = purchaseOrder.delivery_time || order.delivery_time || "";
+      const requiredDocs = purchaseOrder.required_docs || order.required_docs || "";
+
+      const items = Array.isArray(purchaseOrder.items)
+        ? purchaseOrder.items
+        : [];
+
+      // Fallback number-to-words (INR) like invoice PDF
+      const numberToWords = (num) => {
+        const units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+        const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+        const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+        const thousands = ["", "Thousand", "Lakh", "Crore"];
+
+        const convertLessThanThousand = (n) => {
+          if (n === 0) return "";
+          if (n < 10) return units[n];
+          if (n < 20) return teens[n - 10];
+          if (n < 100) return `${tens[Math.floor(n / 10)]} ${units[n % 10]}`.trim();
+          return `${units[Math.floor(n / 100)]} Hundred ${convertLessThanThousand(n % 100)}`.trim();
+        };
+
+        const convert = (n) => {
+          if (!n || isNaN(n)) return "";
+          if (n === 0) return "Zero";
+          let result = "";
+          let thousandIndex = 0;
+          while (n > 0) {
+            const chunk = n % 1000;
+            if (chunk > 0) {
+              result = `${convertLessThanThousand(chunk)} ${thousands[thousandIndex]} ${result}`.trim();
+            }
+            n = Math.floor(n / 1000);
+            thousandIndex++;
+          }
+          return result;
+        };
+
+        return `${convert(Math.floor(Number(num) || 0))} Rupees Only`;
       };
 
-      // Prepare safe data from backend only (no dummy constants)
-      const safeOrderData = {
-        purchase_order_no: purchase_order.purchase_order_no || order.purchase_order_no || '',
-        purchase_order_date: (purchase_order.purchase_order_date || order.purchase_order_date || '').slice(0, 10),
-        os_id: purchase_order.os_id || order.os_id || '',
-        subtotal: typeof purchase_order.sub_total !== 'undefined' ? purchase_order.sub_total : order.sub_total || '',
-        cgst: typeof purchase_order.cgst !== 'undefined' ? purchase_order.cgst : order.cgst || '',
-        sgst: typeof purchase_order.sgst !== 'undefined' ? purchase_order.sgst : order.sgst || '',
-        igst: typeof purchase_order.igst !== 'undefined' ? purchase_order.igst : order.igst || '',
-        freight: typeof purchase_order.freight !== 'undefined' ? purchase_order.freight : order.freight || '',
-        total: typeof purchase_order.total !== 'undefined' ? purchase_order.total : order.total || '',
-        total_in_words: purchase_order.total_in_words || order.total_in_words || '',
-        payment_terms: purchase_order.payment_terms || order.payment_terms || '',
-        delivery_time: purchase_order.delivery_time || order.delivery_time || '',
-        required_docs: purchase_order.required_docs || order.required_docs || '',
-        po_validity: purchase_order.po_validity || order.po_validity || '',
-        gstin: purchase_order.gstin || '27AKUPY6544R1ZM',
-        udyam: purchase_order.udyam || 'UDYAM-MH-20-0114278',
-        status: purchase_order.status || order.status || ''
-      };
+      // Compose billing/shipping details like invoice PDF
+      const billingDetails = `
+        ${vendor.billing_recipient_name || vendor.company_name || vendor.vendor_name || "N/A"}<br>
+        ${vendor.billing_address1 || ""}${vendor.billing_address2 ? `<br>${vendor.billing_address2}` : ""}<br>
+        ${vendor.billing_city || ""}, ${vendor.billing_state || ""} - ${vendor.billing_pincode || ""}<br>
+        Pin Code - ${vendor.billing_pincode || ""}, ${vendor.billing_country || "India"}<br>
+        <b>State Code :</b> ${vendor.billing_state ? "27" : "N/A"}<br>
+        <b>GSTIN :</b> ${vendor.gstin || "N/A"}
+      `;
 
-      const safeVendorDetails = {
-        vendor_name: vendor.vendor_name || order.vendor_name || '',
-        billing_address: normalizeAddress(vendor.billing_address || ''),
-        shipping_address: normalizeAddress(vendor.shipping_address || vendor.billing_address || ''),
-        gst: vendor.gst || '',
-        contact_name: vendor.contact_name || '',
-        mobile_no: vendor.mobile_no || vendor.phone || '',
-        email: vendor.email || '',
-      };
+      const shippingDetails = `
+        ${vendor.shipping_recipient_name || vendor.company_name || vendor.vendor_name || "N/A"}<br>
+        ${vendor.shipping_address1 || ""}${vendor.shipping_address2 ? `<br>${vendor.shipping_address2}` : ""}<br>
+        ${vendor.shipping_city || ""}, ${vendor.shipping_state || ""} - ${vendor.shipping_pincode || ""}<br>
+        Pin Code - ${vendor.shipping_pincode || ""}, ${vendor.shipping_country || "India"}<br>
+        <b>State Code :</b> ${vendor.shipping_state ? "27" : "N/A"}<br>
+        <b>GSTIN :</b> ${vendor.gstin || "N/A"}
+      `;
 
-      // Build HTML using backend data
-      const printWindow = window.open('', '_blank');
+      // Open print window with dynamic HTML content
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        alert('Popup blocked. Please allow popups for this site to download the PDF.');
+        return;
+      }
       printWindow.document.write(`
         <!DOCTYPE html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Order - ${safeOrderData.purchase_order_no || 'N/A'}</title>
-</head>
-<body style="font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 20px;">
-    <div style="border: 2px solid #000; padding: 10px; width: 600px; margin: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 5px;">
-            <div style="display: flex; align-items: center;">
-                <img src="/static/media/ui.405d9b691b910181ce2e.png" alt="Merraki Expert Logo" style="width: 200px; height: auto; margin-top: -70px; margin-bottom: -70px;">
-        
-            </div>
-            <div style="text-align: right;">
-                <div style="margin-bottom: 2px;"><strong>PO No:</strong> ${safeOrderData.purchase_order_no || 'N/A'}</div>
-                <div style="margin-bottom: 2px; margin-right: 9px;"><strong>Date:</strong> ${new Date(safeOrderData.purchase_order_date).toLocaleDateString() || 'N/A'}</div>
-                <div style="margin-right: 17px;"><strong>JO ID:</strong> ${safeOrderData.jo_id || 'N/A'}</div>
-            </div>
-        </div>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <title>Purchase Order - ${poNo}</title>
+          <style>
+            @page { size: A4 landscape; margin: 10mm; }
+            body { font-family: Arial; margin: 20px; }
+            .invoice-box {
+              max-width: 950px;
+              margin: auto;
+              padding: 30px;
+              border: 1px solid #eee;
+            }
+            table { width: 100%; border-collapse: collapse; }
+            td, th { padding: 8px; border: 1px solid #ddd; }
+            .no-border td, .no-border th { border: none !important; }
+            .bold { font-weight: bold; }
+            .right { text-align: right; }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-box">
+            <table class="no-border">
+              <tr>
+                <td>
+                  <p class="bold">GSTIN : ${COMPANY.gstin}</p>
+                  <p class="bold">Name : ${COMPANY.name}</p>
+                </td>
+                <td class="right">
+                  <h2>PURCHASE ORDER</h2>
+                  <p>PO Number: ${poNo}</p>
+                  <p>Date: ${poDate}</p>
+                </td>
+              </tr>
+            </table>
 
-        <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 2px solid #000;">
-            <div style="font-size: 10px;"><strong>GSTIN:</strong> 27AKUPY6544R1ZM</div>
-            <div style="font-size: 10px;"><strong>UDYAM-MH-20-0114278</strong></div>
-        </div>
+            <!-- Vendor Details -->
+            <table>
+              <tr>
+                <th colspan="2">VENDOR DETAILS</th>
+              </tr>
+              <tr>
+                <td width="50%">${billingDetails}</td>
+                <td width="50%">${shippingDetails}</td>
+              </tr>
+            </table>
 
-        <div style="border-bottom: 2px solid #000; padding: 5px 0;">
-            <div style="display: flex;">
-                <div style="width: 100px; font-weight: bold;">Billing Address:</div>
-                <div>101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</div>
-            </div>
-            <div style="display: flex;">
-                <div style="width: 100px; font-weight: bold;">Shipping Address:</div>
-                <div>${safeVendorDetails.shipping_address || 'Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015'}</div>
-            </div>
-        </div>
-
-        <div style="text-align: center; font-weight: bold; padding: 5px 0; border-bottom: 2px solid #000;">
-            Purchase Order
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse;">
-            <tbody>
+            <!-- Items Table -->
+            <table>
+              <thead>
                 <tr>
-                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Vendor:</td>
-                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">${vendor.company_name || vendor.vendor_name}</td>
-                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">GSTIN</td>
-                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">${vendor.gst || 'N/A'}</td>
+                  <th>Sr.</th>
+                  <th>Description</th>
+                  <th>HSN</th>
+                  <th>Qty</th>
+                  <th>UOM</th>
+                  <th>Rate</th>
+                  <th>Amount</th>
                 </tr>
+              </thead>
+              <tbody>
+                ${items.map((it, idx) => `
                 <tr>
-                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Address:</td>
-                    <td style="border: 1px solid #000; padding: 3px;">${vendor.billing_address}</td>
-                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Kind Attn.</td>
-                    <td style="border: 1px solid #000; padding: 3px;">${vendor.contact_name}</td>
-                </tr>
-                <tr>
-                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Mobile No.</td>
-                    <td style="border: 1px solid #000; padding: 3px;">${vendor.mobile_no}</td>
-                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Email</td>
-                    <td style="border: 1px solid #000; padding: 3px; color: #00f;"><a href="mailto:${vendor.email}">${vendor.email}</a></td>
-                </tr>
-            </tbody>
-        </table>
+                  <td>${idx + 1}</td>
+                  <td>${it.description || it.item_name || ""}</td>
+                  <td>${it.hsnCode || it.hsn_code || ""}</td>
+                  <td>${it.quantity ?? it.qty ?? ""}</td>
+                  <td>${it.mou || it.uom || ""}</td>
+                  <td>${Number(it.rate ?? 0).toFixed(2)}</td>
+                  <td>₹ ${Number(it.amount ?? 0).toFixed(2)}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
 
-        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
-            This is reference to our requirement,
-        </div>
+            <!-- Totals -->
+            <table class="no-border">
+              <tr>
+                <td width="70%">
+                  <p class="bold">Total Amount (in words): ${totalInWords || numberToWords(total)}</p>
+                </td>
+                <td>
+                  <p>Sub Total: ₹ ${subTotal.toFixed(2)}</p>
+                  <p>CGST (${((cgst / (subTotal || 1)) * 100).toFixed(2)}%): ₹ ${cgst.toFixed(2)}</p>
+                  <p>SGST (${((sgst / (subTotal || 1)) * 100).toFixed(2)}%): ₹ ${sgst.toFixed(2)}</p>
+                  <p class="bold">Grand Total: ₹ ${total.toFixed(2)}</p>
+                </td>
+              </tr>
+            </table>
 
-        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
-            <thead>
-                <tr style="background-color: #f2f2f2;">
-                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Sr. No.</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 35%;">Item Description</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 10%;">HSN Code</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Qty.</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">MOU</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 15%;">Rate</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 25%;">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${safeOrderData.items?.map(item => `
-<tr>
-<td>${item.sr_no}</td>
-<td>${item.description}</td>
-<td>${item.hsn_code}</td>
-<td>${item.quantity}</td>
-<td>${item.uom}</td>
-<td>₹${item.rate || 0}</td>
-<td>₹${item.amount || 0}</td>
-</tr>`).join('') || ''}
-            </tbody>
-        </table>
-
-        <div style="display: flex; margin-top: 5px;">
-            <div style="width: 50%; border: 1px solid #000; padding: 5px;">
-                <div style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 5px;">Terms & Conditions</div>
-                <div>Payment Terms: ${safeOrderData.payment_terms || '100% After Delivery'}</div>
-                <div style="margin-top: 5px;">PO Validity: ${safeOrderData.po_validity || '4 Month'}</div>
-                <div>Delivery: ${safeOrderData.delivery_time || '1 to 2 Weeks (Immediate)'}</div>
-                <div>Document Required: ${safeOrderData.required_docs || 'Test Certificate'}</div>
-            </div>
-            <div style="width: 50%;">
-                <table style="width: 100%; border-collapse: collapse; margin-left: -1px;">
-                    <tbody>
-                        <tr>
-                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Sub Total</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹${safeOrderData.sub_total || 0}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">CGST @${(safeOrderData.cgst / (safeOrderData.subtotal || 1) * 100).toFixed(2)}%</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹${safeOrderData.cgst || 0}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">SGST @${(safeOrderData.sgst / (safeOrderData.subtotal || 1) * 100).toFixed(2)}%</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹${safeOrderData.sgst || 0}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Grand Total</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹${safeOrderData.total || 0}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Total in Words</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: left;">${safeOrderData.total_in_words || 'N/A'}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
-            <strong>Amount (in words):</strong> ${safeOrderData.total_in_words || 'N/A'}
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 5px;">
-            <div style="width: 70%;">
-                <div style="border: 1px solid #000; padding: 3px;">
-                    Email: merakkiexpert@gmail.com | Mobile: +91-8793484326 / +91-9130801011 | www.merakkiexpert.in
-                </div>
-            </div>
-            <div style="width: 30%; text-align: center; margin-left: 10px;">
-                <div style="font-weight: bold;">For MERAKI EXPERT</div>
-                <div style="height: 50px; display: flex; align-items: center; justify-content: center;">
-                    <!-- Signature placeholder removed for reliability -->
-                </div>
-                <div>(Authorized Signatory)</div>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
+            <!-- Payment Terms -->
+            <table class="no-border">
+              <tr>
+                <td>
+                  <p class="bold">Payment Terms: ${paymentTerms}</p>
+                  <p class="bold">Delivery Time: ${deliveryTime}</p>
+                  <p class="bold">Required Documents: ${requiredDocs}</p>
+                  <p class="bold">PO Validity: ${poValidity}</p>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </body>
+        </html>
       `);
-      
+      printWindow.document.close();
+
       printWindow.onload = () => {
         try {
-          printWindow.print();
+          setTimeout(() => {
+            printWindow.print();
+          }, 200); // Add a small delay before printing
         } catch (error) {
-          console.error('Print failed:', error);
-          alert('Failed to generate PDF. Please allow popups and try again.');
+          console.error("Print failed:", error);
+          alert("Failed to generate PDF. Please allow popups and try again.");
         } finally {
           setTimeout(() => printWindow.close(), 1000);
         }
       };
-      
-      printWindow.document.close();
-      
+
     } catch (error) {
-      console.error('Error downloading PDF:', error);
-      console.error('Error details:', error.response?.data || error.message);
-      alert('Failed to download PDF. Please check console for details.');
+      console.error("Error downloading PDF:", error);
+      console.error("Error details:", error.response?.data || error.message);
+      alert("Failed to download PDF. Please check console for details.");
     }
   };
 
@@ -578,4 +571,4 @@ const PurchaseOrderActions = () => {
   );
 };
 
-export default PurchaseOrderActions;;
+export default PurchaseOrderActions;
