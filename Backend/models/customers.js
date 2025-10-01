@@ -1,29 +1,19 @@
 const db = require('../config/db');
 
-exports.getAll = (cb) => {
-  db.query('SELECT * FROM customers', cb);
-};
+const Customer = {
+  getAll: (cb) => {
+    db.query('SELECT * FROM customers', cb);
+  },
 
-exports.getById = (id, cb) => {
-  db.query('SELECT * FROM customers WHERE id = ?', [id], (err, results) => {
-    if (err) return cb(err);
-    cb(null, results[0]);
-  });
-};
+  getById: (id, cb) => {
+    db.query('SELECT * FROM customers WHERE id = ?', [id], (err, results) => {
+      if (err) return cb(err);
+      cb(null, results[0]);
+    });
+  },
 
-exports.create = (data, cb) => {
-  const {
-    customer_type, title, customer_name, company_name, display_name,
-    email, mobile, office_no, pan, gst, currency, document_path,
-    billing_recipient_name, billing_country, billing_address1, billing_address2,
-    billing_city, billing_state, billing_pincode, billing_fax, billing_phone,
-    shipping_recipient_name, shipping_country, shipping_address1, shipping_address2,
-    shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
-    remark, status
-  } = data;
-
-  db.query(
-    `INSERT INTO customers (
+  create: (data, cb) => {
+    const {
       customer_type, title, customer_name, company_name, display_name,
       email, mobile, office_no, pan, gst, currency, document_path,
       billing_recipient_name, billing_country, billing_address1, billing_address2,
@@ -31,33 +21,43 @@ exports.create = (data, cb) => {
       shipping_recipient_name, shipping_country, shipping_address1, shipping_address2,
       shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
       remark, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
+    } = data;
+
+    db.query(
+      `INSERT INTO customers (
+        customer_type, title, customer_name, company_name, display_name,
+        email, mobile, office_no, pan, gst, currency, document_path,
+        billing_recipient_name, billing_country, billing_address1, billing_address2,
+        billing_city, billing_state, billing_pincode, billing_fax, billing_phone,
+        shipping_recipient_name, shipping_country, shipping_address1, shipping_address2,
+        shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
+        remark, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        customer_type, title, customer_name, company_name, display_name,
+        email, mobile, office_no, pan, gst, currency, document_path,
+        billing_recipient_name, billing_country, billing_address1, billing_address2,
+        billing_city, billing_state, billing_pincode, billing_fax, billing_phone,
+        shipping_recipient_name, shipping_country, shipping_address1, shipping_address2,
+        shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
+        remark, status || 'Active'
+      ],
+      cb
+    );
+  },
+
+  update: async (id, data) => {
+    const {
       customer_type, title, customer_name, company_name, display_name,
       email, mobile, office_no, pan, gst, currency, document_path,
       billing_recipient_name, billing_country, billing_address1, billing_address2,
       billing_city, billing_state, billing_pincode, billing_fax, billing_phone,
       shipping_recipient_name, shipping_country, shipping_address1, shipping_address2,
       shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
-      remark, status || 'Active'
-    ],
-    cb
-  );
-};
+      remark, status
+    } = data;
 
-exports.update = (id, data, cb) => {
-  const {
-    customer_type, title, customer_name, company_name, display_name,
-    email, mobile, office_no, pan, gst, currency, document_path,
-    billing_recipient_name, billing_country, billing_address1, billing_address2,
-    billing_city, billing_state, billing_pincode, billing_fax, billing_phone,
-    shipping_recipient_name, shipping_country, shipping_address1, shipping_address2,
-    shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
-    remark, status
-  } = data;
-
-  db.query(
-    `UPDATE customers SET
+    const sql = `UPDATE customers SET
       customer_type=?, title=?, customer_name=?, company_name=?, display_name=?,
       email=?, mobile=?, office_no=?, pan=?, gst=?, currency=?, document_path=?,
       billing_recipient_name=?, billing_country=?, billing_address1=?, billing_address2=?,
@@ -65,8 +65,9 @@ exports.update = (id, data, cb) => {
       shipping_recipient_name=?, shipping_country=?, shipping_address1=?, shipping_address2=?,
       shipping_city=?, shipping_state=?, shipping_pincode=?, shipping_fax=?, shipping_phone=?,
       remark=?, status=?
-      WHERE id=?`,
-    [
+      WHERE id=?`;
+
+    const values = [
       customer_type, title, customer_name, company_name, display_name,
       email, mobile, office_no, pan, gst, currency, document_path,
       billing_recipient_name, billing_country, billing_address1, billing_address2,
@@ -74,17 +75,21 @@ exports.update = (id, data, cb) => {
       shipping_recipient_name, shipping_country, shipping_address1, shipping_address2,
       shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
       remark, status || 'Active', id
-    ],
-    cb
-  );
+    ];
+
+    const [result] = await pool.query(sql, values);
+    return result;
+  },
+
+  remove: async (id) => {
+    const [result] = await pool.query('DELETE FROM customers WHERE id=?', [id]);
+    return result;
+  },
+
+  updateStatus: async (id, status) => {
+    const [result] = await pool.query('UPDATE customers SET status = ? WHERE id = ?', [status, id]);
+    return result;
+  },
 };
 
-exports.remove = (id, cb) => {
-  db.query('DELETE FROM customers WHERE id=?', [id], cb);
-};
-
-exports.updateStatus = (id, status, cb) => {
-  db.query('UPDATE customers SET status = ? WHERE id = ?', [status, id], cb);
-};
-
-module.exports = exports;
+module.exports = Customer;

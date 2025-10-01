@@ -1,9 +1,10 @@
 const quotation = require('../models/quotation');
+const pool = require('../config/db'); // Added missing import for pool
 
 // Get all quotations
 exports.getAll = (req, res) => {
   quotation.getAll((err, result) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) return res.status(500).json({ error: err.message });
     res.json(result);
   });
 };
@@ -13,11 +14,11 @@ exports.getOne = (req, res) => {
   const id = req.params.id;
 
   quotation.getById(id, (err, quotationData) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) return res.status(500).json({ error: err.message });
     if (!quotationData) return res.status(404).json({ message: 'Quotation not found' });
 
     quotation.getItemsByQuotationId(id, (itemErr, items) => {
-      if (itemErr) return res.status(500).json({ error: itemErr });
+      if (itemErr) return res.status(500).json({ error: itemErr.message });
 
       const sub_total = items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
       const cgst = parseFloat((sub_total * 0.09).toFixed(2));
@@ -50,7 +51,7 @@ exports.create = (req, res) => {
   }
 
   quotation.create(quotationData, items, (err, result) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) return res.status(500).json({ error: err.message });
 
     res.status(201).json({
       message: 'Quotation created successfully',
@@ -68,7 +69,7 @@ exports.create = (req, res) => {
 // Delete quotation and its items
 exports.remove = (req, res) => {
   quotation.remove(req.params.id, (err) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Quotation and related items deleted successfully' });
   });
 };
@@ -100,13 +101,12 @@ exports.addItems = (req, res) => {
     ) VALUES ?
   `;
 
-  const db = require('../config/db');
-  db.query(itemSql, [itemValues], (err, result) => {
-    if (err) return res.status(500).json({ error: err });
+  pool.query(itemSql, [itemValues], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
 
     // Recalculate updated totals
     quotation.getItemsByQuotationId(quotationId, (itemErr, allItems) => {
-      if (itemErr) return res.status(500).json({ error: itemErr });
+      if (itemErr) return res.status(500).json({ error: itemErr.message });
 
       const sub_total = allItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
       const cgst = parseFloat((sub_total * 0.09).toFixed(2));
@@ -119,8 +119,8 @@ exports.addItems = (req, res) => {
         WHERE quotation_id = ?
       `;
 
-      db.query(updateSql, [sub_total, cgst, sgst, grand_total, quotationId], (updateErr) => {
-        if (updateErr) return res.status(500).json({ error: updateErr });
+      pool.query(updateSql, [sub_total, cgst, sgst, grand_total, quotationId], (updateErr) => {
+        if (updateErr) return res.status(500).json({ error: updateErr.message });
 
         res.json({
           message: 'Items added and quotation updated successfully',
@@ -139,33 +139,23 @@ exports.addItems = (req, res) => {
 // Update a quotation by ID
 exports.update = (req, res) => {
   const id = req.params.id;
-  const data = req.body;
-  const fields = [
-    'customer_name',
-    'quotation_date',
-    'expiry_date',
-    'subject',
-    'customer_notes',
-    'terms_and_conditions',
-    'status'
-  ];
-  const updates = [];
-  const values = [];
-  fields.forEach(field => {
-    if (data[field] !== undefined) {
-      updates.push(`${field} = ?`);
-      values.push(data[field]);
-    }
-  });
-  if (updates.length === 0) {
-    return res.status(400).json({ error: 'No valid fields to update' });
+  const { quotation: quotationData, items = [] } = req.body;
+
+  if (!quotationData || typeof quotationData !== 'object') {
+    return res.status(400).json({ error: 'Missing or invalid quotation data' });
   }
-  const sql = `UPDATE quotation SET ${updates.join(', ')} WHERE quotation_id = ?`;
-  values.push(id);
-  const db = require('../config/db');
-  db.query(sql, values, (err, result) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json({ message: 'Quotation updated successfully' });
+
+  quotation.update(id, quotationData, items, (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({
+      message: 'Quotation updated successfully',
+      quotationId: result.quotationId,
+      itemsUpdated: result.itemsUpdated,
+      sub_total: result.sub_total,
+      cgst: result.cgst,
+      sgst: result.sgst,
+      grand_total: result.grand_total,
+    });
   });
 };
 

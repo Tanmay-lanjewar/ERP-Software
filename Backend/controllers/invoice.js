@@ -1,12 +1,41 @@
 // controllers/invoice.js
 const invoice = require('../models/invoice');
 const Customer = require('../models/customers');
-const db = require('../config/db');
 
 exports.getAll = (req, res) => {
   invoice.getAll((err, result) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(result);
+  });
+};
+
+exports.getDashboardSummary = (req, res) => {
+  invoice.getInvoiceSummary((err, summary) => {
+    if (err) {
+      console.error('Error Fetching invoice summary:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(summary);
+  });
+};
+
+exports.getRecentInvoices = (req, res) => {
+  invoice.getRecentInvoices((err, recentInvoices) => {
+    if (err) {
+      console.log('Error Fetching recent invoices:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(recentInvoices);
+  });
+};
+
+exports.getInvoicesOverTime = (req, res) => {
+  invoice.getInvoicesOverTime((err, invoicesOverTime) => {
+    if (err) {
+      console.error('Error Fetching invoices from overtime:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(invoicesOverTime);
   });
 };
 
@@ -77,33 +106,23 @@ exports.remove = (req, res) => {
 
 exports.update = (req, res) => {
   const id = req.params.id;
-  const data = req.body;
-  const fields = [
-    'customer_id',
-    'customer_name',
-    'invoice_date',
-    'expiry_date',
-    'subject',
-    'customer_notes',
-    'terms_and_conditions',
-    'status',
-  ];
-  const updates = [];
-  const values = [];
-  fields.forEach((field) => {
-    if (data[field] !== undefined) {
-      updates.push(`${field} = ?`);
-      values.push(data[field]);
-    }
-  });
-  if (updates.length === 0) {
-    return res.status(400).json({ error: 'No valid fields to update' });
+  const { invoice: invoiceData, items = [] } = req.body;
+
+  if (!invoiceData || typeof invoiceData !== 'object') {
+    return res.status(400).json({ error: 'Missing or invalid invoice data' });
   }
-  const sql = `UPDATE invoice SET ${updates.join(', ')} WHERE invoice_id = ?`;
-  values.push(id);
-  db.query(sql, values, (err, result) => {
+
+  invoice.update(id, invoiceData, items, (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: 'Invoice updated successfully' });
+    res.json({
+      message: 'Invoice updated successfully',
+      invoiceId: result.invoiceId,
+      itemsUpdated: result.itemsUpdated,
+      sub_total: result.sub_total,
+      cgst: result.cgst,
+      sgst: result.sgst,
+      grand_total: result.grand_total,
+    });
   });
 };
 
