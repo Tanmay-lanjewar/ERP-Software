@@ -1,45 +1,46 @@
-import React, { useEffect } from "react";
-import {
-  Box,
-  Grid,
-  Typography,
-  InputBase,
-  IconButton,
-  Avatar,
-  Paper,
-  Chip,
-  Button,
-  CircularProgress, // Import CircularProgress for loading indicator
-  Alert, // Import Alert for error display
-} from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import { Link } from "react-router-dom"; // Import Link for navigation
-import Sidebar from "./Sidebar";
-//import ui from "../assets/ui.png";
-
-// Redux imports
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchDashboardData } from '../redux/slices/dashboardSlice';
-
-// Recharts imports
 import {
-  BarChart,
-  Bar,
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Typography,
+  useTheme,
+  CircularProgress,
+} from '@mui/material';
+import {
   PieChart,
   Pie,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
   Cell,
   ResponsiveContainer,
-} from "recharts";
+  Tooltip,
+  Legend,
+} from 'recharts';
+import {
+  ReceiptLong,
+  RequestQuote,
+  People,
+  Category,
+  ShoppingCart,
+  Business,
+  Construction,
+  Assignment,
+} from '@mui/icons-material';
 
 const Dashboard = () => {
+  const theme = useTheme();
   const dispatch = useDispatch();
-  const { totalInvoices, recentInvoices, invoicesOverTime, loading, error, paid, partial, draft } = useSelector((state) => state.dashboard);
+  const { role } = useSelector((state) => state.auth);
+  const {
+    totalInvoices,
+    paid,
+    partial,
+    draft,
+    loading,
+    error,
+  } = useSelector((state) => state.dashboard);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,14 +54,70 @@ const Dashboard = () => {
   }, [dispatch]);
 
   const dataInvoiceStatus = [
-    { name: "Paid", value: parseInt(paid) || 0, color: "#2E7D32" },
-    { name: "Partial", value: parseInt(partial) || 0, color: "#FFA726" },
-    { name: "Draft", value: parseInt(draft) || 0, color: "#C62828" },
+    { name: 'Paid', value: parseInt(paid) || 0, color: '#4CAF50' },
+    { name: 'Partial', value: parseInt(partial) || 0, color: '#FFC107' },
+    { name: 'Draft', value: parseInt(draft) || 0, color: '#9E9E9E' },
+  ];
+
+  const quickLinks = [
+    {
+      title: 'Invoice',
+      icon: <ReceiptLong />,
+      path: '/invoice',
+      visible: role === 'superadmin',
+    },
+    {
+      title: 'Quotation',
+      icon: <RequestQuote />,
+      path: '/quotation',
+      visible: role === 'superadmin',
+    },
+    {
+      title: 'Customers',
+      icon: <People />,
+      path: '/customer',
+      visible: true,
+    },
+    {
+      title: 'Products',
+      icon: <Category />,
+      path: '/items',
+      visible: true,
+    },
+    {
+      title: 'Purchase Orders',
+      icon: <ShoppingCart />,
+      path: '/purchase-order',
+      visible: true,
+    },
+    {
+      title: 'Vendors',
+      icon: <Business />,
+      path: '/vendors',
+      visible: true,
+    },
+    {
+      title: 'Work Orders',
+      icon: <Construction />,
+      path: '/work-order',
+      visible: true,
+    },
+    {
+      title: 'Pro Forma',
+      icon: <Assignment />,
+      path: '/pro-forma-invoice',
+      visible: true,
+    },
   ];
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
         <CircularProgress />
       </Box>
     );
@@ -68,382 +125,125 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Alert severity="error">Error: {error}</Alert>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
+        <Typography color="error">Error: {error}</Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ display: "flex", height: "70vh", bgcolor: "#F9FAFB" }}>
-      <Sidebar />
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" sx={{ mb: 4 }}>
+        Dashboard Overview
+      </Typography>
 
-      <Box sx={{ flexGrow: 1 }}>
-        {/* Header */}
-        <Box
-          sx={{
-            height: 60,
-            borderBottom: "1px solid #eee",
-            display: "flex",
-            alignItems: "center",
-            px: 3,
-            justifyContent: "space-between",
-            bgcolor: "#fff",
-          }}
-        >
-          <Typography variant="h5" fontWeight="bold">
-            Dashboard
-          </Typography>
-          <Box display="flex" alignItems="center" gap={2}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                bgcolor: "transparent",
-                border: "1px solid #e0e0e0",
-                px: 2,
-                py: 0.5,
-                borderRadius: "20px",
-                minWidth: 250,
-              }}
-            >
-              <SearchIcon fontSize="small" sx={{ color: "#888" }} />
-              <InputBase
-                placeholder="Search anything here..."
+      <Grid container spacing={3}>
+        {/* Quick Links */}
+        {quickLinks
+          .filter((link) => link.visible)
+          .map((link) => (
+            <Grid item xs={12} sm={6} md={3} key={link.title}>
+              <Card
                 sx={{
-                  ml: 1,
-                  flex: 1,
-                  fontSize: 14,
-                  "&::placeholder": { color: "#888" },
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: 'transform 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.shadows[4],
+                  },
                 }}
-              />
-            </Box>
-            <IconButton>
-              <NotificationsNoneIcon sx={{ color: "#555" }} />
-            </IconButton>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Avatar
-                src={"https://i.pravatar.cc/40?img=1"}
-                sx={{ width: 30, height: 30 }}
-              />
-              <Typography fontSize={14}>Admin name</Typography>
-              <ArrowDropDownIcon sx={{ color: "#555" }} />
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Main Content Area */}
-        <Box sx={{ p: 2 }}>
-          <Grid container spacing={2}>
-            {/* Left Column: Recent Invoices and Invoices Over Time */}
-            <Grid size={6} item xs={12} md={6}>
-              {/* Recent Invoices */}
-              <Paper sx={{ p: 2, borderRadius: 2, mb: 6, height: "auto" }}>
-                <Typography variant="h6" fontWeight="bold" mb={2}>
-                  Recent Invoices
-                </Typography>
-                <Box>
-                  {recentInvoices.map((invoice) => (
-                    <Box
-                      key={invoice.id}
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      mb={0}
-                    >
-                      <Box>
-                        <Typography fontWeight="bold" lineHeight={1.5}>
-                          {invoice.name}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="textSecondary"
-                          lineHeight={2.0}
-                        >
-                          {invoice.client_name}
-                        </Typography>
-                      </Box>
-                      <Box display="flex" alignItems="center" gap={2}>
-                        <Chip
-                          label={invoice.status}
-                          size="small"
-                          sx={{
-                            bgcolor:
-                              invoice.status === "Completed"
-                                ? "#E6F4EA"
-                                : "#FEEAEA",
-                            color:
-                              invoice.status === "Completed"
-                                ? "#2E7D32"
-                                : "#C62828",
-                            fontWeight: "bold",
-                          }}
-                        />
-                        <Typography variant="body2" color="textSecondary">
-                          {new Date(invoice.date).toLocaleDateString()}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  ))}
-                </Box>
-                <Box mt={2} textAlign="right">
-                  <Link
-                    to="/invoices"
-                    style={{ textDecoration: "none", color: "#004085" }}
+              >
+                <CardContent>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      mb: 2,
+                    }}
                   >
-                    View All
-                  </Link>
-                </Box>
-              </Paper>
-
-              {/* Invoices Over Time */}
-              <Paper sx={{ p: 3, borderRadius: 2, height: "auto" }}>
-                <Typography variant="h6" fontWeight="bold" mb={2}>
-                  Invoices Over Time
-                </Typography>
-                <Box
-                  sx={{
-                    height: 200,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    px: 0.5,
-                    py: 1,
-                  }}
-                >
-                  <ResponsiveContainer width="120%" height="100%">
-                    <BarChart
-                      data={invoicesOverTime}
-                      margin={{
-                        top: 5,
-                        right: 25,
-                        left: -20,
-                        bottom: 5,
+                    <Box
+                      sx={{
+                        p: 1,
+                        borderRadius: 1,
+                        bgcolor: theme.palette.primary.main,
+                        color: 'white',
+                        mr: 2,
                       }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                      <YAxis axisLine={false} />
-                      <Tooltip />
-                      <Bar
-                        dataKey="invoices"
-                        fill="#2E7D32"
-                        barSize={20}
-                        radius={[5, 5, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Box>
-              </Paper>
-            </Grid>
-
-            {/* Right Column: Invoice Summary, Invoice Status, Reports, Invoice Status Pie Chart */}
-            <Grid size={6} item xs={12} md={6}>
-              <Grid
-                container
-                spacing={2}
-                sx={{ display: "flex", flexDirection: "row" }}
-              >
-                {/* Invoice Summary */}
-                <Paper
-                  sx={{
-                    p: 3,
-                    borderRadius: 2,
-                    mb: 2,
-                    height: "auto",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Typography variant="h6" fontWeight="bold">
-                    Invoice Summary
-                  </Typography>
-                  <Box textAlign="center" mt={4} mb={1}>
-                    <Typography variant="h2" fontWeight="bold" color="#004085">
-                      {totalInvoices}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Total number of Invoices
-                    </Typography>
+                      {link.icon}
+                    </Box>
+                    <Typography variant="h6">{link.title}</Typography>
                   </Box>
-                </Paper>
-
-                {/* Invoice Status */}
-                <Paper
-                  sx={{
-                    p: 3,
-                    borderRadius: 2,
-                    mb: 2,
-                    height: "auto",
-                    width: "52%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Typography variant="h6" fontWeight="bold">
-                    Invoice Status{" "}
-                  </Typography>
-                  <Box
-                    display="flex"
-                    justifyContent="space-around"
-                    mt={4}
-                    mb={1}
-                    sx={{ flexWrap: 'wrap', gap: 2 }}
-                  >
-                    <Box textAlign="center">
-                      <Typography
-                        variant="h3"
-                        fontWeight="bold"
-                        sx={{
-                          border: "1px solid #D3D3D3",
-                          p: 1,
-                          borderRadius: 1,
-                          color: "#2E7D32",
-                        }}
-                      >
-                        {paid || 0}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Paid
-                      </Typography>
-                    </Box>
-                    <Box textAlign="center">
-                      <Typography
-                        variant="h3"
-                        fontWeight="bold"
-                        sx={{
-                          border: "1px solid #D3D3D3",
-                          p: 1,
-                          borderRadius: 1,
-                          color: "#FFA726",
-                        }}
-                      >
-                        {partial || 0}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Partial
-                      </Typography>
-                    </Box>
-                    <Box textAlign="center">
-                      <Typography
-                        variant="h3"
-                        fontWeight="bold"
-                        sx={{
-                          border: "1px solid #D3D3D3",
-                          p: 1,
-                          borderRadius: 1,
-                          color: "#C62828",
-                        }}
-                      >
-                        {draft || 0}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Draft
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Paper>
-              </Grid>
-
-              {/* Reports */}
-              <Paper sx={{ p: 2, borderRadius: 2, mb: 2 }}>
-                <Typography variant="h6" fontWeight="bold" mb={2}>
-                  Reports
-                </Typography>
-                <Box display="flex" gap={2}>
-                  <Button
-                    variant="contained"
-                    sx={{
-                      backgroundColor: "#004085",
-                      textTransform: "none",
-                      "&:hover": { backgroundColor: "#003060" },
-                    }}
-                  >
-                    All Invoices
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    sx={{
-                      borderColor: "#f0f0f0",
-                      color: "#004085",
-                      textTransform: "none",
-                      "&:hover": { borderColor: "#ccc", color: "#003060" },
-                    }}
-                  >
-                    Customer
-                  </Button>
-                </Box>
-              </Paper>
-
-              {/* Invoice Status Pie Chart */}
-              <Paper sx={{ p: 2, borderRadius: 2, mb: 2, height: 'auto' }}>
-                <Typography variant="h6" fontWeight="bold" mb={2}>
-                  Invoice Status
-                </Typography>
-                <Box sx={{ width: '100%', height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie
-                        data={dataInvoiceStatus}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {dataInvoiceStatus.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={entry.color}
-                            stroke="#fff"
-                            strokeWidth={2}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value, name) => [`${value} invoices`, name]}
-                        contentStyle={{ 
-                          backgroundColor: '#fff',
-                          border: '1px solid #ccc',
-                          borderRadius: '4px',
-                          padding: '8px',
-                          boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </Box>
-                <Box sx={{ mt: 3, display: "flex", justifyContent: "center", gap: 3 }}>
-                  {dataInvoiceStatus.map((entry, index) => {
-                    const total = dataInvoiceStatus.reduce((sum, item) => sum + (item.value || 0), 0);
-                    const percentage = total > 0 ? Math.round((entry.value / total) * 100) : 0;
-                    return (
-                      <Box key={index} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Box
-                          sx={{
-                            width: 12,
-                            height: 12,
-                            backgroundColor: entry.color,
-                            borderRadius: "50%",
-                            border: '2px solid #fff',
-                            boxShadow: '0 0 0 1px rgba(0,0,0,0.1)'
-                          }}
-                        />
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {entry.name} ({entry.value}) - {percentage}%
-                        </Typography>
-                      </Box>
-                    );
-                  })}
-                </Box>
-              </Paper>
+                </CardContent>
+              </Card>
             </Grid>
-          </Grid>
-        </Box>
-      </Box>
+          ))}
+
+        {/* Invoice Status Chart */}
+        <Grid item xs={12} md={6}>
+          <Card
+            sx={{
+              height: '100%',
+              minHeight: 400,
+              p: 2,
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Invoice Status
+            </Typography>
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie
+                  data={dataInvoiceStatus}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={80}
+                  outerRadius={120}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
+                  {dataInvoiceStatus.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color}
+                      stroke="white"
+                      strokeWidth={2}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: 8,
+                    border: 'none',
+                    boxShadow: theme.shadows[2],
+                  }}
+                  formatter={(value) => [`${value} Invoices`, '']}
+                />
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  formatter={(value, entry) => {
+                    const { payload } = entry;
+                    const percentage = (
+                      (payload.value / totalInvoices) *
+                      100
+                    ).toFixed(1);
+                    return `${value} (${percentage}%)`;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </Card>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
