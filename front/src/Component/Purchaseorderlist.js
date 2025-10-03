@@ -29,6 +29,7 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import ui from "../assets/mera.png";
 import axios from "axios";
+import UserMenu from './UserMenu';
 
 // Company constants used in PDF header
 const COMPANY = {
@@ -388,9 +389,8 @@ const PurchaseOrderActions = () => {
               <NotificationsNoneIcon sx={{ fontSize: 20, color: "#666" }} />
             </IconButton>
             <Box display="flex" alignItems="center" gap={1}>
-              <Avatar src="https://i.pravatar.cc/40?img=1" />
-              <Typography fontSize={14}>Admin name</Typography>
-              <ArrowDropDownIcon />
+              <NotificationsNoneIcon />
+              <UserMenu />
             </Box>
           </Box>
         </Box>

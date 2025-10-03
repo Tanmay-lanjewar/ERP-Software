@@ -9,15 +9,14 @@ import {
   Paper,
   Chip,
   Button,
-  CircularProgress, // Import CircularProgress for loading indicator
-  Alert, // Import Alert for error display
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import { Link } from "react-router-dom"; // Import Link for navigation
+import { Link } from "react-router-dom";
 import Sidebar from "./Sidebar";
-//import ui from "../assets/ui.png";
+import UserMenu from "./UserMenu";
 
 // Redux imports
 import { useDispatch, useSelector } from 'react-redux';
@@ -114,14 +113,7 @@ const Dashboard = () => {
             <IconButton>
               <NotificationsNoneIcon sx={{ color: "#555" }} />
             </IconButton>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Avatar
-                src={"https://i.pravatar.cc/40?img=1"}
-                sx={{ width: 30, height: 30 }}
-              />
-              <Typography fontSize={14}>Admin name</Typography>
-              <ArrowDropDownIcon sx={{ color: "#555" }} />
-            </Box>
+            <UserMenu />
           </Box>
         </Box>
 

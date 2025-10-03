@@ -17,6 +17,7 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import axios from "axios";
+import UserMenu from './UserMenu';
 
 const AddTax = () => {
   const [taxType, setTaxType] = useState("GST");
@@ -96,9 +97,8 @@ const AddTax = () => {
             </IconButton>
 
             <Box display="flex" alignItems="center" gap={1}>
-              <Avatar src="https://i.pravatar.cc/40?img=1" />
-              <Typography fontSize={14}>Admin name</Typography>
-              <ArrowDropDownIcon />
+              <NotificationsNoneIcon />
+              <UserMenu />
             </Box>
           </Box>
         </Box>

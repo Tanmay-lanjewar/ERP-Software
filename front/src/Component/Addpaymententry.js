@@ -15,6 +15,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import Sidebar from './Sidebar';
+import UserMenu from './UserMenu';
 
 const customers = ['Customer 1', 'Customer 2'];
 const currencies = ['INR', 'USD', 'EUR'];
@@ -60,7 +61,10 @@ const AddPaymentsEntry = () => {
               <NotificationsNoneIcon />
             </IconButton>
             <Avatar src="/avatar.png" sx={{ width: 32, height: 32 }} />
-            <Typography fontSize={14}>Admin name</Typography>
+            <Box display="flex" alignItems="center" gap={1}>
+              <NotificationsNoneIcon />
+              <UserMenu />
+            </Box>
           </Box>
         </Box>
 

@@ -9,6 +9,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ItemList from './Itemlist';
 import axios from 'axios';
+import UserMenu from './UserMenu';
 
 export default function ItemsPage() {
   const navigate = useNavigate();
@@ -77,9 +78,8 @@ export default function ItemsPage() {
                   <NotificationsNoneIcon sx={{ fontSize: 20, color: '#666' }} />
                 </IconButton>
                 <Box display="flex" alignItems="center" gap={1}>
-                  <Avatar src="https://i.pravatar.cc/150?img=1" />
-                  <Typography fontSize={14}>Admin name</Typography>
-                  <ArrowDropDownIcon />
+                  <NotificationsNoneIcon />
+                  <UserMenu />
                 </Box>
               </Box>
             </Box>

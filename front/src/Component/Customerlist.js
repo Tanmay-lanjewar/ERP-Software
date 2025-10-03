@@ -21,6 +21,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import UserMenu from './UserMenu';
 
 export default function CustomerList() {
     const [customers, setCustomers] = useState([]);
@@ -327,8 +328,7 @@ export default function CustomerList() {
                         </IconButton>
                         <Box display="flex" alignItems="center" gap={1}>
                             <Avatar src="https://i.pravatar.cc/40?img=1" />
-                            <Typography fontSize={14}>Admin name</Typography>
-                            <ArrowDropDownIcon />
+                            <UserMenu />
                         </Box>
                     </Box>
                 </Box>

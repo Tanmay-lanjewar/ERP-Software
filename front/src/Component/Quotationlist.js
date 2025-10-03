@@ -32,6 +32,7 @@ import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import jsPDF from "jspdf";
 import autoTable from 'jspdf-autotable';
 import axios from 'axios';
+import UserMenu from './UserMenu';
 
 
 export default function QuotationListPage() {
@@ -339,8 +340,6 @@ const handlePrintQuotation = async () => {
 
 // ...existing code...
 
-// ...existing code...
-
 // const handlePrintQuotation = async () => {
 //   if (!selectedQuote) return;
 //   try {
@@ -597,9 +596,7 @@ const handleDeleteQuotation = async () => {
               <NotificationsNoneIcon sx={{ fontSize: 20, color: "#666" }} />
             </IconButton>
             <Box display="flex" alignItems="center" gap={1}>
-              <Avatar src="https://i.pravatar.cc/150?img=1" />
-              <Typography fontSize={14}>Admin name</Typography>
-              <ArrowDropDownIcon />
+              <UserMenu />
             </Box>
           </Box>
         </Box>

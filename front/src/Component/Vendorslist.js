@@ -14,6 +14,8 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Sidebar from './Sidebar';
 import { useNavigate } from 'react-router-dom';
 import { grey } from '@mui/material/colors';
+import UserMenu from './UserMenu';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 
 export default function VendorListPage() {
   const navigate = useNavigate();
@@ -490,9 +492,8 @@ export default function VendorListPage() {
           }}>
             <Typography style={{ color: grey[500] }} fontWeight={600}>Vendors</Typography>
             <Box display="flex" alignItems="center" gap={1}>
-              <Avatar src="https://i.pravatar.cc/40?img=1" />
-              <Typography fontSize={14}>Admin name</Typography>
-              <ArrowDropDownIcon />
+              <NotificationsNoneIcon />
+              <UserMenu />
             </Box>
           </Box>
 
