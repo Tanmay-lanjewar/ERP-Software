@@ -108,10 +108,7 @@ const Login = () => {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    // Google Sign In implementation will go here
-    console.log('Google Sign In clicked');
-  };
+ 
 
   return (
     <Container component="main" maxWidth="xs">
