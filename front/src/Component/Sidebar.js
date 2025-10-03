@@ -28,18 +28,25 @@ import {
 
 const Sidebar = () => {
     const location = useLocation();
+    const userRole = localStorage.getItem('userRole');
+    
+    const filterMenuItemsByRole = (items) => {
+      return items.filter(item => item.roles.includes(userRole));
+    };
 const menuItems = [
   {
     text: 'Dashboard',
     icon: <Dashboard />,
     path: '/dashboard',
-    matchPaths: ['/dashboard']
+    matchPaths: ['/dashboard'],
+    roles: ['admin', 'superadmin']
   },
   {
     text: 'Product & Services',
     icon: <Category />,
     path: '/items',
-    matchPaths: ['/items', '/add-items', '/item-list']
+    matchPaths: ['/items', '/add-items', '/item-list'],
+    roles: ['superadmin']  // Changed to superadmin only
   },
 ];
 
@@ -48,26 +55,23 @@ const salesItems = [
     text: 'Customers',
     icon: <People />,
     path: '/customer',
-    matchPaths: ['/customer', '/add-customer', '/customer-list']
+    matchPaths: ['/customer', '/add-customer', '/customer-list'],
+    roles: ['admin', 'superadmin']
   },
   {
     text: 'Quotation',
     icon: <RequestQuote />,
     path: '/quotation',
-    matchPaths: ['/quotation', '/add-quotation', '/quotation-list']
+    matchPaths: ['/quotation', '/add-quotation', '/quotation-list'],
+    roles: ['admin', 'superadmin']  // Added admin role
   },
   {
     text: 'Invoice',
     icon: <ReceiptLong />,
     path: '/invoice',
-    matchPaths: ['/invoice', '/new-invoice', '/invoice-list']
+    matchPaths: ['/invoice', '/new-invoice', '/invoice-list'],
+    roles: ['admin', 'superadmin']  // Added admin role
   },
-  // {
-  //   text: 'Pro Forma Invoice',
-  //   icon: <Assignment />,
-  //   path: '/pro-forma-Invoice',
-  //   matchPaths: ['/pro-forma-Invoice', '/new-pro-forma-Invoice', '/pro-forma-Invoice-list']
-  // },
 ];
 
 const purchaseItems = [
@@ -75,19 +79,22 @@ const purchaseItems = [
     text: 'Purchase Order',
     icon: <ShoppingCart />,
     path: '/purchase-order',
-    matchPaths: ['/purchase-order', '/add-purchase-order', '/purchase-order-list']
+    matchPaths: ['/purchase-order', '/add-purchase-order', '/purchase-order-list'],
+    roles: ['superadmin']
   },
   {
     text: 'Vendors',
     icon: <Business />,
     path: '/vendors',
-    matchPaths: ['/vendors','/add-vendor','/vendor-list']
+    matchPaths: ['/vendors','/add-vendor','/vendor-list'],
+    roles: ['superadmin']  // Changed to superadmin only
   },
   {
     text: 'Work Order',
     icon: <Construction />,
     path: '/Work-Order',
-    matchPaths: ['/Work-Order','/add-Work-Order','/Work-Order-list']
+    matchPaths: ['/Work-Order','/add-Work-Order','/Work-Order-list'],
+    roles: ['superadmin']
   },
 ];
 
@@ -97,31 +104,29 @@ const othersItems = [
     icon: <Gavel />,
     path: '/tax',
     matchPaths: ['/tax','/add-tax'],
+    roles: ['superadmin']
   },
   {
     text: 'Financial Year Settings',
     icon: <EventNote />,
     path: '/add-Financial-year-settings',
-    matchPaths: ['/add-Financial-year-settings']
+    matchPaths: ['/add-Financial-year-settings'],
+    roles: ['superadmin']
   },
   {
     text: 'Report & Analytics',
     icon: <BarChart />,
     path: '/Report-and-Analytics',
-    matchPaths: ['/Report-and-Analytics']
+    matchPaths: ['/Report-and-Analytics'],
+    roles: ['superadmin']  // Changed to superadmin only
   },
   {
     text: 'Payment Settings',
     icon: <Payments />,
     path: '/payment-settings',
-    matchPaths: ['/payment-settings','/add-payment-settings']
+    matchPaths: ['/payment-settings','/add-payment-settings'],
+    roles: ['superadmin']
   },
-  // {
-  //   text: 'Settings',
-  //   icon: <Settings />,
-  //   path: '/settings',
-  //   matchPaths: ['/settings'],
-  // },
 ];
 
 
@@ -131,13 +136,20 @@ const othersItems = [
     const ListSection = ({ title, items, location }) => {
   const activeColor = '#004085';
   const hoverColor = '#fff';
+  const userRole = localStorage.getItem('userRole');
+
+  const filteredItems = items.filter(item => !item.roles || item.roles.includes(userRole));
+
+  if (filteredItems.length === 0) {
+    return null;
+  }
 
   return (
     <>
       <Typography sx={{ mt: 2, mb: 1, fontWeight: 'bold', pl: 2, fontSize: 12, color: '#777' }}>
         {title}
       </Typography>
-      {items.map((item) => {
+      {filteredItems.map((item) => {
         const isActive = item.matchPaths.some((path) => location.pathname.startsWith(path));
         return (
           <NavLink to={item.path} key={item.text} style={{ textDecoration: 'none' }}>

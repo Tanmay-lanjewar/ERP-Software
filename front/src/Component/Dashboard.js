@@ -42,21 +42,14 @@ const Dashboard = () => {
   const { totalInvoices, recentInvoices, invoicesOverTime, loading, error, paid, partial, draft } = useSelector((state) => state.dashboard);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await dispatch(fetchDashboardData()).unwrap();
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-      }
-    };
-    fetchData();
+    dispatch(fetchDashboardData());
   }, [dispatch]);
 
   const dataInvoiceStatus = [
     { name: "Paid", value: parseInt(paid) || 0, color: "#2E7D32" },
     { name: "Partial", value: parseInt(partial) || 0, color: "#FFA726" },
     { name: "Draft", value: parseInt(draft) || 0, color: "#C62828" },
-  ];
+  ].filter(item => item.value > 0);
 
   if (loading) {
     return (
@@ -378,29 +371,26 @@ const Dashboard = () => {
               </Paper>
 
               {/* Invoice Status Pie Chart */}
-              <Paper sx={{ p: 2, borderRadius: 2, mb: 2, height: 'auto' }}>
-                <Typography variant="h6" fontWeight="bold" mb={2}>
+              <Paper sx={{ p: 1, borderRadius: 2, mb: 2 }}>
+                <Typography variant="h6" fontWeight="bold" mb={0.5}>
                   Invoice Status
                 </Typography>
-                <Box sx={{ width: '100%', height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
+                <Box sx={{ width: '100%', height: 300, position: 'relative', py: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: -10, right: 0, bottom: -10, left: 0 }}>
                       <Pie
                         data={dataInvoiceStatus}
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={2}
+                        innerRadius={70}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        paddingAngle={5}
                         dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       >
                         {dataInvoiceStatus.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={entry.color}
-                            stroke="#fff"
-                            strokeWidth={2}
-                          />
+                          <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip 
@@ -409,14 +399,13 @@ const Dashboard = () => {
                           backgroundColor: '#fff',
                           border: '1px solid #ccc',
                           borderRadius: '4px',
-                          padding: '8px',
-                          boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                          padding: '8px'
                         }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </Box>
-                <Box sx={{ mt: 3, display: "flex", justifyContent: "center", gap: 3 }}>
+                <Box sx={{ mt: 0.5, display: "flex", justifyContent: "center", gap: 2 }}>
                   {dataInvoiceStatus.map((entry, index) => {
                     const total = dataInvoiceStatus.reduce((sum, item) => sum + (item.value || 0), 0);
                     const percentage = total > 0 ? Math.round((entry.value / total) * 100) : 0;

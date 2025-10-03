@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -9,7 +9,6 @@ import {
   Paper,
   Grid,
   Chip,
-  Checkbox,
   Table,
   TableBody,
   TableCell,
@@ -23,142 +22,238 @@ import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
-import Sidebar from './Sidebar'; 
-
-const dummyData = Array.from({ length: 15 }, (_, i) => ({
-  id: i + 1,
-  customerName: 'Customer 1',
-  paymentMode: 'Online',
-  paymentDate: '30/06/2025',
-  status: 'Sent',
-  billAmount: '₹118.00',
-}));
+import Sidebar from './Sidebar';
 
 const PaymentsSettings = () => {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState('all');
+
+  // Static data for testing
+  const payments = [
+    {
+      payment_id: 1,
+      customer_name: "Rahul Kumar",
+      invoice_number: "INV-0001",
+      amount: 25000,
+      pending_amount: 5000,
+      payment_mode: "Online",
+      payment_date: "2024-03-20",
+      status: "Completed"
+    },
+    {
+      payment_id: 2,
+      customer_name: "Priya Sharma",
+      invoice_number: "INV-0002",
+      amount: 15000,
+      pending_amount: 15000,
+      payment_mode: "Cash",
+      payment_date: "2024-03-19",
+      status: "Pending"
+    },
+    {
+      payment_id: 3,
+      customer_name: "Amit Patel",
+      invoice_number: "INV-0003",
+      amount: 50000,
+      pending_amount: 0,
+      payment_mode: "Cheque",
+      payment_date: "2024-03-18",
+      status: "Completed"
+    }
+  ];
+
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const filteredPayments = payments.filter(payment => {
+    const matchesSearch = 
+      payment.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.customer_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (filter === 'all') return matchesSearch;
+    return matchesSearch && payment.status === filter;
+  });
 
   return (
     <Box sx={{ display: 'flex', bgcolor: '#f4f5fa', minHeight: '100vh' }}>
-         <Sidebar />
-
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-    
-        <Box
-          sx={{
-            backgroundColor: '#fff',
-            p: 2,
-            px: 3,
-            borderBottom: '1px solid #e0e0e0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="h6" fontWeight="bold">
+      <Sidebar />
+      <Box sx={{ flexGrow: 1, p: 3 }}>
+        {/* Header */}
+        <Box sx={{ 
+          backgroundColor: '#fff', 
+          p: 2, 
+          borderRadius: '12px',
+          mb: 3,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <Typography variant="h5" fontWeight="600">
             Payments Settings
           </Typography>
-
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <IconButton>
+              <NotificationsNoneIcon />
+            </IconButton>
+            <Avatar sx={{ width: 35, height: 35 }} />
+          </Box>
+        </Box>
+
+        {/* Main Content */}
+        <Paper sx={{ p: 3, borderRadius: '12px' }}>
+          {/* Top Actions */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+            <Typography variant="h6" fontWeight="600">
+              Payments List
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => navigate('/add-payment')}
+              sx={{
+                bgcolor: '#003865',
+                '&:hover': { bgcolor: '#002548' },
+                borderRadius: '8px',
+                textTransform: 'none',
+              }}
+            >
+              Add New Payment
+            </Button>
+          </Box>
+
+          {/* Filters */}
+          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+            <Button
+              onClick={() => setFilter('all')}
+              variant={filter === 'all' ? 'contained' : 'outlined'}
+              sx={{
+                bgcolor: filter === 'all' ? '#003865' : 'transparent',
+                color: filter === 'all' ? '#fff' : '#003865',
+                '&:hover': { bgcolor: filter === 'all' ? '#002548' : '#f0f0f0' },
+                borderRadius: '8px',
+                textTransform: 'none',
+              }}
+            >
+              All
+            </Button>
+            <Button
+              onClick={() => setFilter('Completed')}
+              variant={filter === 'Completed' ? 'contained' : 'outlined'}
+              sx={{
+                bgcolor: filter === 'Completed' ? '#003865' : 'transparent',
+                color: filter === 'Completed' ? '#fff' : '#003865',
+                '&:hover': { bgcolor: filter === 'Completed' ? '#002548' : '#f0f0f0' },
+                borderRadius: '8px',
+                textTransform: 'none',
+              }}
+            >
+              Completed
+            </Button>
+            <Button
+              onClick={() => setFilter('Pending')}
+              variant={filter === 'Pending' ? 'contained' : 'outlined'}
+              sx={{
+                bgcolor: filter === 'Pending' ? '#003865' : 'transparent',
+                color: filter === 'Pending' ? '#fff' : '#003865',
+                '&:hover': { bgcolor: filter === 'Pending' ? '#002548' : '#f0f0f0' },
+                borderRadius: '8px',
+                textTransform: 'none',
+              }}
+            >
+              Pending
+            </Button>
+          </Box>
+
+          {/* Search */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                bgcolor: '#f0f0f0',
+                bgcolor: '#f5f5f5',
                 px: 2,
-                py: 0.5,
+                py: 1,
                 borderRadius: '8px',
+                width: '300px'
               }}
             >
-              <SearchIcon fontSize="small" sx={{ mr: 1 }} />
-              <InputBase placeholder="Search anything here..." />
+              <SearchIcon sx={{ color: '#666', mr: 1 }} />
+              <InputBase
+                placeholder="Search payments..."
+                value={searchTerm}
+                onChange={handleSearch}
+                fullWidth
+              />
             </Box>
-            <IconButton>
-              <NotificationsNoneIcon />
-            </IconButton>
-            <Avatar src="/avatar.png" sx={{ width: 32, height: 32 }} />
-            <Typography fontSize={14}>Admin name</Typography>
           </Box>
-        </Box>
 
-        <Box sx={{ p: 3 }}>
-          <Paper elevation={0} sx={{ p: 3, borderRadius: '12px' }}>
-            <Grid container justifyContent="space-between" alignItems="center" mb={3}>
-              <Typography variant="h6" fontWeight="bold">
-                Payments Settings
-              </Typography>
-              <Button variant="contained" sx={{ bgcolor: '#003865', textTransform: 'none' }}onClick={() => navigate('/add-Payment-settings')}>
-                + Add Payments Entry
-              </Button>
-            </Grid>
-
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              <Button variant="outlined" size="small">All</Button>
-              <Button variant="outlined" size="small">Draft</Button>
-              <Button variant="outlined" size="small">Sent</Button>
-            </Box>
-
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  bgcolor: '#f0f0f0',
-                  px: 2,
-                  py: 0.5,
-                  borderRadius: '8px',
-                }}
-              >
-                <SearchIcon fontSize="small" sx={{ mr: 1 }} />
-                <InputBase placeholder="Search by customer name,..." />
-              </Box>
-            </Box>
-
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell padding="checkbox"><Checkbox /></TableCell>
-                    <TableCell>Customer Name</TableCell>
-                    <TableCell>Payment Mode</TableCell>
-                    <TableCell>Payment Date</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Bill Amount</TableCell>
-                    <TableCell>Action</TableCell>
+          {/* Table */}
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f9fafb' }}>Customer Name</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f9fafb' }}>Invoice Number</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f9fafb' }}>Payment Number</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f9fafb' }}>Amount Received</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f9fafb' }}>Pending Amount</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f9fafb' }}>Payment Mode</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f9fafb' }}>Payment Date</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f9fafb' }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f9fafb' }}>Action</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredPayments.map((payment) => (
+                  <TableRow key={payment.payment_id} hover>
+                    <TableCell>{payment.customer_name}</TableCell>
+                    <TableCell>{payment.invoice_number}</TableCell>
+                    <TableCell>{`PAY-${payment.payment_id.toString().padStart(4, '0')}`}</TableCell>
+                    <TableCell>₹{payment.amount.toLocaleString()}</TableCell>
+                    <TableCell>₹{payment.pending_amount.toLocaleString()}</TableCell>
+                    <TableCell>{payment.payment_mode}</TableCell>
+                    <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={payment.status}
+                        size="small"
+                        sx={{
+                          bgcolor: payment.status === 'Completed' ? '#e6f4ea' : '#feeaea',
+                          color: payment.status === 'Completed' ? '#0b8f3c' : '#d32f2f',
+                          fontWeight: 500,
+                          borderRadius: '6px',
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <IconButton size="small">
+                        <MoreVertIcon />
+                      </IconButton>
+                    </TableCell>
                   </TableRow>
-                </TableHead>
-                <TableBody>
-                  {dummyData.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell padding="checkbox"><Checkbox /></TableCell>
-                      <TableCell>{row.customerName}</TableCell>
-                      <TableCell>{row.paymentMode}</TableCell>
-                      <TableCell>{row.paymentDate}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={row.status}
-                          size="small"
-                          sx={{
-                            bgcolor: '#e6f4ea',
-                            color: '#0b8f3c',
-                            fontWeight: 500,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>{row.billAmount}</TableCell>
-                      <TableCell>
-                        <IconButton><MoreVertIcon /></IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-            <Box display="flex" justifyContent="flex-end" mt={2}>
-              <Pagination count={4} shape="rounded" />
-            </Box>
-          </Paper>
-        </Box>
+          {/* Pagination */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+            <Pagination
+              count={Math.ceil(filteredPayments.length / 10)}
+              color="primary"
+              sx={{
+                '& .MuiPaginationItem-root': {
+                  color: '#003865',
+                },
+                '& .Mui-selected': {
+                  bgcolor: '#003865 !important',
+                  color: '#fff !important',
+                },
+              }}
+            />
+          </Box>
+        </Paper>
       </Box>
     </Box>
   );
