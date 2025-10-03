@@ -16,81 +16,54 @@ const quotation = {
     db.query('SELECT * FROM quotation_items WHERE quotation_id = ?', [quotationId], callback);
   },
 
-  getNextQuoteNumber: async (callback) => {
-    try {
-      // Fetch active financial year
-      const financialYears = await new Promise((resolve, reject) => {
-        db.query('SELECT start_date FROM financial_years WHERE is_active = TRUE', (err, results) => {
-          if (err) return reject(err);
-          resolve(results);
+  getNextQuoteNumber: (callback) => {
+    db.query('START TRANSACTION', (err) => {
+      if (err) return callback(err);
+
+      db.query('SELECT start_date FROM financial_years WHERE is_active = TRUE', (err, financialYears) => {
+        if (err) {
+          return db.query('ROLLBACK', () => callback(err));
+        }
+
+        if (financialYears.length === 0) {
+          return db.query('ROLLBACK', () => callback(new Error('No active financial year found')));
+        }
+
+        const startYear = new Date(financialYears[0].start_date).getFullYear();
+        const endYear = startYear + 1;
+        const financialYear = `${startYear}-${endYear.toString().slice(-2)}`;
+        const counterId = `quotation_${financialYear}`;
+
+        db.query('SELECT seq FROM counters WHERE id = ? FOR UPDATE', [counterId], (err, counter) => {
+          if (err) {
+            return db.query('ROLLBACK', () => callback(err));
+          }
+
+          let nextSeq;
+          if (counter.length === 0) {
+            db.query('INSERT INTO counters (id, seq) VALUES (?, 1)', [counterId], (err) => {
+              if (err) return db.query('ROLLBACK', () => callback(err));
+              nextSeq = 1;
+              db.query('COMMIT', (err) => {
+                if (err) return callback(err);
+                const quoteNumber = `ME/BESPL/${String(nextSeq).padStart(3, '0')}/${financialYear}`;
+                callback(null, { nextQuoteNumber: quoteNumber });
+              });
+            });
+          } else {
+            nextSeq = counter[0].seq + 1;
+            db.query('UPDATE counters SET seq = seq + 1 WHERE id = ?', [counterId], (err) => {
+              if (err) return db.query('ROLLBACK', () => callback(err));
+              db.query('COMMIT', (err) => {
+                if (err) return callback(err);
+                const quoteNumber = `ME/BESPL/${String(nextSeq).padStart(3, '0')}/${financialYear}`;
+                callback(null, { nextQuoteNumber: quoteNumber });
+              });
+            });
+          }
         });
       });
-
-      if (financialYears.length === 0) {
-        return callback(new Error('No active financial year found'));
-      }
-
-      const startYear = new Date(financialYears[0].start_date).getFullYear();
-      const endYear = startYear + 1;
-      const financialYear = `${startYear}-${endYear.toString().slice(-2)}`;
-      const counterId = `quotation_${financialYear}`;
-
-      // Start transaction to ensure atomicity
-      await new Promise((resolve, reject) => {
-        db.query('START TRANSACTION', (err) => {
-          if (err) return reject(err);
-          resolve();
-        });
-      });
-
-      // Check if counter exists
-      const counter = await new Promise((resolve, reject) => {
-        db.query('SELECT seq FROM counters WHERE id = ?', [counterId], (err, results) => {
-          if (err) return reject(err);
-          resolve(results[0]);
-        });
-      });
-
-      let nextSeq;
-      if (!counter) {
-        // Insert new counter with seq = 1
-        await new Promise((resolve, reject) => {
-          db.query('INSERT INTO counters (id, seq) VALUES (?, 1)', [counterId], (err) => {
-            if (err) return reject(err);
-            resolve();
-          });
-        });
-        nextSeq = 1;
-      } else {
-        // Update existing counter
-        nextSeq = counter.seq + 1;
-        await new Promise((resolve, reject) => {
-          db.query('UPDATE counters SET seq = seq + 1 WHERE id = ?', [counterId], (err) => {
-            if (err) return reject(err);
-            resolve();
-          });
-        });
-      }
-
-      // Commit transaction
-      await new Promise((resolve, reject) => {
-        db.query('COMMIT', (err) => {
-          if (err) return reject(err);
-          resolve();
-        });
-      });
-
-      // Format quote number as ME/BESPL/NNN/YYYY-YY
-      const quoteNumber = `ME/BESPL/${String(nextSeq).padStart(3, '0')}/${financialYear}`;
-      callback(null, { nextQuoteNumber: quoteNumber });
-    } catch (err) {
-      // Rollback transaction on error
-      await new Promise((resolve) => {
-        db.query('ROLLBACK', () => resolve());
-      });
-      console.error('Error in getNextQuoteNumber:', err);
-      callback(err);
-    }
+    });
   },
 
   create: (data, items = [], callback) => {
@@ -113,7 +86,6 @@ const quotation = {
     const sgst = parseFloat((sub_total * 0.09).toFixed(2));
     const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
 
-    // Get quote number
     quotation.getNextQuoteNumber((err, result) => {
       if (err) return callback(err);
       const quoteNumber = result.nextQuoteNumber;
@@ -174,6 +146,86 @@ const quotation = {
             grand_total
           });
         });
+      });
+    });
+  },
+
+  update: (id, data, items = [], callback) => {
+    let sub_total = 0;
+    items.forEach(item => {
+      const quantity = parseFloat(item.quantity) || 0;
+      const rate = parseFloat(item.rate) || 0;
+      const discount = parseFloat(item.discount) || 0;
+      const amount = (quantity * rate) - discount;
+      item.amount = parseFloat(amount.toFixed(2));
+      sub_total += amount;
+    });
+
+    sub_total = parseFloat(sub_total.toFixed(2));
+    const cgst = parseFloat((sub_total * 0.09).toFixed(2));
+    const sgst = parseFloat((sub_total * 0.09).toFixed(2));
+    const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
+
+    const quotationSql = `
+      UPDATE quotation SET
+        customer_name = ?, quotation_date = ?, expiry_date = ?, subject = ?,
+        customer_notes = ?, terms_and_conditions = ?,
+        sub_total = ?, cgst = ?, sgst = ?, grand_total = ?, attachment_url = ?, status = ?
+      WHERE quotation_id = ?
+    `;
+
+    const quotationValues = [
+      data.customer_name,
+      data.quotation_date,
+      data.expiry_date,
+      data.subject,
+      data.customer_notes,
+      data.terms_and_conditions,
+      sub_total,
+      cgst,
+      sgst,
+      grand_total,
+      data.attachment_url,
+      data.status || 'Draft',
+      id
+    ];
+
+    db.query(quotationSql, quotationValues, (err) => {
+      if (err) return callback(err);
+
+      db.query(`DELETE FROM quotation_items WHERE quotation_id = ?`, [id], (deleteErr) => {
+        if (deleteErr) return callback(deleteErr);
+
+        if (items.length > 0) {
+          const itemSql = `
+            INSERT INTO quotation_items (
+              quotation_id, item_detail, quantity, rate, discount, amount
+            ) VALUES ?
+          `;
+
+          const itemValues = items.map(item => [
+            id,
+            item.item_detail,
+            item.quantity,
+            item.rate,
+            item.discount,
+            item.amount
+          ]);
+
+          db.query(itemSql, [itemValues], (itemErr, itemResult) => {
+            if (itemErr) return callback(itemErr);
+            callback(null, {
+              quotationId: id,
+              itemsUpdated: itemResult.affectedRows,
+              sub_total,
+              cgst,
+              sgst,
+              grand_total
+            });
+          });
+        } else {
+          callback(null, { quotationId: id, itemsUpdated: 0, sub_total, cgst, sgst, grand_total });
+        }
       });
     });
   },

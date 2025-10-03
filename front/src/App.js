@@ -1,6 +1,9 @@
 import './App.css';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import Login from './Component/Login';
+import Dashboard from './Component/Dashboard';
 import InvoicePage from './Component/Invoice';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import NewInvoicePage from './Component/NewInvoice';
 import Invoicelist from './Component/Invoicelist';
 import CustomerPage from './Component/Customer';
@@ -36,8 +39,6 @@ import ReportsAndAnalytics from './Component/ReportandAnalytics';
 import FinancialYearGuard from './Component/financial_year_check';
 import AddFinancialYear from './Component/add_financial_year';
 import FinancialYearMain from './Component/financial-year-home';
-import Dashboard from './Component/Dashboard';
-import { useState } from 'react';
 import EditTax from './Component/EditTax';
 import EditQuotationPage from './Component/EditQuotationPage';
 import EditInvoicePage from './Component/EditInvoicePage';
@@ -45,65 +46,232 @@ import EditPurchaseOrderPage from './Component/EditPurchaseOrderPage';
 import EditVendorDialog from './Component/EditVendor';
 import EditWorkOrderPage from './Component/EditWorkOrder';
 
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, role } = useSelector((state) => state.auth);
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
 
+  // Hide Invoice and Quotation sections for Admin role
+  if (role === 'admin') {
+    const path = window.location.pathname;
+    if (path.includes('/invoice') || path.includes('/quotation')) {
+      return <Navigate to="/dashboard" />;
+    }
+  }
 
-
+  return children;
+};
 
 function App() {
- 
-  
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      
       <Router>
-           <FinancialYearGuard /> 
+        <FinancialYearGuard />
         <Routes>
-          <Route path="/dashboard" element={<Dashboard></Dashboard>} />
-          <Route path="/" element={<InvoicePage />} />
-          <Route path="/invoice" element={<Invoicelist></Invoicelist>} />
-          <Route path="/new-invoice" element={<NewInvoicePage />} />
-          <Route path="/invoice-list" element={<Invoicelist />} />
-          <Route path="/customer" element={<CustomerPage />} />
-          <Route path="/add-customer" element={<AddCustomerForm />} />
-          <Route path="/customer-list" element={<CustomerList />} />
-          <Route path="/items" element={  <ItemsPage />} />
-          <Route path="/add-items" element={<AddItem />} />
-          <Route path="/item-list" element={<ItemList />} />
-          {/* <Route path="/purchase-order" element={<FirstTimePurchaseOrder />} /> */}
-          <Route path="/purchase-order" element={<PurchaseOrderList></PurchaseOrderList>} />
-          <Route path="/add-purchase-order" element={<PurchaseOrderForm />} />
-          <Route path="/purchase-order-list" element={<PurchaseOrderList />} />
-          <Route path="/edit-purchase/:id" element={<EditPurchaseOrderPage />} />'
-          {/* <Route path="/vendors" element={<Vendors />} /> */}
-          <Route path="/vendors" element={<VendorListPage/>} />
-          <Route path="/add-vendor" element={<NewVendorForm />} />
-          <Route path="/vendor-list" element={<VendorListPage />} />
-          <Route path="/edit-vendor/:id" element={<EditVendorDialog />} />'
-          {/* <Route path="/Quotation" element={<Quotation />} /> */}
-          <Route path="/Quotation" element={<QuotationListPage />} />
-          <Route path="/add-Quotation" element={<NewQuotation />} />
-          <Route path="/editQuotation/:id" element={<EditQuotationPage />} />
-          <Route path="/Quotation-list" element={<QuotationListPage />} />
-          <Route path="/Tax" element={<Tax />} />
-          <Route path="/add-Tax" element={<AddTax />} />
-          <Route path="/Tax-list" element={<Taxlist />} />
-          {/* <Route path="/Work-Order" element={<WorkOrder />} /> */}
-          <Route path="/Work-Order" element={<WorkOrderlist />} />
-          <Route path="/add-Work-Order" element={<NewWorkOrder />} />
-          <Route path="/Work-Order-list" element={<WorkOrderlist />} />
-          <Route path="/edit-work-order/:id" element={<EditWorkOrderPage />} />
-          {/* <Route path="/pro-forma-invoice" element={<ProFormaInvoice />} /> */}
-          <Route path="/pro-forma-invoice" element={<ProformaInvoicelist />} />
-          <Route path="/add-pro-forma-invoice" element={<NewProFormaInvoice />} />
-          <Route path="/pro-forma-invoice-list" element={<ProformaInvoicelist />} />
-          <Route path="/add-financial-year-settings" element={<FinancialYearMain></FinancialYearMain>} />
-          <Route path="/Payment-settings" element={<PaymentsSettings />} />
-          <Route path="/Add-Payment-settings" element={<AddPaymentsEntry />} />
-          <Route path="/Report-and-analytics" element={<ReportsAndAnalytics />} />
-          <Route path='/add/financial_year' element={<AddFinancialYear></AddFinancialYear>}/>
-          <Route path="/edit-tax/:id" element={<EditTax />} />
-          <Route path="/edit-invoice/:id" element={<EditInvoicePage />} />
+          {/* Public Route */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Navigate to="/login" />} />
 
+          {/* Protected Routes */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/invoice" element={
+            <ProtectedRoute>
+              <Invoicelist />
+            </ProtectedRoute>
+          } />
+          <Route path="/new-invoice" element={
+            <ProtectedRoute>
+              <NewInvoicePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/invoice-list" element={
+            <ProtectedRoute>
+              <Invoicelist />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer" element={
+            <ProtectedRoute>
+              <CustomerPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/add-customer" element={
+            <ProtectedRoute>
+              <AddCustomerForm />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer-list" element={
+            <ProtectedRoute>
+              <CustomerList />
+            </ProtectedRoute>
+          } />
+          <Route path="/items" element={
+            <ProtectedRoute>
+              <ItemsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/add-items" element={
+            <ProtectedRoute>
+              <AddItem />
+            </ProtectedRoute>
+          } />
+          <Route path="/item-list" element={
+            <ProtectedRoute>
+              <ItemList />
+            </ProtectedRoute>
+          } />
+          <Route path="/purchase-order" element={
+            <ProtectedRoute>
+              <PurchaseOrderList />
+            </ProtectedRoute>
+          } />
+          <Route path="/add-purchase-order" element={
+            <ProtectedRoute>
+              <PurchaseOrderForm />
+            </ProtectedRoute>
+          } />
+          <Route path="/purchase-order-list" element={
+            <ProtectedRoute>
+              <PurchaseOrderList />
+            </ProtectedRoute>
+          } />
+          <Route path="/edit-purchase/:id" element={
+            <ProtectedRoute>
+              <EditPurchaseOrderPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/vendors" element={
+            <ProtectedRoute>
+              <VendorListPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/add-vendor" element={
+            <ProtectedRoute>
+              <NewVendorForm />
+            </ProtectedRoute>
+          } />
+          <Route path="/vendor-list" element={
+            <ProtectedRoute>
+              <VendorListPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/edit-vendor/:id" element={
+            <ProtectedRoute>
+              <EditVendorDialog />
+            </ProtectedRoute>
+          } />
+          <Route path="/Quotation" element={
+            <ProtectedRoute>
+              <QuotationListPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/add-Quotation" element={
+            <ProtectedRoute>
+              <NewQuotation />
+            </ProtectedRoute>
+          } />
+          <Route path="/editQuotation/:id" element={
+            <ProtectedRoute>
+              <EditQuotationPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/Quotation-list" element={
+            <ProtectedRoute>
+              <QuotationListPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/Tax" element={
+            <ProtectedRoute>
+              <Tax />
+            </ProtectedRoute>
+          } />
+          <Route path="/add-Tax" element={
+            <ProtectedRoute>
+              <AddTax />
+            </ProtectedRoute>
+          } />
+          <Route path="/Tax-list" element={
+            <ProtectedRoute>
+              <Taxlist />
+            </ProtectedRoute>
+          } />
+          <Route path="/Work-Order" element={
+            <ProtectedRoute>
+              <WorkOrderlist />
+            </ProtectedRoute>
+          } />
+          <Route path="/add-Work-Order" element={
+            <ProtectedRoute>
+              <NewWorkOrder />
+            </ProtectedRoute>
+          } />
+          <Route path="/Work-Order-list" element={
+            <ProtectedRoute>
+              <WorkOrderlist />
+            </ProtectedRoute>
+          } />
+          <Route path="/edit-work-order/:id" element={
+            <ProtectedRoute>
+              <EditWorkOrderPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/pro-forma-invoice" element={
+            <ProtectedRoute>
+              <ProformaInvoicelist />
+            </ProtectedRoute>
+          } />
+          <Route path="/add-pro-forma-invoice" element={
+            <ProtectedRoute>
+              <NewProFormaInvoice />
+            </ProtectedRoute>
+          } />
+          <Route path="/pro-forma-invoice-list" element={
+            <ProtectedRoute>
+              <ProformaInvoicelist />
+            </ProtectedRoute>
+          } />
+          <Route path="/add-financial-year-settings" element={
+            <ProtectedRoute>
+              <FinancialYearMain />
+            </ProtectedRoute>
+          } />
+          <Route path="/Payment-settings" element={
+            <ProtectedRoute>
+              <PaymentsSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/Add-Payment-settings" element={
+            <ProtectedRoute>
+              <AddPaymentsEntry />
+            </ProtectedRoute>
+          } />
+          <Route path="/Report-and-analytics" element={
+            <ProtectedRoute>
+              <ReportsAndAnalytics />
+            </ProtectedRoute>
+          } />
+          <Route path="/add/financial_year" element={
+            <ProtectedRoute>
+              <AddFinancialYear />
+            </ProtectedRoute>
+          } />
+          <Route path="/edit-tax/:id" element={
+            <ProtectedRoute>
+              <EditTax />
+            </ProtectedRoute>
+          } />
+          <Route path="/edit-invoice/:id" element={
+            <ProtectedRoute>
+              <EditInvoicePage />
+            </ProtectedRoute>
+          } />
         </Routes>
       </Router>
     </LocalizationProvider>
