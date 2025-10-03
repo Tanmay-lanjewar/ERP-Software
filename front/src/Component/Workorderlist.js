@@ -13,6 +13,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import Sidebar from './Sidebar';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ui from '../assets/mera.png';
 
 
 const statusColorMap = {
@@ -110,265 +111,207 @@ const WorkOrderlist = () => {
     return `${convert(Math.floor(num))} Rupees Only`;
   };
 
+
+
   const handleDownloadPdf = async (workOrder) => {
     try {
-      // const response = await axios.get(`http://localhost:5000/api/work-orders/${workOrder.work_order_id}`);
-      // const { workOrder: workOrderData, workOrderItems, customer, total_amount, cgst, sgst, grand_total } = response.data;
-
-      // Dummy Data for PDF Generation
-      const workOrderData = {
-        work_order_number: workOrder.work_order_number || "WO-DUMMY-001",
-        work_order_date: workOrder.work_order_date || "2025-09-19",
-        due_date: workOrder.due_date || "2025-10-19",
-        purchase_order_number: workOrder.purchase_order_number || "PO-DUMMY-123",
-        // ... other work order fields if needed
-      };
-
-      const customer = {
-        customer_name: workOrder.customer_name || "Dummy Customer",
-        billing_recipient_name: "Dummy Billing Recipient",
-        billing_address1: "123 Dummy Billing St",
-        billing_address2: "Apt 4B",
-        billing_city: "Dummy City",
-        billing_state: "Dummy State",
-        billing_pincode: "123456",
-        billing_country: "India",
-        gst: "27DUMMYGST1Z5",
-        shipping_recipient_name: "Dummy Shipping Recipient",
-        shipping_address1: "456 Dummy Shipping Ave",
-        shipping_address2: "Suite 100",
-        shipping_city: "Another Dummy City",
-        shipping_state: "Another Dummy State",
-        shipping_pincode: "654321",
-        shipping_country: "India",
-      };
-
-      const workOrderItems = [
-        {
-          item_name: "Dummy Product 1",
-          hsn_sac: "1234",
-          quantity: 2,
-          unit: "Pcs",
-          rate: 150.00,
-          discount: 10,
-          amount: 280.00, // 2 * 150 - 10 (discount) = 290.00 (This calculation is illustrative. Actual calculation should be precise)
-        },
-        {
-          item_name: "Dummy Service 2",
-          hsn_sac: "5678",
-          quantity: 1,
-          unit: "Hrs",
-          rate: 500.00,
-          discount: 0,
-          amount: 500.00,
-        },
-      ];
-
-      const sub_total = workOrderItems.reduce((acc, item) => acc + item.amount, 0);
-      const cgst = sub_total * 0.09;
-      const sgst = sub_total * 0.09;
-      const grand_total = sub_total + cgst + sgst;
-
-      if (!customer) {
-        throw new Error("Customer not found"); // This error will now only be thrown if dummy customer is not defined.
+      // Fetch work order details from API
+      const response = await axios.get(`http://localhost:5000/api/work-orders/${workOrder.work_order_id}`);
+      const responseData = response.data;
+      
+      if (!responseData || !responseData.workOrderItems) {
+        alert('Work order data is incomplete');
+        return;
       }
 
-      const itemsRows = workOrderItems
-        .map(
-          (item, index) => `
-          <tr>
-            <td>${index + 1}</td>
-            <td>${item.item_name}</td>
-            <td>${item.hsn_sac || "N/A"}</td>
-            <td>${item.quantity}</td>
-            <td>${item.unit || "N/A"}</td>
-            <td>${parseFloat(item.rate).toFixed(2)}</td>
-            <td>${(item.quantity * item.rate).toFixed(2)}</td>
-            <td>${item.discount || "-"}</td>
-            <td>${item.amount.toFixed(2)}</td>
-            <td>9%<br>${(item.amount * 0.09).toFixed(2)}</td>
-            <td>9%<br>${(item.amount * 0.09).toFixed(2)}</td>
-            <td>0%</td>
-            <td>${(item.amount + item.amount * 0.18).toFixed(2)}</td>
-          </tr>`
-        )
-        .join("");
+      // Extract data from response
+      const { workOrder: workOrderData, workOrderItems, customer } = responseData;
 
-      const billingDetails = `
-        ${customer.billing_recipient_name || customer.customer_name || "N/A"}<br>
-        ${customer.billing_address1 || ""}${customer.billing_address2 ? `<br>${customer.billing_address2}` : ""}<br>
-        ${customer.billing_city || ""}, ${customer.billing_state || ""} - ${customer.billing_pincode || ""}<br>
-        Pin Code - ${customer.billing_pincode || ""}, ${customer.billing_country || "India"}<br>
-        <b>State Code :</b> ${customer.billing_state ? "27" : "N/A"}<br>
-        <b>GSTIN :</b> ${customer.gst || "N/A"}
-      `;
+      // Use totals from backend response
+      const sub_total = parseFloat(responseData.total_amount || workOrderData.sub_total || 0);
+      const cgst = parseFloat(responseData.cgst || workOrderData.cgst || 0);
+      const sgst = parseFloat(responseData.sgst || workOrderData.sgst || 0);
+      const grand_total = parseFloat(responseData.grand_total || workOrderData.grand_total || 0);
+      
+      // Format date
+      const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-IN');
+      };
+      
+      // Format currency
+      const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR'
+        }).format(amount);
+      };
 
-      const shippingDetails = `
-        ${customer.shipping_recipient_name || customer.customer_name || "N/A"}<br>
-        ${customer.shipping_address1 || ""}${customer.shipping_address2 ? `<br>${customer.shipping_address2}` : ""}<br>
-        ${customer.shipping_city || ""}, ${customer.shipping_state || ""} - ${customer.shipping_pincode || ""}<br>
-        Pin Code - ${customer.shipping_pincode || ""}, ${customer.shipping_country || "India"}<br>
-        <b>State Code :</b> ${customer.shipping_state ? "27" : "N/A"}<br>
-        <b>GSTIN :</b> ${customer.gst || "N/A"}
-      `;
+      // Generate items HTML
+      const itemsHTML = workOrderItems.map((item, index) => `
+        <tr>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${index + 1}</td>
+          <td style="border: 1px solid #000; padding: 3px;">${item.item_detail || 'N/A'}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">32149090</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.quantity || 0}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">Box</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: right;">${item.rate || 0}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: right;">${item.amount || (item.quantity * item.rate).toFixed(2)}</td>
+        </tr>
+      `).join('');
 
       const printWindow = window.open("", "_blank");
       printWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <title>Work Order</title>
-          <style>
-            @page {
-              size: A4 landscape;
-              margin: 10mm;
-            }
-            body {
-              font-family: Arial, sans-serif;
-              font-size: 12px;
-              color: #000;
-            }
-            .invoice-box {
-              width: 98%;
-              border: 1px solid #000;
-              padding: 10px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-            }
-            td, th {
-              border: 1px solid #000;
-              padding: 5px;
-              vertical-align: top;
-            }
-            .logo {
-              height: 270px;
-              width: auto;
-              object-fit: contain;
-              margin-top: -100px;
-              margin-bottom: -90px;
-              margin-left: -60px;
-              margin-right: -70px;
-            }
-            .no-border {
-              height: -80px;
-            }
-            .no-border td {
-              border: none;
-            }
-            .center {
-              text-align: center;
-            }
-            .right {
-              text-align: right;
-            }
-            .bold {
-              font-weight: bold;
-            }
-            .small {
-              font-size: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="invoice-box">
-            <!-- Header -->
-            <table class="no-border">
-              <tr>
-                <td style="border:none;">
-                  <img src= class="logo" alt="Logo" />
-                </td>
-                <td style="text-align:center; border:none;">
-                  <p class="bold">WORK ORDER</p>
-                  <p class="small">[Section 31 of the CGST Act, 2017 read with Rule 1 of Revised Invoice Rules, 2017]</p>
-                </td>
-                <td style="border:none;">
-                  <table class="no-border">
-                    <tr><td class="bold">Work Order No.:</td><td>${workOrderData.work_order_number}</td></tr>
-                    <tr><td class="bold">Work Order Date:</td><td>${workOrderData.work_order_date}</td></tr>
-                    <tr><td class="bold">Cust Order Date:</td><td>${workOrderData.due_date || "N/A"}</td></tr>
-                    <tr><td class="bold">PO Number:</td><td>${workOrderData.purchase_order_number || "N/A"}</td></tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
+      <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Order</title>
+</head>
+<body style="font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 20px;">
+    <div style="border: 2px solid #000; padding: 10px; width: 600px; margin: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 5px;">
+                <div style="display: flex; align-items: center;">
+                    <img src="https://example.com/logo.png" alt="Merraki Expert Logo" style="width: 50px; height: auto; margin-right: 10px;">
+                    <div style="font-size: 14px; font-weight: bold;">MERRAKI EXPERT</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="margin-bottom: 2px;"><strong>Work No:</strong> ${workOrderData.work_order_number}</div>
+                    <div style="margin-bottom: 2px;"><strong>Date:</strong> ${formatDate(workOrderData.work_order_date)}</div>
+                    <div><strong>JO ID:</strong> ${workOrderData.job_order_id || 'N/A'}</div>
+                </div>
+            </div>
 
-            <!-- Supplier GST Info -->
-            <table style="margin-top:10px;">
-              <tr>
-                <td>
-                  <p><span class="bold">GSTIN :</span> 27AKUPY6544R1ZM</p>
-                  <p><span class="bold">Name :</span> Meraki Expert</p>
-                  <p><span class="bold">PAN :</span> AKUPY6544R</p>
-                </td>
-              </tr>
-            </table>
+        <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 2px solid #000;">
+            <div style="font-size: 10px;"><strong>GSTIN:</strong> 27AKUPY6544R1ZM</div>
+            <div style="font-size: 10px;"><strong>UDYAM-MH-20-0114278</strong></div>
+        </div>
 
-            <!-- Billed / Shipped -->
-            <table style="margin-top:10px;">
-              <tr>
-                <th>Details of Receiver (Billed to)</th>
-                <th>Details of Consignee (Shipped to)</th>
-              </tr>
-              <tr>
-                <td>${billingDetails}</td>
-                <td>${shippingDetails}</td>
-              </tr>
-            </table>
+        <div style="border-bottom: 2px solid #000; padding: 5px 0;">
+            <div style="display: flex;">
+                <div style="width: 100px; font-weight: bold;">Billing Address:</div>
+                <div>101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</div>
+            </div>
+            <div style="display: flex;">
+                <div style="width: 100px; font-weight: bold;">Shipping Address:</div>
+                <div>Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</div>
+            </div>
+        </div>
 
-            <!-- Items Table -->
-            <table style="margin-top:10px;">
-              <tr>
-                <th>S.No.</th>
-                <th>Description of Goods</th>
-                <th>HSN / SAC</th>
-                <th>QTY</th>
-                <th>Unit</th>
-                <th>Rate</th>
-                <th>Total Value (Rs.)</th>
-                <th>Disc.</th>
-                <th>Taxable Value (Rs.)</th>
-                <th>CGST</th>
-                <th>SGST</th>
-                <th>IGST</th>
-                <th>Total</th>
-              </tr>
-              ${itemsRows}
-            </table>
+        <div style="text-align: center; font-weight: bold; padding: 5px 0; border-bottom: 2px solid #000;">
+            Work Order
+        </div>
 
-            <!-- Totals -->
-            <table style="margin-top:10px;">
-              <tr>
-                <td class="right bold">Grand Total (Inclusive of GST)</td>
-                <td class="bold">${grand_total.toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td colspan="2">Work Order Value (In words): ${numberToWords(grand_total)}</td>
-              </tr>
-            </table>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tbody>
+                <tr>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Customer:</td>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">${customer.customer_name || 'N/A'}</td>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">GSTIN</td>
+                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">${customer.gst || 'N/A'}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Address:</td>
+                    <td style="border: 1px solid #000; padding: 3px;">${customer.billing_address1 || 'N/A'}</td>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Kind Attn.</td>
+                    <td style="border: 1px solid #000; padding: 3px;">${customer.billing_recipient_name || 'N/A'}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Mobile No.</td>
+                    <td style="border: 1px solid #000; padding: 3px;">${workOrderData.customer_phone || 'N/A'}</td>
+                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Email</td>
+                    <td style="border: 1px solid #000; padding: 3px; color: #00f;">${workOrderData.customer_email || 'N/A'}</td>
+                </tr>
+            </tbody>
+        </table>
 
-            <!-- Declaration -->
-            <p class="bold" style="margin-top:20px;">Declaration :</p>
-            <p class="small">
-              Certified that the particulars given above are true and correct and the amount indicated represents the Price actually charged
-              and that there is no flow of additional consideration directly or indirectly from the Receiver [Buyer].
-            </p>
+        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
+            This is referance to our requirement,
+        </div>
 
-            <!-- Footer -->
-            <table class="no-border" style="margin-top:20px;">
-              <tr>
-                <td style="border:none;"></td>
-                <td style="border:none;" class="right">
-                  For MERAKI EXPERT<br><br><br>
-                  Authorized Signatory
-                </td>
-              </tr>
-            </table>
-          </div>
-        </body>
-        </html>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Sr. No.</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 35%;">Item Description</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 10%;">HSN Code</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Qty.</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">MOU</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 15%;">Rate</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 25%;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${itemsHTML}
+            </tbody>
+        </table>
+
+        <div style="display: flex; margin-top: 5px;">
+            <div style="width: 50%; border: 1px solid #000; padding: 5px;">
+                <div style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 5px;">Terms & Conditions</div>
+                <div>Payment Terms: 100% After Delivery.</div>
+                <div style="margin-top: 5px;">PO Validity : 4 Month</div>
+                <div>Delivery: 1 to 2 Weeks (Immediate)</div>
+                <div>Document Required: Test Certificate</div>
+            </div>
+            <div style="width: 50%;">
+                <table style="width: 100%; border-collapse: collapse; margin-left: -1px;">
+                    <tbody>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Amount</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">${sub_total.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">CGST (9%)</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">${cgst.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">SGST (9%)</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">${sgst.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">IGST</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">0.00</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Freight Charges</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">Extra at Actual</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Total (Tax Inclusive)</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">${grand_total.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2; text-align: right;">ROUNDUP</td>
+                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">${Math.round(grand_total).toFixed(2)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
+            <strong>Amount (in words) :</strong> ${numberToWords(Math.round(grand_total))} Rupees Only
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 5px;">
+            <div style="width: 70%;">
+                <div style="border: 1px solid #000; padding: 3px;">
+                    Email : merakkiexpert@gmail.com | Mobile : +91-8793484326 / +91-9130801011 | www.merakkiexpert.in
+                </div>
+            </div>
+            <div style="width: 30%; text-align: center; margin-left: 10px;">
+                <div style="font-weight: bold;">For MERAKI EXPERT</div>
+                <div style="height: 50px; display: flex; align-items: center; justify-content: center;">
+                    <img src="https://example.com/signature.png" alt="Signature" style="height: 50px;">
+                </div>
+                <div>(Authorized Signatory)</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
       `);
       printWindow.document.close();
       printWindow.print();

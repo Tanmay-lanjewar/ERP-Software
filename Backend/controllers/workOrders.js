@@ -2,9 +2,25 @@ const WorkOrder = require('../models/workorders');
 const WorkOrderItem = require('../models/workOrderItems');
 
 exports.create = (req, res) => {
-  WorkOrder.create(req.body, (err, result) => {
+  const { items, ...workOrderData } = req.body;
+  
+  WorkOrder.create(workOrderData, (err, result) => {
     if (err) return res.status(500).json({ error: err });
-    res.status(201).json({ message: 'Work order created', id: result.insertId });
+    
+    const workOrderId = result.insertId;
+    
+    // If there are items, create them
+    if (items && items.length > 0) {
+      WorkOrderItem.createItems(workOrderId, items, (itemErr, itemResult) => {
+        if (itemErr) {
+          console.error('Error creating work order items:', itemErr);
+          return res.status(500).json({ error: 'Work order created but failed to add items' });
+        }
+        res.status(201).json({ message: 'Work order and items created successfully', id: workOrderId });
+      });
+    } else {
+      res.status(201).json({ message: 'Work order created', id: workOrderId });
+    }
   });
 };
 

@@ -28,6 +28,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import Sidebar from "./Sidebar";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import ui from '../assets/mera.png';
 
 import axios from "axios";
 
@@ -131,13 +132,13 @@ const PurchaseOrderActions = () => {
     <div style="border: 2px solid #000; padding: 10px; width: 600px; margin: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 5px;">
             <div style="display: flex; align-items: center;">
-                <img src="/static/media/ui.405d9b691b910181ce2e.png" alt="Merraki Expert Logo" style="width: 200px; height: auto; margin-top: -70px; margin-bottom: -70px;">
+                <img src="${ui}" alt="Merraki Expert Logo" style="width: 200px; height: auto; margin-top: -70px; margin-bottom: -70px;">
         
             </div>
             <div style="text-align: right;">
-                <div style="margin-bottom: 2px;"><strong>PO No:</strong> ${poData.purchase_order_no}</div>
+                <div style="margin-bottom: 2px;margin-right: 53px;"><strong>PO No:</strong> ${poData.purchase_order_no}</div>
                 <div style="margin-bottom: 2px; margin-right: 9px;"><strong>Date:</strong> ${formatDate(poData.purchase_order_date)}</div>
-                <div style="margin-right: 17px;"><strong>JO ID:</strong> ${poData.jo_id || 'N/A'}</div>
+                <div style="margin-right: 48px;"><strong>JO ID:</strong> ${poData.jo_id || 'N/A'}</div>
             </div>
         </div>
 

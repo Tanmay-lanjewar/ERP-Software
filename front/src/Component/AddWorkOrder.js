@@ -62,7 +62,7 @@ const NewWorkOrder = () => {
 
   const [products, setProducts] = useState([]);
 
-  const [rows, setRows] = useState([{ item: '', qty: 0, rate: 0, discount: 0, amount: 0 }]);
+  const [rows, setRows] = useState([{ item: '', itemName: '', qty: 0, rate: 0, discount: 0, amount: 0 }]);
   const [subtotal, setSubtotal] = useState(0);
   const [gst, setGst] = useState(0);
   const [total, setTotal] = useState(0);
@@ -160,7 +160,7 @@ const NewWorkOrder = () => {
       purchase_order_number: purchaseordernumber,
       purchase_order_date: purchaseorderdate,
       items: rows.map((row) => ({
-        item_detail: row.item,
+        item_detail: row.itemName,
         quantity: row.qty,
         rate: row.rate,
         discount: row.discount,
@@ -477,7 +477,9 @@ const NewWorkOrder = () => {
                           value={row.item}
                           onChange={(e) => {
                             const selectedProductId = e.target.value;
+                            const selectedProduct = products.find(p => p.id === selectedProductId);
                             updateRow(index, 'item', selectedProductId);
+                            updateRow(index, 'itemName', selectedProduct ? selectedProduct.product_name : '');
                             // Fetch product details by id and update rate
                             fetch(`http://localhost:5000/api/products/${selectedProductId}`)
                               .then((res) => res.json())

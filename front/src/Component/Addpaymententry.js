@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -10,17 +10,114 @@ import {
   InputBase,
   Grid,
   Paper,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import Sidebar from './Sidebar';
+import { useNavigate } from 'react-router-dom';
 
-const customers = ['Customer 1', 'Customer 2'];
 const currencies = ['INR', 'USD', 'EUR'];
 const paymentModes = ['Online', 'Cash', 'Cheque'];
 
 const AddPaymentsEntry = () => {
+  const navigate = useNavigate();
+  const [invoices, setInvoices] = useState([]);
+  const [selectedInvoice, setSelectedInvoice] = useState('');
+  const [invoiceDetails, setInvoiceDetails] = useState(null);
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentMode, setPaymentMode] = useState('Cash');
+  const [currency, setCurrency] = useState('INR');
+  const [amount, setAmount] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Fetch invoices on component mount
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
+
+  const fetchInvoices = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/invoice');
+      if (!response.ok) throw new Error('Failed to fetch invoices');
+      const data = await response.json();
+      setInvoices(data);
+    } catch (err) {
+      setError('Failed to load invoices: ' + err.message);
+    }
+  };
+
+  const handleInvoiceChange = async (invoiceId) => {
+    setSelectedInvoice(invoiceId);
+    if (invoiceId) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/invoice/${invoiceId}`);
+        if (!response.ok) throw new Error('Failed to fetch invoice details');
+        const data = await response.json();
+        setInvoiceDetails(data);
+      } catch (err) {
+        setError('Failed to load invoice details: ' + err.message);
+      }
+    } else {
+      setInvoiceDetails(null);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedInvoice || !amount || !paymentDate) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const paymentData = {
+        invoice_id: selectedInvoice,
+        invoice_number: invoiceDetails.invoice.invoice_number,
+        payment_date: paymentDate,
+        payment_mode: paymentMode,
+        currency: currency,
+        amount: parseFloat(amount)
+      };
+
+      const response = await fetch('http://localhost:5000/api/payment-entries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save payment entry');
+      }
+
+      const result = await response.json();
+      setSuccess(`Payment entry saved successfully! Remaining balance: ₹${result.remainingBalance}`);
+      
+      // Reset form
+      setSelectedInvoice('');
+      setInvoiceDetails(null);
+      setAmount('');
+      setPaymentDate(new Date().toISOString().split('T')[0]);
+      setPaymentMode('Cash');
+      setCurrency('INR');
+      
+    } catch (err) {
+      setError('Error saving payment entry: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Box sx={{ display: 'flex', bgcolor: '#f4f5fa', minHeight: '100vh' }}>
   
@@ -66,6 +163,18 @@ const AddPaymentsEntry = () => {
 
        
         <Box sx={{ p: 3 }}>
+          {/* Error and Success Messages */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+              {error}
+            </Alert>
+          )}
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
+              {success}
+            </Alert>
+          )}
+
           <Paper elevation={0} sx={{ p: 4, borderRadius: '12px' }}>
             <Box display="flex" alignItems="center" gap={1} mb={3}>
               <ArrowBackIosNewIcon fontSize="small" />
@@ -74,117 +183,194 @@ const AddPaymentsEntry = () => {
               </Typography>
             </Box>
 
+            {/* Invoice Details Display */}
+            {invoiceDetails && (
+              <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
+                  Invoice Details
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      <strong>Customer:</strong> {invoiceDetails.invoice.customer_name}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      <strong>Invoice Date:</strong> {new Date(invoiceDetails.invoice.invoice_date).toLocaleDateString()}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="success.main">
+                      <strong>Total Amount:</strong> ₹{invoiceDetails.invoice.grand_total}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      <strong>Status:</strong> {invoiceDetails.invoice.status}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+
+            <form onSubmit={handleSubmit}>
+
             <Grid container spacing={2}>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    select
+                    fullWidth
+                    required
+                    label="Invoice No"
+                    value={selectedInvoice}
+                    onChange={(e) => handleInvoiceChange(e.target.value)}
+                    sx={{
+                        width: { xs: '100%', sm: '100%', md: 330 },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '10px',
+                          backgroundColor: '#f9fafb',
+                          height: 40,
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderRadius: '10px',
+                        },
+                        '& input': {
+                          fontSize: '14px',
+                          padding: '10px 14px',
+                        },
+                      }}
+                  >
+                    <MenuItem value="">
+                      <em>Select Invoice</em>
+                    </MenuItem>
+                    {invoices.map((invoice) => (
+                      <MenuItem key={invoice.invoice_id} value={invoice.invoice_id}>
+                        {invoice.invoice_number} - {invoice.customer_name} (₹{invoice.grand_total})
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
               <Grid item xs={12} md={4}>
-                <TextField
-                  select
-                  fullWidth
-                  required
-                  label="Customer Name"
-                  defaultValue="Customer 1"     sx={{
-                      width: { xs: '100%', sm: '100%', md: 330 },
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '10px',
-                        backgroundColor: '#f9fafb',
-                        height: 40,
-                      },
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderRadius: '10px',
-                      },
-                      '& input': {
-                        fontSize: '14px',
-                        padding: '10px 14px',
-                      },
-                    }}
-                >
-                  {customers.map((c) => (
-                    <MenuItem key={c} value={c}>{c}</MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
+                  <TextField
+                    fullWidth
+                    required
+                    label="Payment Date"
+                    type="date"
+                    value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                    sx={{
+                        width: { xs: '100%', sm: '100%', md: 330 },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '10px',
+                          backgroundColor: '#f9fafb',
+                          height: 40,
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderRadius: '10px',
+                        },
+                        '& input': {
+                          fontSize: '14px',
+                          padding: '10px 14px',
+                        },
+                      }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField 
+                    select 
+                    fullWidth 
+                    required 
+                    label="Payment Mode"
+                    value={paymentMode}
+                    onChange={(e) => setPaymentMode(e.target.value)}
+                    sx={{
+                        width: { xs: '100%', sm: '100%', md: 330 },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '10px',
+                          backgroundColor: '#f9fafb',
+                          height: 40,
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderRadius: '10px',
+                        },
+                        '& input': {
+                          fontSize: '14px',
+                          padding: '10px 14px',
+                        },
+                      }}>
+                    {paymentModes.map((mode) => (
+                      <MenuItem key={mode} value={mode}>{mode}</MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
               <Grid item xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  required
-                  label="Payment Date"
-                  type="date"
-                  defaultValue="2025-04-01"
-                  InputLabelProps={{ shrink: true }}     sx={{
-                      width: { xs: '100%', sm: '100%', md: 330 },
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '10px',
-                        backgroundColor: '#f9fafb',
-                        height: 40,
-                      },
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderRadius: '10px',
-                      },
-                      '& input': {
-                        fontSize: '14px',
-                        padding: '10px 14px',
-                      },
-                    }}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField select fullWidth required label="Payment Mode"     sx={{
-                      width: { xs: '100%', sm: '100%', md: 330 },
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '10px',
-                        backgroundColor: '#f9fafb',
-                        height: 40,
-                      },
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderRadius: '10px',
-                      },
-                      '& input': {
-                        fontSize: '14px',
-                        padding: '10px 14px',
-                      },
-                    }}>
-                  {paymentModes.map((mode) => (
-                    <MenuItem key={mode} value={mode}>{mode}</MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField select fullWidth required label="Currency Preference"     sx={{
-                      width: { xs: '100%', sm: '100%', md: 330 },
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '10px',
-                        backgroundColor: '#f9fafb',
-                        height: 40,
-                      },
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderRadius: '10px',
-                      },
-                      '& input': {
-                        fontSize: '14px',
-                        padding: '10px 14px',
-                      },
-                    }}>
-                  {currencies.map((curr) => (
-                    <MenuItem key={curr} value={curr}>{curr}</MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField fullWidth required label="Amount" placeholder="Enter amount"     sx={{
-                      width: { xs: '100%', sm: '100%', md: 330 },
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '10px',
-                        backgroundColor: '#f9fafb',
-                        height: 40,
-                      },
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderRadius: '10px',
-                      },
-                      '& input': {
-                        fontSize: '14px',
-                        padding: '10px 14px',
-                      },
-                    }} />
-              </Grid>
+                  <TextField 
+                    select 
+                    fullWidth 
+                    required 
+                    label="Currency Preference"
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    sx={{
+                        width: { xs: '100%', sm: '100%', md: 330 },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '10px',
+                          backgroundColor: '#f9fafb',
+                          height: 40,
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderRadius: '10px',
+                        },
+                        '& input': {
+                          fontSize: '14px',
+                          padding: '10px 14px',
+                        },
+                      }}>
+                    {currencies.map((curr) => (
+                      <MenuItem key={curr} value={curr}>{curr}</MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField 
+                    fullWidth 
+                    required 
+                    label="Amount" 
+                    placeholder="Enter amount"
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    inputProps={{ min: 0, step: 0.01 }}
+                    sx={{
+                        width: { xs: '100%', sm: '100%', md: 330 },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '10px',
+                          backgroundColor: '#f9fafb',
+                          height: 40,
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderRadius: '10px',
+                        },
+                        '& input': {
+                          fontSize: '14px',
+                          padding: '10px 14px',
+                        },
+                      }} 
+                  />
+                </Grid>
+
+                {/* Remaining Balance Display */}
+                {invoiceDetails && amount && (
+                  <Grid item xs={12}>
+                    <Box sx={{ p: 2, bgcolor: '#e3f2fd', borderRadius: 2, mt: 2 }}>
+                      <Typography variant="body2" color="info.main">
+                        <strong>Remaining Balance after this payment:</strong> ₹{Math.max(0, invoiceDetails.invoice.grand_total - parseFloat(amount || 0)).toFixed(2)}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                )}
             </Grid>
 
        
@@ -196,19 +382,29 @@ const AddPaymentsEntry = () => {
               borderTop="1px solid #eee"
               pt={2}
             >
-              <Typography sx={{ color: '#888' }}>Preview Receipt</Typography>
+              <Typography sx={{ color: '#888' }}>Payment Entry Form</Typography>
               <Box display="flex" gap={2}>
-                <Button variant="outlined" color="inherit" sx={{ textTransform: 'none' }}>
+                <Button 
+                  variant="outlined" 
+                  color="inherit" 
+                  sx={{ textTransform: 'none' }}
+                  onClick={() => navigate(-1)}
+                  disabled={loading}
+                >
                   Cancel
                 </Button>
-                <Button variant="outlined" sx={{ textTransform: 'none' }}>
-                  Save as Draft
-                </Button>
-                <Button variant="contained" sx={{ textTransform: 'none', bgcolor: '#003865' }}>
-                  Save & Send
+                <Button 
+                  type="submit" 
+                  variant="contained" 
+                  sx={{ textTransform: 'none', bgcolor: '#003865' }}
+                  disabled={loading || !selectedInvoice || !amount}
+                  startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+                >
+                  {loading ? 'Saving...' : 'Save Payment'}
                 </Button>
               </Box>
             </Box>
+            </form>
           </Paper>
         </Box>
       </Box>

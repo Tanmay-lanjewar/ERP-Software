@@ -32,6 +32,7 @@ import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import ui from "../assets/mera.png"
+import ne from "../assets/new.png"
 const statusColor = {
   Paid: "success",
   Draft: "default",
@@ -160,164 +161,802 @@ export default function Invoicelist() {
       // Open print window with dynamic data
       const printWindow = window.open("", "_blank");
       printWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <title>Tax Invoice</title>
-          <style>
-            @page {
-              size: A4 landscape;
-              margin: 10mm;
-            }
+      <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1222, user-scalable=no">
+
+    <title>TAX INVOICE Exact Replica</title>
+  
+
+    <style>
+        @page {
+            size: 310mm 250mm;
+            margin: 8mm;
+        }
+
+        @media screen and (min-width: 1025px) {
             body {
-              font-family: Arial, sans-serif;
-              font-size: 12px;
-              color: #000;
+                background-color: #f0f0f0;
             }
-            .invoice-box {
-              width: 98%;
-              border: 1px solid #000;
-              padding: 10px;
+
+            .invoice-containerone {
+                width: 1022px;
+                height: 794px;
+                font-size: 0.9em;
+                padding: 50px;
             }
-            table {
-              width: 100%;
-              border-collapse: collapse;
+
+            .items-table {
+                font-size: 7pt;
             }
-            td, th {
-              border: 1px solid #000;
-              padding: 5px;
-              vertical-align: top;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            padding: 50px;
+        }
+
+     
+
+        .invoice-containerone {
+            transform: scale(1);
+            transform-origin: top left;
+            width: 1222px;
+            height: 794px;
+        }
+
+        .invoice-containerone {
+            font-size: 0.85em;
+            width: 1222px;
+            height: 794px;
+            background-color: #fff;
+            padding: 50px;
+            box-sizing: border-box;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .invoice-containertwo {
+            border: 1px solid rgb(177, 177, 177);
+            background-color: #fff;
+            padding: 0px;
+            box-sizing: border-box;
+            font-size: 0.85em;
+            position: relative;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .font-7pt {
+            font-size: 7pt;
+        }
+
+        .font-8pt {
+            font-size: 8pt;
+        }
+
+        .font-9pt {
+            font-size: 9pt;
+        }
+
+        .font-bold {
+            font-weight: bold;
+        }
+
+        .border-1px {
+            border: 1px solid #636363;
+        }
+
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+        }
+
+        .header-logo {
+            width: 100px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            font-size: 14pt;
+            font-weight: bold;
+            color: #041E42;
+        }
+
+        .header-logo span {
+            font-size: 8pt;
+            font-weight: normal;
+            margin-left: 5px;
+            color: #000000;
+        }
+
+        .header-title {
+            text-align: center;
+            flex-grow: 1;
+            padding-top: 0px;
+        }
+
+        .header-title h4 {
+            margin: 0;
+            font-size: 9pt;
+            font-weight: 800;
+        }
+
+        .header-title small {
+            display: block;
+            font-size: 7pt;
+            font-weight: normal;
+            margin-top: 2px;
+            line-height: 1.3;
+        }
+
+        .top-details-box {
+            display: flex;
+            border: 1px solid gray;
+            border-top: 4px solid rgb(0, 0, 0);
+            line-height: 1;
+            margin-bottom: 9;
+            font-size: 7pt;
+        }
+
+        .top-details-col {
+            width: 50%;
+            padding: 0 2px;
+            box-sizing: border-box;
+            position: relative;
+
+        }
+
+        .detail-row {
+            padding-top: 10px;
+            display: flex;
+            border-bottom: 1px solid transparent;
+            padding: 2px 0;
+        }
+
+        .detail-label {
+            width: 80px;
+            font-weight: bold;
+        }
+
+        .detail-value {
+            flex-grow: 1;
+        }
+
+        .detail-small-text {
+            font-size: 7pt;
+            padding-left: 70px;
+            display: block;
+        }
+
+
+        .header-original {
+            font-size: 8pt;
+            font-weight: bold;
+            text-align: right;
+            margin-bottom: 3px;
+            margin-top: 1px;
+            margin-right: 80px;
+        }
+
+        .consignee-section {
+            display: flex;
+            border: 1px solid #696969;
+            border-top: none;
+            margin-bottom: -1px;
+        }
+
+        .consignee-col {
+            width: 50%;
+            border-right: 1px solid #7d7d7d;
+            min-height: 110px;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        .consignee-col {
+            width: 60%;
+        }
+
+        .consignee-col:last-child {
+            width: 40%;
+            border-right: none;
+        }
+
+
+        .consignee-col p {
+            margin: 0 0 2px 0;
+            font-size: 7.8pt;
+            line-height: 1.2;
+        }
+
+        .consignee-col .title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 8pt;
+        }
+
+        .consignee-section {
+            display: flex;
+            position: relative;
+        }
+
+        .consignee-section::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 52.1%;
+            width: 1px;
+            background: #8e8e8e;
+        }
+
+        .consignee-col {
+            width: 52%;
+            border-right: none;
+        }
+
+        .state-gstin-row {
+            display: flex;
+            border: 1px solid #757575;
+            border-top: none;
+            margin-bottom: -1px;
+        }
+
+        .state-gstin-col {
+            width: 25%;
+            border-right: 1px solid #797979;
+            padding: 5px;
+            box-sizing: border-box;
+            font-size: 7.8pt;
+        }
+
+        .state-gstin-col:last-child {
+            border-right: none;
+        }
+
+        .state-gstin-col p {
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .state-gstin-col .col-header {
+            text-decoration: underline;
+            margin-bottom: 2px;
+            font-size: 8pt;
+        }
+
+        .place-of-supply {
+            border: 1px solid #6e6e6e;
+            border-top: none;
+            padding: 2px 5px 5px;
+            font-size: 7.8pt;
+            margin-bottom: 0px;
+        }
+
+        .items-table {
+            text-align: center;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 7pt;
+            table-layout: fixed;
+        }
+
+        .items-table th,
+        .items-table td {
+            border: 1px solid #818181;
+            padding: 2px 2px;
+            text-align: center;
+            vertical-align: center;
+            height: 12px;
+            line-height: 1.15;
+        }
+
+        .items-table th {
+            text-align: center;
+            font-weight: bold;
+            background-color: #ffffff;
+            padding: 3px;
+        }
+
+        .items-table .col-sno {
+            width: 3%;
+            font-weight: bold;
+        }
+
+        .items-table .col-desc {
+            width: 18%;
+        }
+
+        .items-table .col-hsn {
+            width: 5%;
+        }
+
+        .items-table .col-qty {
+            width: 4%;
+        }
+
+        .items-table .col-unit {
+            width: 3%;
+        }
+
+        .items-table .col-rate {
+            width: 4.3%;
+        }
+
+        .items-table .col-total-value {
+            width: 6%;
+        }
+
+        .items-table .col-disc {
+            width: 4%;
+        }
+
+        .items-table .col-taxable-value {
+            width: 6%;
+        }
+
+        .items-table .col-tax-rate {
+            width: 3.5%;
+        }
+
+        .items-table .col-tax-rs {
+            width: 6%;
+
+        }
+
+        .items-table .col-igst-rs {
+            width: 5.5%;
+        }
+
+        .items-table .col-total-rs {
+            width: 6.5%;
+        }
+
+        .items-table .item-description {
+            font-size: 7.5pt;
+        }
+
+        .total-row td {
+            font-weight: bold;
+            background-color: #fcfcfc;
+            padding: 5px;
+        }
+
+        .total-row .col-label {
+            text-align: right;
+            border-right: none;
+            font-weight: bold;
+        }
+
+        .empty-space-row {
+            height: 0px;
+        }
+
+        .value-in-words-row,
+        .reverse-charge-row {
+            border: 1px solid #797979;
+            border-top: none;
+            padding: 2px;
+            font-weight: bold;
+            font-size: 7pt;
+            margin-bottom: 0px;
+        }
+
+        .declaration-section {
+            border: 1px solid #6d6d6d;
+            padding: 3px;
+            font-size: 8pt;
+            min-height: 125px;
+            margin-top: 0px;
+            position: relative;
+        }
+
+        .declaration-section h5 {
+            margin: 0 0 0px 0;
+            font-weight: bold;
+            font-size: 10pt;
+            border-bottom: 2px solid #333333;
+            padding-bottom: 2px;
+            width: 85px;
+        }
+
+        .declaration-text {
+            width: 60%;
+            float: left;
+            line-height: 1.3;
+            font-size: 7.8pt;
+        }
+
+        .signature-box {
+            width: 28%;
+            float: right;
+            text-align: center;
+            padding-left: 10px;
+            box-sizing: border-box;
+            min-height: 95px;
+            font-size: 8pt;
+        }
+
+        .signature-box .auth-sign {
+            font-weight: bold;
+            padding-top: 4px;
+            display: block;
+            margin-top: 50px;
+        }
+
+        .reg-address {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            right: 5px;
+            font-size: 7.8pt;
+            text-align: center;
+            border-top: 1px solid #737373;
+            padding-top: 8px;
+            font-weight: bold;
+        }
+
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+                background-color: #fff;
             }
-            .logo {
-              height: 270px;
-              width: auto;
-              object-fit: contain;
-              margin-top: -100px;
-              margin-bottom: -90px;
-              margin-left: -60px;
-              margin-right: -70px;
+
+            .invoice-containerone {
+                width: 100%;
+                height: auto;
+                padding: 15px;
+                box-shadow: none;
             }
-            .no-border {
-              height: -80px;
+
+            .invoice-containertwo {
+                font-size: 0.75em;
             }
-            .no-border td {
-              border: none;
+
+            .header-section {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
             }
-            .center {
-              text-align: center;
+
+            .header-logo {
+                margin-bottom: 10px;
             }
-            .right {
-              text-align: right;
+
+            .header-title h4 {
+                font-size: 12pt;
             }
-            .bold {
-              font-weight: bold;
+
+            .consignee-section {
+                flex-direction: column;
             }
-            .small {
-              font-size: 10px;
+
+            .consignee-col {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #ccc;
             }
-          </style>
-        </head>
-        <body>
-          <div class="invoice-box">
-            <!-- Header -->
-            <table class="no-border">
-              <tr>
-                
-                 <div style="display: flex; align-items: center;">
-                                 <img src=${ui} alt="Merraki Expert Logo" style="width: 200px; height: auto; margin-top: -70px; margin-bottom: -70px;">
-                         
-                             </div>
-                
-                <td style="text-align:center; border:none;">
-                  <p class="bold">TAX INVOICE</p>
-                  <p class="small">[Section 31 of the CGST Act, 2017 read with Rule 1 of Revised Invoice Rules, 2017]</p>
-                </td>
-                <td style="border:none;">
-                  <table class="no-border">
-                    <tr><td class="bold">Invoice No.:</td><td>${invoiceData.invoice_number}</td></tr>
-                    <tr><td class="bold">Invoice Date:</td><td>${invoiceData.invoice_date}</td></tr>
-                    <tr><td class="bold">Cust Order Date:</td><td>${invoiceData.expiry_date}</td></tr>
-                    <tr><td class="bold">PO Number:</td><td>${invoiceData.subject || "N/A"}</td></tr>
-                  </table>
-                </td>
-              </tr>
+
+            .consignee-col:last-child {
+                border-bottom: none;
+            }
+
+            .state-gstin-row {
+                flex-wrap: wrap;
+            }
+
+            .state-gstin-col {
+                width: 50%;
+                font-size: 7pt;
+            }
+
+            .items-table {
+                font-size: 6.5pt;
+                display: block;
+                white-space: nowrap;
+            }
+
+            .value-in-words-row,
+            .reverse-charge-row {
+                font-size: 7pt;
+                text-align: left;
+                display: block;
+            }
+
+            .declaration-section {
+                font-size: 7pt;
+            }
+
+            .declaration-text,
+            .signature-box {
+                width: 100%;
+                float: none;
+                text-align: center;
+                margin-bottom: 10px;
+            }
+
+            .reg-address {
+                font-size: 8pt;
+                position: static;
+                border-top: none;
+                padding-top: 5px;
+            }
+        }
+
+        .total-row.bold-row td {
+            font-weight: 800 !important;
+            font-size: 6.5pt;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="invoice-containerone">
+        <div class="invoice-containertwo">
+            <div class="header-section">
+                <div class="header-logo">
+                    <img src="${ui}" style="width: Auto; height: 230px; margin-top: -50px; margin-bottom: -70px;"
+                        alt="Logo" />
+
+                </div>
+                <div class="header-title">
+                    <h4>TAX INVOICE</h4>
+                    <h4>for Supply of Goods/Services</h4>
+                    <small class="font-bold small">[Section 31 of the CGST Act, 2017 read with Rule 1 of Revised Invoice
+                        Rules, 2017]</small>
+                </div>
+
+            </div>
+            <div class="top-details-box">
+
+                <div class="top-details-col" style="position: relative;top: 9px;">
+                    <div class="detail-row">
+                        <span class="detail-label font-bold"></br />GSTIN</span><span class="detail-value"style="position: relative; right: 30px;"><b></br />:
+                                27AKUPY6544R1ZM</b></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label font-bold">Name</span><span class="detail-value"style="position: relative; right: 30px;"><b>: Meraki
+                                Expert</b></span>
+                    </div>
+                    <div class="detail-row" style="border-bottom: none; padding-bottom: 0;">
+                        <span class="detail-label font-bold">PAN</span><span class="detail-value"style="position: relative; right: 30px;"><b>:
+                                AKUPY6544R</b></span>
+                    </div>
+                    <span class="detail-small-text font-7pt"style="position: relative; right: 15px;">UDYAM-MH-20-0114278</span>
+                </div>
+
+                <div class="top-details-col" style="position: relative;left: 25px;">
+                    <div class="header-original">Original for Recipient</div>
+                    <div class="detail-row">
+                        <span class="detail-label font-bold" style="font-weight: bold;">Invoice No.</span><span
+                            class="detail-value"style="font-weight: 700;">: <b style="position: relative; left: 15px;"> ${invoiceData.invoice_number}</b></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label font-bold">Invoice Date</span><span class="detail-value"style="font-weight: 700;">:<b style="position: relative; left: 15px;">
+                                ${invoiceData.invoice_date}</b></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label font-bold">Cust Order Date</span><span class="detail-value"style="font-weight: 700;">:
+                           <span style="position: relative; left: 15px;"> ${invoiceData.expiry_date}</span></span>
+                    </div>
+                    <div class="detail-row" style="border-bottom: none;">
+                        <span class="detail-label font-bold">PO Number</span><span class="detail-value" style="font-weight: 700;">:
+                           <span style="position: relative; left: 15px;">${invoiceData.subject || "N/A"}</span> </span>
+                    </div>
+                </div>
+            </div>
+
+
+             <div class="consignee-section">
+                <div class="consignee-col">
+                    <p class="title font-bold">Details of Receiver (Billed to)</p>
+                    <p><strong>Name:</strong> <b> ${customer.billing_recipient_name || customer.customer_name ||
+                            "N/A"}</b></p>
+                    <p><strong>Address :</strong> ${customer.billing_address1 || ""}
+                        <br>${customer.billing_address2}
+                        
+                    </p><br>
+                    <p><strong>State Code:</strong> <b> ${customer.billing_state ? "27" : "N/A"}</b></p>
+                    <p><strong>GSTIN:</strong> <b> ${customer.gst || "N/A"}</b></p>
+                    <p style="margin: 0; "><b>Place of Supply/Service</b>: Maharashtra</p>
+                </div>
+                <div class="consignee-col">
+                    <p class="title font-bold">Details of Consignee (Shipped to)</p>
+                    <p><strong>Name: </strong> <b> ${customer.shipping_recipient_name || customer.customer_name ||
+                            "N/A"}</b></p>
+                    <p><strong>Address:</strong> ${customer.shipping_address1 || ""}
+                        ${customer.shipping_address2}
+                        ${customer.shipping_city || ""}, ${customer.shipping_state || ""} - ${customer.shipping_pincode
+                        || ""}${customer.shipping_pincode || ""}, ${customer.shipping_country || "India"}</p><br>
+                    <p><strong>State Code: </strong> <b> ${customer.shipping_state ? "27" : "N/A"}</b></p>
+                    <p><strong>GSTIN : </strong><b> ${customer.gst || "N/A"}</b></p>
+                </div>
+            </div>
+
+
+            <table class="items-table">
+                <thead>
+                    <tr class="tax-header-row" style="font-weight: bold;">
+                        <th class="col-sno" rowspan="2">S.No.</th>
+                        <th class="col-desc" rowspan="2" style="text-align: left;">Description of Goods</th>
+                        <th class="col-hsn" rowspan="2">HSN/SAC</th>
+                        <th class="col-qty" rowspan="2">QTY</th>
+                        <th class="col-unit" rowspan="2">Unit</th>
+                        <th class="col-rate" rowspan="2">Rate</th>
+                        <th class="col-total-value" rowspan="2">Total Value (Rs).</th>
+                        <th class="col-disc" rowspan="2">Disc.</th>
+                        <th class="col-taxable-value" rowspan="2">Taxable Value (Rs).</th>
+                        <th colspan="2">CGST</th>
+                        <th colspan="2">SGST</th>
+                        <th colspan="2">IGST</th>
+                        <th colspan="1">Total</th>
+                    </tr>
+                    <tr class="tax-sub-header-row">
+                        <th class="col-tax-rate">Rate (%)</th>
+                        <th class="col-tax-rs">Rs</th>
+                        <th class="col-tax-rate">Rate (%)</th>
+                        <th class="col-tax-rs">Rs</th>
+                        <th class="col-tax-rate">Rate (%)</th>
+                        <th class="col-tax-rs">Rs</th>
+                        <th class="col-tax-rs">Rs</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="col-sno text-center">1</td>
+                        <td class="col-desc item-description" style="text-align: left;">
+                            Supply of Kingspan Jindal <br />Contineous Line, 50 mm THK PUR <br />Wall Panel Both Side
+                            0.5 mm<br />
+                            PPGL-300Mpa SMP-AZ 150<br /> GSM (RAL9002) Plain Lamination<br /> - Density: 40 (+-2)
+                            Kg/cum. -Panel<br />
+                            Cover Width:1000MM
+                        </td>
+                        <td class="col-hsn text-center">39259010</td>
+                        <td class="col-qty text-right">680.250</td>
+                        <td class="col-unit text-center">Sq.M</td>
+                        <td class="col-rate text-right">1430.00</td>
+                        <td class="col-total-value text-right">9,72,757.50</td>
+                        <td class="col-disc text-center">-</td>
+                        <td class="col-taxable-value text-right">9,72,757.500.</td>
+                        <td class="col-tax-rate text-right">9%</td>
+                        <td class="col-tax-rs text-right">87,548.18</td>
+                        <td class="col-tax-rate text-right">9%</td>
+                        <td class="col-tax-rs text-right">87,548.18</td>
+                        <td class="col-tax-rate text-right">0%</td>
+                        <td class="col-igst-rs text-right">0</td>
+                        <td class="col-total-rs text-right">11,47,853.85</td>
+                    </tr>
+                    <!-- <tr class="empty-space-row">
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                    </tr> -->
+                    <tr class="total-row bold-row">
+                        <td colspan="8" class="col-label"></td>
+                        <td class="col-taxable-value text-right">9,72,757.50</td>
+                        <td class="col-tax-rate"></td>
+                        <td class="col-tax-rs text-right">87,548.18</td>
+                        <td class="col-tax-rate"></td>
+                        <td class="col-tax-rs text-right">87,548.18</td>
+                        <td class="col-tax-rate"></td>
+                        <td class="col-igst-rs text-right">0.00</td>
+                        <td class="col-total-rs text-right">11,47,853.85</td>
+                    </tr>
+
+                    <tr class="total-row bold-row">
+                        <td colspan="8" class="col-label" style="border-right: 1px solid #6b6b6b;">Add: Freight</td>
+                        <td class="col-taxable-value text-right">0.00</td>
+                        <td class="col-tax-rate"></td>
+                        <td class="col-tax-rs text-right"></td>
+                        <td class="col-tax-rate"></td>
+                        <td class="col-tax-rs text-right"></td>
+                        <td class="col-tax-rate"></td>
+                        <td class="col-igst-rs text-right"></td>
+                        <td class="col-total-rs text-right">0.00</td>
+                    </tr>
+
+                    <tr class="total-row bold-row">
+                        <td colspan="8" class="col-label" style="border-right: 1px solid #777777;">Sub Total</td>
+                        <td class="col-taxable-value text-right">9,72,757.50</td>
+                        <td class="col-tax-rate"></td>
+                        <td class="col-tax-rs text-right">87,548.18</td>
+                        <td class="col-tax-rate"></td>
+                        <td class="col-tax-rs text-right">87,548.18</td>
+                        <td class="col-tax-rate"></td>
+                        <td class="col-igst-rs text-right">0.00</td>
+                        <td class="col-total-rs text-right">11,47,853.85</td>
+                    </tr>
+
+                    <tr class="total-row">
+                        <td colspan="15" class="col-label" style="text-align: center; padding: 1px ; line-height: 1.8;">
+                            <b style="text-align: center; border-right: 1px solid #868686; padding: 2px; line-height: 1.1;padding-top: 7px;padding-bottom: 7px;position: relative;
+    right: 22px;">Grand Total (Inclusive of GST) </b>
+                        </td>
+                        <td class="col-total-rs text-center">11,47,854</td>
+                    </tr>
+                </tbody>
             </table>
 
-            <!-- Supplier GST Info -->
-            <table style="margin-top:10px;">
-              <tr>
-                <td>
-                  <p><span class="bold">GSTIN :</span> 27AKUPY6544R1ZM</p>
-                  <p><span class="bold">Name :</span> Meraki Expert</p>
-                  <p><span class="bold">PAN :</span> AKUPY6544R</p>
-                </td>
-              </tr>
-            </table>
+            <div class="value-in-words-row" style="margin-top: 0px;text-align: center;">
+                <p style="margin: 0;"><strong style="text-align: center; border-right: 1px solid #868686; padding: 3px; line-height: 1.3;padding-top: 2px;padding-bottom: 2px;position: relative;
+    left: 155.3px;">Invoice Value (In words):</strong> <strong style=" position: relative;
+    left: 156px;">Eleven Lac Fourty Seven Thausand Eight Hundred and Fifty Four Rupees only
+                    </strong></p>
+            </div>
+            <div class="reverse-charge-row" style="text-align: center;">
+                <p style="margin: 0; display: inline-block; text-align: center;position: relative;
+    right: 82px; "><strong
+                        style="text-align: center; border-right: 1px solid #868686; padding: 4px; line-height: 1.3;padding-top: 2px;padding-bottom: 2px;">Whether
+                        Tax is payable on Reverse Charge:</strong> </p>
+                <p style="margin: 0; display: inline-block; float: right; position: relative;
+    right: 290px;padding-right: 5px;">No</p>
+            </div>
 
-            <!-- Billed / Shipped -->
-            <table style="margin-top:10px;">
-              <tr>
-                <th>Details of Receiver (Billed to)</th>
-                <th>Details of Consignee (Shipped to)</th>
-              </tr>
-              <tr>
-                <td>${billingDetails}</td>
-                <td>${shippingDetails}</td>
-              </tr>
-            </table>
+            <div class="declaration-section clearfix">
+                <h5>Declaration :</h5>
+                <div class="declaration-text">
+                    <p style="margin: 0; font-size: 8.5pt; ">Certified that the particulars given above are true and
+                        correct and the amount indicated represents </p>
+                    <p style="margin: 0; font-size: 8.5pt; ">represents the Price actually charged and that there
+                        is no flow of additional consideration directly</p>
+                    <p style="margin: 0; font-size: 8.5pt; ">or indirectly from the Receiver [Buyer].</p>
+                </div>
+                <div class=" signature-box">
+                    <p class="font-8pt text-right" style="margin: 0; padding-right: 100px;margin-top: -15px;"> <b>For
+                            MERAKI
+                            EXPERT</b></p>
 
-            <!-- Items Table -->
-            <table style="margin-top:10px;">
-              <tr>
-                <th>S.No.</th>
-                <th>Description of Goods</th>
-                <th>HSN / SAC</th>
-                <th>QTY</th>
-                <th>Unit</th>
-                <th>Rate</th>
-                <th>Total Value (Rs.)</th>
-                <th>Disc.</th>
-                <th>Taxable Value (Rs.)</th>
-                <th>CGST</th>
-                <th>SGST</th>
-                <th>IGST</th>
-                <th>Total</th>
-              </tr>
-              ${itemsRows}
-            </table>
+                    <img src=" ${ne} " style="width: 90px; height: 70px;  margin-bottom: -60px;" alt="Logo" />
 
-            <!-- Totals -->
-            <table style="margin-top:10px;">
-              <tr>
-                <td class="right bold">Grand Total (Inclusive of GST)</td>
-                <td class="bold">${grand_total.toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td colspan="2">Invoice Value (In words): ${numberToWords(grand_total)}</td>
-              </tr>
-            </table>
 
-            <!-- Declaration -->
-            <p class="bold" style="margin-top:20px;">Declaration :</p>
-            <p class="small">
-              Certified that the particulars given above are true and correct and the amount indicated represents the Price actually charged
-              and that there is no flow of additional consideration directly or indirectly from the Receiver [Buyer].
-            </p>
+                    <span class="auth-sign">Authorized Signatory</span>
+                </div>
 
-            <!-- Footer -->
-            <table class="no-border" style="margin-top:20px;">
-              <tr>
-                <td style="border:none;"></td>
-                <td style="border:none;" class="right">
-                  For MERAKI EXPERT<br><br><br>
-                  Authorized Signatory
-                </td>
-              </tr>
-            </table>
-          </div>
-        </body>
-        </html>
+                <div class="reg-address">
+                    Registered Address: Prabhag No. 5, Ganesh Chowk, Deori, Dist.-Gondia. 441901 | www.merrakiexpert.in
+                    | P: 7722001802; 9130801011
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+
+</html>
       `);
       printWindow.document.close();
       printWindow.print();
@@ -329,19 +968,515 @@ export default function Invoicelist() {
 
   const handlePrintInvoice = (invoice) => {
     const printWindow = window.open("", "_blank");
-    printWindow.document.write(`
-      <html><head><title>Print Invoice</title>
-      <style>body{font-family:Arial;margin:40px;}h1{text-align:center;color:#003366;}p{font-size:16px;}</style>
-      </head><body>
-      <h1>Invoice Document</h1>
-      <p><b>Invoice #:</b> ${invoice.id}</p>
-      <p><b>Customer:</b> ${invoice.customer}</p>
-      <p><b>Created Date:</b> ${invoice.createdDate}</p>
-      <p><b>Due Date:</b> ${invoice.dueDate}</p>
-      <p><b>Status:</b> ${invoice.status}</p>
-      <p><b>Amount:</b> ${invoice.amount}</p>
-      <p style="margin-top:40px;font-style:italic;text-align:center;">Generated by ERP Software</p>
-      </body></html>`);
+    printWindow.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAX INVOICE Exact Replica</title>
+    <style>
+        /* ========================================================================= */
+        /* BASE LAYOUT - A4 LANDSCAPE SIMULATION (Approx. 1122px x 794px at 96 DPI) */
+        /* ========================================================================= */
+         @page {
+  size: 310mm 230mm;   /* width x height */
+  margin: 8mm;
+}
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 10px;
+        }
+
+        .invoice-container {
+            /* A4 Landscape dimensions at typical screen resolution (96dpi) */
+            width: 1122px; /* ~29.7 cm */
+            height: 794px;  /* ~21.0 cm */
+            background-color: #fff;
+            padding: 15px;
+            box-sizing: border-box;
+            /* REMOVED: Outer border around the whole page */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); 
+            font-size: 10pt;
+            position: relative;
+        }
+
+        /* Utility Classes */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .font-7pt { font-size: 7pt; }
+        .font-8pt { font-size: 8pt; }
+        .font-9pt { font-size: 9pt; }
+        .font-bold { font-weight: bold; }
+        .border-1px { border: 1px solid #000; }
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ========================================================================= */
+        /* HEADER SECTION */
+        /* ========================================================================= */
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+        .header-logo {
+            width: 300px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            font-size: 14pt;
+            font-weight: bold;
+            color: #041E42;
+        }
+        .header-logo span {
+             font-size: 8pt;
+             font-weight: normal;
+             margin-left: 5px;
+             color: #9C1F37;
+        }
+        .header-title {
+            text-align: center;
+            flex-grow: 1;
+            padding-top: 5px;
+        }
+        .header-title h4 {
+            margin: 0;
+            font-size: 11pt;
+            letter-spacing: 0.5px;
+            font-weight: 900;
+        }
+        .header-title small {
+            display: block;
+            font-size: 8pt;
+            margin-top: 2px;
+            line-height: 1.3;
+        }
+        .header-original {
+            font-size: 9pt;
+            font-weight: bold;
+            width: 150px;
+            text-align: right;
+            padding-top: 10px;
+        }
+        
+        /* ========================================================================= */
+        /* TOP DETAIL BOXES (GSTIN, Invoice No.) */
+        /* ========================================================================= */
+        .top-details-box {
+            display: flex;
+            border: 1px solid #040000ff;
+            line-height: 1.3;
+            margin-bottom: -1px;
+            font-size: 9pt;
+        }
+        .top-details-col {
+            width: 50%;
+            border-right: 1px solid #ffffffff;
+            box-sizing: border-box;
+            padding: 0 5px;
+        }
+        .top-details-col:last-child {
+            border-right: none;
+        }
+        .detail-row {
+            display: flex;
+            border-bottom: 1px solid #ffffffff;
+            padding: 1px 0;
+        }
+        /* REMOVED: border-bottom on the last row of the first column (where UDYAM text sits) */
+        .detail-label {
+            width: 80px; 
+            font-weight: bold;
+        }
+        .detail-value {
+            flex-grow: 1;
+        }
+        .detail-small-text {
+            font-size: 7pt;
+            padding-left: 80px; 
+            display: block;
+        }
+
+        /* ========================================================================= */
+        /* CONSIGNEE/BILLED TO SECTION */
+        /* ========================================================================= */
+        .consignee-section {
+            display: flex;
+            border: 1px solid #000;
+            border-top: none;
+            margin-bottom: -1px;
+        }
+        .consignee-col {
+            width: 50%;
+            border-right: 1px solid #000;
+            min-height: 110px;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .consignee-col:last-child {
+            border-right: none;
+        }
+        .consignee-col p {
+            margin: 0 0 2px 0;
+            font-size: 9pt;
+            line-height: 1.3;
+        }
+        .consignee-col .title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* ========================================================================= */
+        /* STATE/GSTIN ROW & PLACE OF SUPPLY */
+        /* ========================================================================= */
+        .state-gstin-row {
+            display: flex;
+            border: 1px solid #000;
+            border-top: none;
+            margin-bottom: -1px;
+        }
+        .state-gstin-col {
+            width: 25%;
+            border-right: 1px solid #000;
+            padding: 5px;
+            box-sizing: border-box;
+            font-size: 9pt;
+        }
+        .state-gstin-col:last-child {
+            border-right: none;
+        }
+        .state-gstin-col p {
+            margin: 0;
+            line-height: 1.3;
+        }
+        .state-gstin-col .col-header {
+            text-decoration: underline;
+            margin-bottom: 2px;
+        }
+        .place-of-supply {
+            border: 1px solid #000;
+            border-top: none;
+            padding: 2px 5px 5px;
+            font-size: 9pt;
+            margin-bottom: 5px;
+        }
+        
+        /* ========================================================================= */
+        /* ITEMS TABLE */
+        /* ========================================================================= */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8pt;
+            table-layout: fixed;
+        }
+        .items-table th, .items-table td {
+            border: 1px solid #000;
+            padding: 3px 5px;
+            text-align: left;
+            vertical-align: top;
+            height: 18px;
+            line-height: 1.2;
+        }
+        .items-table th {
+            text-align: center;
+            font-weight: bold;
+            background-color: #f7f7f7;
+            padding: 4px;
+        }
+        /* Column Widths (Tuned) */
+        .items-table .col-sno { width: 3%; }
+        .items-table .col-desc { width: 18%; }
+        .items-table .col-hsn { width: 5%; }
+        .items-table .col-qty { width: 4%; }
+        .items-table .col-unit { width: 3%; }
+        .items-table .col-rate { width: 4.3%; }
+        .items-table .col-total-value { width: 6%; }
+        .items-table .col-disc { width: 4%; }
+        .items-table .col-taxable-value { width: 6%; }
+        .items-table .col-tax-rate { width: 3.5%; }
+        .items-table .col-tax-rs { width: 6%; }
+        .items-table .col-igst-rs { width: 5.5%; }
+        .items-table .col-total-rs { width: 6.5%; }
+
+        .items-table .item-description {
+            font-size: 7.5pt;
+        }
+        /* Footer Rows */
+        .total-row td {
+            font-weight: bold;
+            background-color: #fcfcfc;
+            padding: 5px;
+        }
+        .total-row .col-label {
+            text-align: right;
+            border-right: none;
+        }
+        .empty-space-row {
+            height: 30px;
+        }
+
+        /* ========================================================================= */
+        /* BOTTOM SECTIONS */
+        /* ========================================================================= */
+        .value-in-words-row, .reverse-charge-row {
+            border: 1px solid #000;
+            border-top: none;
+            padding: 5px;
+            font-weight: bold;
+            font-size: 9pt;
+        }
+        .declaration-section {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            border: 1px solid #000;
+            padding: 5px;
+            font-size: 9pt;
+            height: 120px;
+        }
+        .declaration-section h5 {
+            margin: 0 0 5px 0;
+            font-weight: bold;
+            font-size: 10pt;
+            border-bottom: 1px solid #000;
+            padding-bottom: 2px;
+        }
+        .declaration-text {
+            width: 60%;
+            float: left;
+            line-height: 1.4;
+        }
+        .signature-box {
+            width: 38%;
+            float: right;
+            text-align: center;
+            border-left: 1px solid #000;
+            padding-left: 10px;
+            box-sizing: border-box;
+            height: 90px;
+        }
+        /* Refined signature line: uses margin-top to create the space, and border-top on the text */
+        .signature-box .auth-sign {
+            font-weight: bold;
+            border-top: 1px solid #000;
+            padding-top: 2px;
+            display: block;
+            margin-top: 55px; /* Pushes text down to create signature space above the line */
+        }
+        .reg-address {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            right: 5px;
+            font-size: 7pt;
+            text-align: center;
+            border-top: 1px solid #000;
+            padding-top: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="invoice-container">
+    <div class="header-section">
+        <div class="header-logo">
+                                <img src= "${ui}" style="width: 250px; height: auto; margin-top: -70px; margin-bottom: -70px;" alt="Logo" />
+
+        </div>
+        <div class="header-title">
+            <h4>TAX INVOICE</h4>
+            <small>for Supply of Goods/Services</small>
+            <small class="font-bold">[Section 31 of the CGST Act, 2017 read with Rule 1 of Revised Invoice Rules, 2017]</small>
+        </div>
+        <div class="header-original">
+            Original for Recipient
+        </div>
+    </div>
+
+    <div class="top-details-box">
+        <div class="top-details-col">
+            <div class="detail-row">
+               <span class="detail-label font-bold">GSTIN</span><span class="detail-value">:<b> 27AKUPY6544R1ZM</b></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label font-bold">Name</span><span class="detail-value">:<b> Meraki Expert</b></span>
+            </div>
+            <div class="detail-row" style="border-bottom: none; padding-bottom: 0;">
+               <span class="detail-label font-bold">PAN</span><span class="detail-value">:<b> AKUPY6544R </b></span>
+            </div>
+            <span class="detail-small-text font-7pt" style="margin-bottom: 2px; margin-right: 10px;">UDYAM-MH-20-0114278</span>
+        </div>
+        <div class="top-details-col">
+            <div class="detail-row">
+                <span class="detail-label font-bold">Invoice No.</span><span class="detail-value">:<b> ΜΕ/2025-26/023</b></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label font-bold">Invoice Date</span><span class="detail-value">:<b> 11.05.2025</b></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label font-bold">Cust Order Date</span><span class="detail-value">: 31.01.2025</span>
+            </div>
+            <div class="detail-row" style="border-bottom: none;">
+                <span class="detail-label font-bold">PO Number</span><span class="detail-value">: JUPL/2025/09</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="consignee-section">
+        <div class="consignee-col">
+            <p class="title font-bold">Details of Receiver (Billed to)</p>
+            <p><strong>Name</strong> : <b>JUST UNIVERSAL PVT. LTD.</b></p>
+            <p><strong>Address</strong> : Kh. No. 101/1, 101/2, 102, Kapsi Budruk, Tah. Kamptee, Nagpur - 441104. Pin Code-441104, Maharashtra</p>
+            <p><strong>State Code</strong> : <b> 27</b></p>
+            <p><strong>GSTIN</strong> : <b>  27AAFCJ1515K1ZL</b></p>
+        </div>
+        <div class="consignee-col">
+            <p class="title font-bold">Details of Consignee (Shipped to)</p>
+            <p><strong>Name</strong> : <b>JUST UNIVERSAL PVT. LTD.</b></p>
+            <p><strong>Address</strong> : Kh. No. 101/1, 101/2, 102, Kapsi Budruk, Tah. Kamptee, Nagpur-441104. Pin Code-441104, Maharashtra</p>
+            <p><strong>State Code</strong> : <b> 27</b></p>
+            <p><strong>GSTIN</strong> : <b>  27AAFCJ1515K1ZL</b></p>
+        </div>
+    </div>
+
+    <div class="state-gstin-row">
+        
+    </div>
+    <div class="place-of-supply border-1px" style="border-top: none; margin-top: -1px;">
+        <p style="margin: 0;"><strong>Place of Supply/Service</strong>: Maharashtra</p>
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr class="tax-header-row">
+                <th class="col-sno" rowspan="2">S.No.</th>
+                <th class="col-desc" rowspan="2">Description of Goods</th>
+                <th class="col-hsn" rowspan="2">HSN/SAC</th>
+                <th class="col-qty" rowspan="2">QTY</th>
+                <th class="col-unit" rowspan="2">Unit</th>
+                <th class="col-rate" rowspan="2">Rate</th>
+                <th class="col-total-value" rowspan="2">Total Value (Rs).</th>
+                <th class="col-disc" rowspan="2">Disc.</th>
+                <th class="col-taxable-value" rowspan="2">Taxable Value (Rs).</th>
+                <th colspan="2">CGST</th>
+                <th colspan="2">SGST</th>
+                <th colspan="2">IGST</th>
+                <th class="col-total-rs" rowspan="2">Total Rs</th>
+            </tr>
+            <tr class="tax-sub-header-row">
+                <th class="col-tax-rate">Rate (%)</th>
+                <th class="col-tax-rs">Rs</th>
+                <th class="col-tax-rate">Rate (%)</th>
+                <th class="col-tax-rs">Rs</th>
+                <th class="col-tax-rate">Rate (%)</th>
+                <th class="col-tax-rs">Rs</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="col-sno text-center">1</td>
+                <td class="col-desc item-description">
+                    Supply of Kingspan Jindal Contineous Line, 50 mm THK PUR Wall Panel Both Side 0.5 mm PPGL-300Mpa SMP-AZ 150 GSM (RAL9002) Plain Lamination - Density: 40 (+-2) Kg/cum. Panel Cover Width:1000MM
+                </td>
+                <td class="col-hsn text-center">39259010</td>
+                <td class="col-qty text-right">680.250</td>
+                <td class="col-unit text-center">Sq.M</td>
+                <td class="col-rate text-right">1430.00</td>
+                <td class="col-total-value text-right">9,72,757.50</td>
+                <td class="col-disc text-center">-</td>
+                <td class="col-taxable-value text-right">9,72,757.500.</td>
+                <td class="col-tax-rate text-right">9%</td>
+                <td class="col-tax-rs text-right">87,548.18</td>
+                <td class="col-tax-rate text-right">9%</td>
+                <td class="col-tax-rs text-right">87,548.18</td>
+                <td class="col-tax-rate text-right">0%</td>
+                <td class="col-igst-rs text-right">0</td>
+                <td class="col-total-rs text-right">11,47,853.85</td>
+            </tr>
+            <tr class="empty-space-row">
+                <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="8" class="col-label"></td>
+                <td class="col-taxable-value text-right">9,72,757.50</td>
+                <td class="col-tax-rate"></td>
+                <td class="col-tax-rs text-right">87,548.18</td>
+                <td class="col-tax-rate"></td>
+                <td class="col-tax-rs text-right">87,548.18</td>
+                <td class="col-tax-rate"></td>
+                <td class="col-igst-rs text-right">0.00</td>
+                <td class="col-total-rs text-right">11,47,853.85</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="8" class="col-label" style="border-right: 1px solid #000;">Add: Freight</td>
+                <td class="col-taxable-value text-right">0.00</td>
+                <td class="col-tax-rate"></td>
+                <td class="col-tax-rs text-right">0.00</td>
+                <td class="col-tax-rate"></td>
+                <td class="col-tax-rs text-right">0.00</td>
+                <td class="col-tax-rate"></td>
+                <td class="col-igst-rs text-right">0.00</td>
+                <td class="col-total-rs text-right">0.00</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="8" class="col-label" style="border-right: 1px solid #000;">Sub Total</td>
+                <td class="col-taxable-value text-right"><b>9,72,757.50</b></td>
+                <td class="col-tax-rate"></td>
+                <td class="col-tax-rs text-right">87,548.18</td>
+                <td class="col-tax-rate"></td>
+                <td class="col-tax-rs text-right">87,548.18</td>
+                <td class="col-tax-rate"></td>
+                <td class="col-igst-rs text-right"><b>0.00</b></td>
+                <td class="col-total-rs text-right">11,47,853.85</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="15" class="col-label" style="text-align: right; border-right: 1px solid #000;"><b>Grand Total (Inclusive of GST)</b></td>
+                <td class="col-total-rs text-right">11,47,854</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="value-in-words-row" style="margin-top: 5px;">
+        <p style="margin: 0;"><strong>Invoice Value (In words):</strong> Eleven Lac Fourty Seven Thausand Eight Hundred and Fifty Four Rupees only</p>
+    </div>
+
+    <div class="reverse-charge-row">
+        <p style="margin: 0; display: inline-block;"><strong>Whether Tax is payable on Reverse Charge</strong> :</p>
+        <p style="margin: 0; display: inline-block; float: right; padding-right: 5px;">No</p>
+    </div>
+
+    <div class="declaration-section clearfix">
+        <h5>Declaration :</h5>
+        <div class="declaration-text">
+            <p style="margin: 0; font-size: 8.5pt; line-height: 1.4;">Certified that the particulars given above are true and correct and the amount indicated represents represents the Price actually charged and that there is no flow of additional consideration directly or indirectly from the Receiver [Buyer].</p>
+        </div>
+        <div class="signature-box">
+            <p class="font-8pt text-right" style="margin: 0; padding-right: 10px;">For MERAKI EXPERT</p>
+            <span class="auth-sign">Authorized Signatory</span>
+        </div>
+        
+        <div class="reg-address">
+            Registered Address: Prabhag No. 5, Ganesh Chowk, Deori, Dist.-Gondia. 441901 | www.merrakiexpert.in | P: 7722001802; 9130801011
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>`);
     printWindow.document.close();
     printWindow.print();
   };
