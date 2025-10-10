@@ -12,6 +12,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import Sidebar from './Sidebar';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import UserMenu from './UserMenu';
 
 const Taxlist = () => {
   const navigate = useNavigate();
@@ -111,9 +112,8 @@ const Taxlist = () => {
             <IconButton><NotificationsNoneIcon /></IconButton>
 
             <Box display="flex" alignItems="center" gap={1}>
-              <Avatar src="https://i.pravatar.cc/40?img=1" />
-              <Typography fontSize={14}>Admin name</Typography>
-              <ArrowDropDownIcon />
+              <NotificationsNoneIcon />
+              <UserMenu />
             </Box>
           </Box>
         </Box>

@@ -16,9 +16,9 @@ app.use(bodyParser.json());
 //product units routes : /api/units
 app.use('/api/units', productUnitRoutes);
 
-// Authentication routes: for /api/register and /api/login
+// Authentication routes: for /api/auth/register and /api/auth/login
 const authRoutes = require('./routes/auth');
-app.use('/api', authRoutes);
+app.use('/api/auth', authRoutes);
 
 // Tax routes: for /api/taxes
 const taxRoutes = require('./routes/taxes');

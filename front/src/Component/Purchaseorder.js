@@ -7,6 +7,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate } from 'react-router-dom';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import UserMenu from './UserMenu';
 
 const FirstTimePurchaseOrder = () => {
     const navigate=useNavigate()
@@ -54,9 +55,8 @@ const FirstTimePurchaseOrder = () => {
                         >
                             <NotificationsNoneIcon sx={{ fontSize: 20, color: '#666' }} />
                         </IconButton> <Box display="flex" alignItems="center" gap={1}>
-              <Avatar src="https://i.pravatar.cc/40?img=1" />
-              <Typography fontSize={14}>Admin name</Typography>
-              <ArrowDropDownIcon />
+              <NotificationsNoneIcon />
+              <UserMenu />
             </Box>
                     </Box>
                 </Box>

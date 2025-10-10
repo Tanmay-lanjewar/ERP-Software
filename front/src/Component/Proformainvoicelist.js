@@ -9,6 +9,7 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Sidebar from './Sidebar';
+import UserMenu from './UserMenu';
 
 const rows = Array.from({ length: 15 }, (_, i) => ({
   invoiceNo: 'PINV-00001',
@@ -80,9 +81,8 @@ const ProformaInvoicelist = () => {
             </IconButton>
 
             <Box display="flex" alignItems="center" gap={1}>
-              <Avatar src="https://i.pravatar.cc/40?img=1" />
-              <Typography fontSize={14}>Admin name</Typography>
-              <ArrowDropDownIcon />
+              <NotificationsNoneIcon />
+              <UserMenu />
             </Box>
           </Box>
         </Box>

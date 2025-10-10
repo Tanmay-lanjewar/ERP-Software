@@ -35,6 +35,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import axios from "axios";
+import UserMenu from './UserMenu';
 
 const NewInvoicePage = () => {
   const navigate = useNavigate();
@@ -228,9 +229,7 @@ const NewInvoicePage = () => {
               <NotificationsNoneIcon sx={{ fontSize: 20, color: "#666" }} />
             </IconButton>
             <Box display="flex" alignItems="center" gap={1}>
-              <Avatar src="https://i.pravatar.cc/40?img=1" />
-              <Typography fontSize={14}>Admin name</Typography>
-              <ArrowDropDownIcon />
+              <UserMenu />
             </Box>
           </Box>
         </Box>

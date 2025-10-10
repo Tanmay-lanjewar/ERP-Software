@@ -13,6 +13,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
 import Sidebar from './Sidebar';
+import UserMenu from './UserMenu';
 
 const ReportsAndAnalytics = () => {
   const sections = [
@@ -67,9 +68,10 @@ const ReportsAndAnalytics = () => {
               <SearchIcon fontSize="small" sx={{ mr: 1 }} />
               <InputBase placeholder="Search anything here..." />
             </Box>
-            <IconButton>
+            <Box display="flex" alignItems="center" gap={1}>
               <NotificationsNoneIcon />
-            </IconButton>
+              <UserMenu />
+            </Box>
             <Avatar src="/avatar.png" sx={{ width: 32, height: 32 }} />
             <Typography fontSize={14}>Admin name</Typography>
           </Box>

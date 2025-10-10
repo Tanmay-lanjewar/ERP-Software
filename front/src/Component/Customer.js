@@ -9,6 +9,7 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import Sidebar from './Sidebar';
 import CustomerList from './Customerlist';
 import { useNavigate } from 'react-router-dom';
+import UserMenu from './UserMenu';
 
 const illustration = 'https://i0.wp.com/cupofglory.com/wp-content/uploads/2024/11/Subscription-Form.webp?resize=1024,912&ssl=1';
 
@@ -57,9 +58,8 @@ export default function CustomerPage() {
                   <NotificationsNoneIcon sx={{ fontSize: 20, color: '#666' }} />
                 </IconButton>
                 <Box display="flex" alignItems="center" gap={1}>
-                  <Avatar src="https://i.pravatar.cc/40?img=1" />
-                  <Typography fontSize={14}>Admin name</Typography>
-                  <ArrowDropDownIcon />
+                  <NotificationsNoneIcon />
+                  <UserMenu />
                 </Box>
               </Box>
             </Box>

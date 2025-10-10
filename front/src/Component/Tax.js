@@ -10,6 +10,7 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Taxlist from './Taxlist';
 import axios from 'axios';
+import UserMenu from './UserMenu';
 
 export default function Tax() {
   const [taxes, setTaxes] = useState([]);
@@ -77,9 +78,8 @@ export default function Tax() {
                 </IconButton>
 
                 <Box display="flex" alignItems="center" gap={1}>
-                  <Avatar src="https://i.pravatar.cc/150?img=1" />
-                  <Typography fontSize={14}>Admin name</Typography>
-                  <ArrowDropDownIcon />
+                  <NotificationsNoneIcon />
+                  <UserMenu />
                 </Box>
               </Box>
             </Box>
