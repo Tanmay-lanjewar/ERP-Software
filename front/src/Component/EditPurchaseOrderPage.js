@@ -310,6 +310,7 @@ export default function EditPurchaseOrderPage() {
                             size="small"
                           />
                         </TableCell>
+
                         <TableCell>
                           <FormControl fullWidth>
                             <Select

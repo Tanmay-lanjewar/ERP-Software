@@ -1,4 +1,6 @@
 const db = require('../config/db'); // assumes db is your MySQL connection
+const { promisify } = require('util');
+const query = promisify(db.query).bind(db);
 
 const WorkOrder = {
   create: (data, callback) => {
@@ -39,8 +41,36 @@ const WorkOrder = {
     }
   },
 
-  getAll: (callback) => {
-    db.query('SELECT * FROM work_orders', callback);
+  getAll: async (callback) => {
+    try {
+      // Get active financial year with date range
+      const activeFinancialYear = await query(
+        'SELECT start_date, end_date, id as financial_year_id FROM financial_years WHERE is_active = TRUE'
+      );
+      
+      if (activeFinancialYear.length === 0) {
+        return callback(new Error('No active financial year found'));
+      }
+      
+      const { start_date, end_date, financial_year_id } = activeFinancialYear[0];
+      
+      // Query work orders where work_order_date falls within the active financial year
+      const sql = `
+        SELECT 
+          wo.*,
+          fy.start_date as fy_start_date,
+          fy.end_date as fy_end_date,
+          CONCAT('FY ', YEAR(fy.start_date), '-', RIGHT(YEAR(fy.end_date), 2)) as financial_year_name
+        FROM work_orders wo
+        LEFT JOIN financial_years fy ON fy.id = ?
+        WHERE DATE(wo.work_order_date) >= DATE(?) AND DATE(wo.work_order_date) <= DATE(?)
+        ORDER BY wo.work_order_date DESC
+      `;
+      
+      db.query(sql, [financial_year_id, start_date, end_date], callback);
+    } catch (err) {
+      callback(err);
+    }
   },
 
   getById: (id, callback) => {

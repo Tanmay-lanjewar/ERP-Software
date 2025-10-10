@@ -69,7 +69,9 @@ export default function NewQuotation() {
       itemId: "",
       item: "",
       qty: 0,
+      uom : "",
       rate: 0,
+      
       discount: 0,
       amount: 0,
     },
@@ -123,6 +125,7 @@ export default function NewQuotation() {
         itemId: "",
         item: "",
         qty: 0,
+        uom : "",
         rate: 0,
         discount: 0,
         amount: 0,
@@ -136,7 +139,7 @@ export default function NewQuotation() {
 
   const updateRow = (index, field, value) => {
     const updated = [...rows];
-    updated[index][field] = ["qty", "rate", "discount"].includes(field)
+    updated[index][field] = ["qty", "rate","uom" ,"discount"].includes(field)
       ? Number(value)
       : value;
     updated[index].amount = calculateAmount(updated[index]);
@@ -198,6 +201,7 @@ export default function NewQuotation() {
       items: rows.map((row) => ({
         item_detail: row.item,
         quantity: row.qty,
+        uom : row.uom,
         rate: row.rate,
         discount: row.discount,
         amount: calculateAmount(row),
@@ -366,6 +370,7 @@ export default function NewQuotation() {
                     ))}
                   </Select>
                 </FormControl>
+                
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
@@ -461,6 +466,7 @@ export default function NewQuotation() {
                     <TableRow>
                       <TableCell>Item Details</TableCell>
                       <TableCell>Quantity</TableCell>
+                      <TableCell>UOM</TableCell>
                       <TableCell>Rate</TableCell>
                       <TableCell>Discount</TableCell>
                       <TableCell>Amount</TableCell>
@@ -521,6 +527,17 @@ export default function NewQuotation() {
                             value={row.qty}
                             onChange={(e) =>
                               updateRow(index, "qty", e.target.value)
+                            }
+                            size="small"
+                          />
+                        </TableCell>
+                         <TableCell>
+                          <TextField
+                            fullWidth
+                            type="text"
+                            value={row.uom}
+                            onChange={(e) =>
+                              updateRow(index, "uom", e.target.value)
                             }
                             size="small"
                           />
