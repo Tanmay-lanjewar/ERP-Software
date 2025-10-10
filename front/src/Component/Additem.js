@@ -10,6 +10,11 @@ import {
   InputBase,
   IconButton,
   Avatar,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material";
 import { FormLabel, RadioGroup, FormControlLabel, Radio } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
@@ -21,8 +26,6 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import UserMenu from './UserMenu';
-
-const units = ["cm", "mm", "kg", "pcs"];
 
 export default function AddItems() {
   const navigate = useNavigate();
@@ -46,8 +49,31 @@ export default function AddItems() {
     preferred_vendor: "",
   });
 
+  // Updated: units as state - will be fetched from backend
+  const [units, setUnits] = useState([]);
+  
+  // New states for Add Unit dialog
+  const [openAddUnitDialog, setOpenAddUnitDialog] = useState(false);
+  const [newUnit, setNewUnit] = useState("");
+  const [unitSelectOpen, setUnitSelectOpen] = useState(false);
+
   const [taxList, setTaxList] = useState([]);
   const [vendors, setVendors] = useState([]);
+
+  // Fetch Units from backend
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/units")
+      .then((res) => {
+        const unitNames = res.data.map(unit => unit.unit_name);
+        setUnits(unitNames);
+      })
+      .catch((err) => {
+        console.error("Error fetching units:", err);
+        // Fallback to default units if API fails
+        setUnits(["cm", "mm", "kg", "pcs", "liters"]);
+      });
+  }, []);
 
   // Fetch Taxes
   useEffect(() => {
@@ -94,6 +120,47 @@ export default function AddItems() {
     } catch (error) {
       console.error("Error saving item:", error);
     }
+  };
+
+  // New handlers for Add Unit
+  const handleOpenAddUnit = () => {
+    setOpenAddUnitDialog(true);
+    setNewUnit(""); // Reset input
+  };
+
+  const handleCloseAddUnit = () => {
+    setOpenAddUnitDialog(false);
+    setNewUnit("");
+  };
+
+  const handleAddUnit = async () => {
+    if (newUnit.trim() && !units.includes(newUnit.trim())) {
+      const trimmedUnit = newUnit.trim();
+      
+      try {
+        // Save to backend first
+        await axios.post("http://localhost:5000/api/units", {
+          unit_name: trimmedUnit
+        });
+        
+        // Update local state only if backend save is successful
+        setUnits((prev) => [...prev, trimmedUnit]);
+        
+        // Auto-select the newly added unit
+        setFormData((prev) => ({ ...prev, unit: trimmedUnit }));
+        
+        // Open the dropdown to show the new unit
+        setTimeout(() => {
+          setUnitSelectOpen(true);
+        }, 100);
+        
+      } catch (error) {
+        console.error("Error saving unit to backend:", error);
+        // You can add a toast notification here for user feedback
+        alert("Error saving unit. Please try again.");
+      }
+    }
+    handleCloseAddUnit();
   };
 
   return (
@@ -255,22 +322,46 @@ export default function AddItems() {
               </Grid>
 
               <Grid item xs="auto">
-                <TextField
-                  select
-                  size="small"
-                  name="unit"
-                  label="Unit"
-                  value={formData.unit || ""}
-                  onChange={handleChange}
-                  sx={{ minWidth: 100 }} // ✅ chhota rakha
-                >
-                  <MenuItem value="">Unit</MenuItem>
-                  {units.map((unit) => (
-                    <MenuItem key={unit} value={unit}>
-                      {unit}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                {/* Updated: Dynamic units dropdown with Add Unit button */}
+                <Box sx={{ display: "flex", alignItems: "end", gap: 1 }}>
+                  <TextField
+                    select
+                    size="small"
+                    name="unit"
+                    label="Unit"
+                    value={formData.unit || ""}
+                    onChange={handleChange}
+                    open={unitSelectOpen}
+                    onOpen={() => setUnitSelectOpen(true)}
+                    onClose={() => setUnitSelectOpen(false)}
+                    sx={{ minWidth: 100 }}
+                    SelectProps={{
+                      MenuProps: {
+                        PaperProps: {
+                          style: {
+                            maxHeight: 200, // Approximately 4 items (48px each + padding)
+                            overflowY: 'auto',
+                          },
+                        },
+                      },
+                    }}
+                  >
+                    <MenuItem value="">Unit</MenuItem>
+                    {units.map((unit) => (
+                      <MenuItem key={unit} value={unit}>
+                        {unit}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={handleOpenAddUnit}
+                    sx={{ minWidth: "auto", px: 2, textTransform: "none" }}
+                  >
+                    + Add Unit
+                  </Button>
+                </Box>
               </Grid>
 
               {/* Sales Info */}
@@ -414,6 +505,31 @@ export default function AddItems() {
             </Box>
           </Paper>
         </Box>
+
+        {/* New: Add Unit Dialog */}
+        <Dialog open={openAddUnitDialog} onClose={handleCloseAddUnit}>
+          <DialogTitle>Add New Unit</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Enter the name of the new unit (e.g., "meters").
+            </DialogContentText>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Unit Name"
+              type="text"
+              fullWidth
+              value={newUnit}
+              onChange={(e) => setNewUnit(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseAddUnit}>Cancel</Button>
+            <Button onClick={handleAddUnit} disabled={!newUnit.trim()}>
+              Add
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Box>
   );
