@@ -1,0 +1,18 @@
+---
+deployment:
+  tasks:
+    # FRONTEND BUILD & DEPLOY
+    - cd frontend
+    - npm install
+    - npm run build
+    - rsync -a build/ /home/rxzxrxyf/public_html/
+
+    # BACKEND DEPLOY
+    - cd ../backend
+    - npm install --production
+    - rsync -a . /home/rxzxrxyf/backend/
+
+    # Restart Node backend app
+    - cd /home/rxzxrxyf/backend
+    - npm install --production
+    - touch tmp/restart.txt || true

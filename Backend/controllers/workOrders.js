@@ -1,4 +1,4 @@
-const WorkOrder = require('../models/workorders');
+const WorkOrder = require('../models/workOrders');
 const WorkOrderItem = require('../models/workOrderItems');
 
 exports.create = (req, res) => {

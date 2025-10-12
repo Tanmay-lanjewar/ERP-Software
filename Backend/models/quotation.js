@@ -1,8 +1,38 @@
 const db = require('../config/db');
+const { promisify } = require('util');
+const query = promisify(db.query).bind(db);
 
 const quotation = {
-  getAll: (callback) => {
-    db.query('SELECT * FROM quotation', callback);
+  getAll: async (callback) => {
+    try {
+      // Get active financial year with date range
+      const activeFinancialYear = await query(
+        'SELECT start_date, end_date, id as financial_year_id FROM financial_years WHERE is_active = TRUE'
+      );
+      
+      if (activeFinancialYear.length === 0) {
+        return callback(new Error('No active financial year found'));
+      }
+      
+      const { start_date, end_date, financial_year_id } = activeFinancialYear[0];
+      
+      // Query quotations where quotation_date falls within the active financial year
+      const sql = `
+        SELECT 
+          q.*,
+          fy.start_date as fy_start_date,
+          fy.end_date as fy_end_date,
+          CONCAT('FY ', YEAR(fy.start_date), '-', RIGHT(YEAR(fy.end_date), 2)) as financial_year_name
+        FROM quotation q
+        LEFT JOIN financial_years fy ON fy.id = ?
+        WHERE DATE(q.quotation_date) >= DATE(?) AND DATE(q.quotation_date) <= DATE(?)
+        ORDER BY q.quotation_date DESC
+      `;
+      
+      db.query(sql, [financial_year_id, start_date, end_date], callback);
+    } catch (err) {
+      callback(err);
+    }
   },
 
   getById: (id, callback) => {
