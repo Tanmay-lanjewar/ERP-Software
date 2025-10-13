@@ -522,6 +522,7 @@ const NewWorkOrder = () => {
                           size="small"
                         />
                       </TableCell>
+
                       <TableCell>
                         <FormControl fullWidth>
                           <Select

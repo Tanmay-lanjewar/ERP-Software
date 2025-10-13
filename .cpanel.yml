@@ -1,0 +1,21 @@
+---
+deployment:
+  tasks:
+    - echo "Starting ERP deployment on cPanel"
+
+    # Deploy FRONTEND (React) build to public_html
+    - cd front
+    - npm install
+    - npm run build
+    - rsync -a --delete build/ ~/public_html/
+
+    # Deploy BACKEND (Node.js) to backend folder under home
+    - mkdir -p ~/backend
+    - rsync -a --delete --exclude node_modules --exclude .git Backend/ ~/backend/
+    - cd ~/backend
+    - npm install --production
+
+    # Restart the backend app (Passenger/Node.js)
+    - mkdir -p tmp
+    - touch tmp/restart.txt || true
+    - echo "Deployment complete"

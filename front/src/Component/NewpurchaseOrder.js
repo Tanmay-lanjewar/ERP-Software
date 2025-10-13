@@ -136,12 +136,29 @@ const PurchaseOrderForm = () => {
   };
 
   const handleSaveAndSend = async (saveAsDraft = false) => {
+    // Basic validation
+    if (!selectedVendor) {
+      alert('Please select a vendor');
+      return;
+    }
+    if (!purchaseOrderDate) {
+      alert('Please select a purchase order date');
+      return;
+    }
+    if (rows.length === 0 || rows.every(row => !row.item)) {
+      alert('Please add at least one item');
+      return;
+    }
+
     const vendorObj = vendors.find((v) => v.vendor_name === selectedVendor);
+    console.log('Creating purchase order with vendor:', vendorObj);
+    
     const payload = {
       purchase_order_no: purchaseOrderNo,
       delivery_to: "organization",
       delivery_address: `Laxmi Enterprises,\nNagpur, Maharashtra, 200145`,
       vendor_name: vendorObj ? vendorObj.vendor_name : selectedVendor,
+      vendor_id: vendorObj ? vendorObj.vendor_id : null,
       purchase_order_date: purchaseOrderDate,
       delivery_date: deliveryDate,
       payment_terms: paymentTerms,
@@ -166,7 +183,9 @@ const PurchaseOrderForm = () => {
       await axios.post("http://localhost:5000/api/purchase", payload);
       navigate("/purchase-order-list");
     } catch (error) {
-      alert("Failed to create purchase order!");
+      console.error('Purchase order creation error:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Unknown error occurred';
+      alert(`Failed to create purchase order: ${errorMessage}`);
     }
   };
 
@@ -503,6 +522,7 @@ const PurchaseOrderForm = () => {
                             size="small"
                           />
                         </TableCell>
+
                         <TableCell>
                           <FormControl fullWidth>
                             <Select

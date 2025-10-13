@@ -12,11 +12,38 @@ function query(sql, values = []) {
 }
 
 const invoice = {
-  getAll: (callback) => {
-    db.query(
-      'SELECT invoice_id, invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject, customer_notes, terms_and_conditions, sub_total, cgst, sgst, grand_total, status FROM invoice',
-      callback
-    );
+  getAll: async (callback) => {
+    try {
+      // Get active financial year with date range
+      const activeFinancialYear = await query(
+        'SELECT start_date, end_date, id as financial_year_id FROM financial_years WHERE is_active = TRUE'
+      );
+      
+      if (activeFinancialYear.length === 0) {
+        return callback(new Error('No active financial year found'));
+      }
+      
+      const { start_date, end_date, financial_year_id } = activeFinancialYear[0];
+      
+      // Query invoices where invoice_date falls within the active financial year
+      const sql = `
+        SELECT 
+          i.invoice_id, i.invoice_number, i.customer_id, i.customer_name, i.invoice_date, 
+          i.expiry_date, i.subject, i.customer_notes, i.terms_and_conditions, 
+          i.sub_total, i.cgst, i.sgst, i.grand_total, i.status,
+          fy.start_date as fy_start_date,
+          fy.end_date as fy_end_date,
+          CONCAT('FY ', YEAR(fy.start_date), '-', RIGHT(YEAR(fy.end_date), 2)) as financial_year_name
+        FROM invoice i
+        LEFT JOIN financial_years fy ON fy.id = ?
+        WHERE DATE(i.invoice_date) >= DATE(?) AND DATE(i.invoice_date) <= DATE(?)
+        ORDER BY i.invoice_date DESC
+      `;
+      
+      db.query(sql, [financial_year_id, start_date, end_date], callback);
+    } catch (err) {
+      callback(err);
+    }
   },
 
   getById: (id, callback) => {

@@ -1,15 +1,41 @@
 // models/purchase.js
 const db = require('../config/db');
+const { promisify } = require('util');
+const query = promisify(db.query).bind(db);
 
 // Get all purchase orders with items
-exports.getAll = (callback) => {
-  const query = `
-    SELECT po.*, poi.*, v.*
-    FROM purchase_orders po
-    LEFT JOIN purchase_order_items poi ON po.id = poi.purchase_order_id
-    LEFT JOIN vendors v ON po.vendor_name = v.vendor_name
-  `;
-  db.query(query, callback);
+exports.getAll = async (callback) => {
+  try {
+    // Get active financial year with date range
+    const activeFinancialYear = await query(
+      'SELECT start_date, end_date, id as financial_year_id FROM financial_years WHERE is_active = TRUE'
+    );
+    
+    if (activeFinancialYear.length === 0) {
+      return callback(new Error('No active financial year found'));
+    }
+    
+    const { start_date, end_date, financial_year_id } = activeFinancialYear[0];
+    
+    // Query purchase orders where purchase_order_date falls within the active financial year
+    const sql = `
+      SELECT 
+        po.*, poi.*, v.*,
+        fy.start_date as fy_start_date,
+        fy.end_date as fy_end_date,
+        CONCAT('FY ', YEAR(fy.start_date), '-', RIGHT(YEAR(fy.end_date), 2)) as financial_year_name
+      FROM purchase_orders po
+      LEFT JOIN purchase_order_items poi ON po.id = poi.purchase_order_id
+      LEFT JOIN vendors v ON po.vendor_name = v.vendor_name
+      LEFT JOIN financial_years fy ON fy.id = ?
+      WHERE DATE(po.purchase_order_date) >= DATE(?) AND DATE(po.purchase_order_date) <= DATE(?)
+      ORDER BY po.purchase_order_date DESC
+    `;
+    
+    db.query(sql, [financial_year_id, start_date, end_date], callback);
+  } catch (err) {
+    callback(err);
+  }
 };
 
 exports.getById = (id, callback) => {
@@ -90,4 +116,57 @@ exports.update = (id, data, callback) => {
   ];
 
   db.query(updateQuery, values, callback);
+};
+
+// Get next purchase order number
+exports.getNextPurchaseOrderNo = async (callback) => {
+  try {
+    // Get active financial year
+    const activeFinancialYear = await query(
+      'SELECT start_date, end_date, id as financial_year_id FROM financial_years WHERE is_active = TRUE'
+    );
+    
+    if (activeFinancialYear.length === 0) {
+      return callback(new Error('No active financial year found'));
+    }
+    
+    const { start_date, end_date, financial_year_id } = activeFinancialYear[0];
+    const startYear = new Date(start_date).getFullYear();
+    const endYear = new Date(end_date).getFullYear();
+    const financialYearSuffix = `${startYear}-${endYear.toString().slice(-2)}`;
+    
+    // Get the last purchase order number for this financial year
+    const lastPOQuery = `
+      SELECT purchase_order_no 
+      FROM purchase_orders 
+      WHERE purchase_order_no LIKE ? 
+      ORDER BY id DESC 
+      LIMIT 1
+    `;
+    
+    const pattern = `PO/%${financialYearSuffix}%`;
+    
+    db.query(lastPOQuery, [pattern], (err, results) => {
+      if (err) return callback(err);
+      
+      let nextNumber = 1;
+      
+      if (results.length > 0) {
+        const lastPONo = results[0].purchase_order_no;
+        // Extract number from format like "PO/2024-25/001"
+        const match = lastPONo.match(/\/(\d+)$/);
+        if (match) {
+          nextNumber = parseInt(match[1]) + 1;
+        }
+      }
+      
+      // Format the next purchase order number
+      const formattedNumber = nextNumber.toString().padStart(3, '0');
+      const nextPurchaseOrderNumber = `PO/${financialYearSuffix}/${formattedNumber}`;
+      
+      callback(null, { nextPurchaseOrderNumber });
+    });
+  } catch (err) {
+    callback(err);
+  }
 };
