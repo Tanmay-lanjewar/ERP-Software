@@ -44,9 +44,13 @@ export const loginWithCredentials = createAsyncThunk(
 );
 
 const initialState = {
-  user: null,
-  role: null,
-  isAuthenticated: false,
+  user: localStorage.getItem('username') ? {
+    id: localStorage.getItem('userId'),
+    username: localStorage.getItem('username'),
+    role: localStorage.getItem('userRole')
+  } : null,
+  role: localStorage.getItem('userRole') || null,
+  isAuthenticated: !!localStorage.getItem('userRole'),
   loading: false,
   error: null,
 };
@@ -60,6 +64,11 @@ const authSlice = createSlice({
       state.role = null;
       state.isAuthenticated = false;
       state.error = null;
+      // Clear localStorage
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('username');
+      localStorage.removeItem('visibleComponents');
     },
     setRole: (state, action) => {
       state.role = action.payload;

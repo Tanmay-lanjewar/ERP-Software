@@ -72,8 +72,8 @@ function App() {
         <FinancialYearGuard />
         <Routes>
           {/* Public Route */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Navigate to="/login" />} />
+          {/* <Route path="/login" element={<Login />} /> */}
+          <Route path="/" element={<Login/>} />
 
           {/* Protected Routes */}
           <Route path="/dashboard" element={
