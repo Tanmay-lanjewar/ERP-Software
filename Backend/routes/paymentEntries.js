@@ -6,6 +6,7 @@ const paymentEntriesController = require('../controllers/paymentEntries');
 // Get all payment entries
 router.get('/', paymentEntriesController.getAll);
 
+
 // Get payment entry by ID
 router.get('/:id', paymentEntriesController.getOne);
 

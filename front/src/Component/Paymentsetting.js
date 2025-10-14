@@ -366,3 +366,4 @@ const PaymentsSettings = () => {
 };
 
 export default PaymentsSettings;
+

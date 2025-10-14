@@ -11,6 +11,7 @@ function query(sql, values = []) {
   });
 }
 
+
 const PaymentEntry = {
   // Get all payment entries
   getAll: (callback) => {

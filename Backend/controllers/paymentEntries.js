@@ -8,6 +8,7 @@ exports.getAll = (req, res) => {
   });
 };
 
+
 exports.getOne = (req, res) => {
   const id = req.params.id;
   PaymentEntry.getById(id, (err, result) => {
