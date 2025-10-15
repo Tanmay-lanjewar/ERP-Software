@@ -41,20 +41,33 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 const NewWorkOrder = () => {
   const navigate = useNavigate();
-  const [customers, setCustomers] = useState([]);
-  const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [customerModalOpen, setCustomerModalOpen] = useState(false);
-  const [customerTab, setCustomerTab] = useState(0);
+  const [vendors, setVendors] = useState([]);
+  const [selectedVendor, setSelectedVendor] = useState('');
+  const [vendorModalOpen, setVendorModalOpen] = useState(false);
+  const [vendorTab, setVendorTab] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  const [workOrderNumber, setWorkOrderNumber] = useState('INV-000001');
+  const [workOrderNumber, setWorkOrderNumber] = useState('ME-000001');
   const [workOrderDate, setWorkOrderDate] = useState('2025-06-21');
   const [paymentTerms, setPaymentTerms] = useState('Due end of the month');
   const [dueDate, setDueDate] = useState('2025-06-30');
   const [subject, setSubject] = useState('');
-  const [customerNotes, setCustomerNotes] = useState('Thanks for your business.');
-  const [termsConditions, setTermsConditions] = useState('');
+  const [vendorNotes, setVendorNotes] = useState('Thanks for your business.');
+  const [termsConditions, setTermsConditions] = useState(`* Advance Payment 20%
+* 80% payment will be done after 15 Days WCC Report.
+* Payment will be done as per work order.
+* Payment will be done as per measurement of Installation of Panel in Sq.Mtr.
+* Ensure minimum wastage of Materials.
+* The quality requirement of the work shall be qualified.
+* All the work will be carried out with safety equipment.
+* Wearing PPT Kit is compalsatory while working on site.
+* Chewing Gutkha, Smoking and Drinking Alcohol is not allowed while working on Site.
+* Child Labour is not allowed.
+* All the work will be done as per given drawing.
+* As per drawing, If any misconduct is observed the contractor shall be penalized.
+* All The Machines and Tools should be Ready with Safety Before Reaching on site.
+* After completion of installation debries cleaning is mandatory.`);
   const [attachmentUrl, setAttachmentUrl] = useState('');
   const [status, setStatus] = useState('Draft');
   const [purchaseordernumber, setpurchaseordernumber] = useState('');
@@ -68,7 +81,7 @@ const NewWorkOrder = () => {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/customers')
+    fetch('http://localhost:5000/api/vendors')
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -76,11 +89,10 @@ const NewWorkOrder = () => {
         return response.json();
       })
       .then((data) => {
-        const customerNames = data.map((customer) => customer.customer_name);
-        setCustomers(customerNames);
+        setVendors(data);
       })
       .catch((error) => {
-        console.error('Error fetching customers:', error);
+        console.error('Error fetching vendors:', error);
       });
   }, []);
 
@@ -100,8 +112,8 @@ const NewWorkOrder = () => {
       });
   }, []);
 
-  const handleAddCustomer = () => {
-    setCustomerModalOpen(true);
+  const handleAddVendor = () => {
+    setVendorModalOpen(true);
   };
 
   const updateRow = (index, field, value) => {
@@ -144,12 +156,12 @@ const NewWorkOrder = () => {
   const handleSubmit = () => {
     const workOrderData = {
       work_order_number: workOrderNumber,
-      customer_name: selectedCustomer,
+      vendor_name: selectedVendor,
       work_order_date: workOrderDate,
       due_date: dueDate,
       payment_terms: paymentTerms,
       subject: subject,
-      customer_notes: customerNotes,
+      vendor_notes: vendorNotes,
       terms_and_conditions: termsConditions,
       attachment_url: attachmentUrl,
       sub_total: subtotal,
@@ -325,10 +337,10 @@ const NewWorkOrder = () => {
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12} sm={6} md={3}>
                 <FormControl fullWidth required>
-                  <InputLabel>Customer Name</InputLabel>
+                  <InputLabel>Vendor Name</InputLabel>
                   <Select
-                    value={selectedCustomer}
-                    onChange={(e) => setSelectedCustomer(e.target.value)}
+                    value={selectedVendor}
+                    onChange={(e) => setSelectedVendor(e.target.value)}
                     displayEmpty
                     sx={{
                       bgcolor: '#f9fafb',
@@ -336,12 +348,12 @@ const NewWorkOrder = () => {
                       width: 300,
                     }}
                   >
-                    {customers.length === 0 ? (
+                    {vendors.length === 0 ? (
                       <MenuItem disabled>No result found</MenuItem>
                     ) : (
-                      customers.map((customer, index) => (
-                        <MenuItem key={index} value={customer}>
-                          {customer}
+                      vendors.map((vendor, index) => (
+                        <MenuItem key={index} value={vendor.vendor_name}>
+                          {vendor.vendor_name}
                         </MenuItem>
                       ))
                     )}
@@ -351,9 +363,9 @@ const NewWorkOrder = () => {
                   <Button
                     size="small"
                     sx={{ textTransform: 'none', color: '#3f51b5' }}
-                    onClick={handleAddCustomer}
+                    onClick={handleAddVendor}
                   >
-                    + Add New Customer
+                    + Add New Vendor
                   </Button>
                 </Box>
               </Grid>
@@ -561,9 +573,9 @@ const NewWorkOrder = () => {
                 <TextField
                   multiline
                   rows={1}
-                  label="Customer Notes"
-                  value={customerNotes}
-                  onChange={(e) => setCustomerNotes(e.target.value)}
+                  label="Vendor Notes"
+                  value={vendorNotes}
+                  onChange={(e) => setVendorNotes(e.target.value)}
                   helperText="Will be displayed on the Work Order"
                   sx={{ bgcolor: '#f9fafb', borderRadius: 1, width: 500 }}
                 />
@@ -571,8 +583,8 @@ const NewWorkOrder = () => {
             </Grid>
           </Grid>
 
-          <Grid container spacing={4} mt={2} justifyContent="space-between" alignItems="flex-start">
-            <Grid item xs={12} sm={6} md={6}>
+          <Grid container spacing={2} mt={2} justifyContent="space-between" alignItems="flex-start">
+            <Grid item xs={12} sm={12} md={11}>
               <Paper
                 variant="outlined"
                 sx={{
@@ -581,6 +593,7 @@ const NewWorkOrder = () => {
                   bgcolor: '#fafafa',
                   width: '100%',
                   height: '100%',
+                  minHeight: '400px',
                 }}
               >
                 <TextField
@@ -589,7 +602,28 @@ const NewWorkOrder = () => {
                   value={termsConditions}
                   onChange={(e) => setTermsConditions(e.target.value)}
                   multiline
-                  minRows={4}
+                  minRows={12}
+                  maxRows={20}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      bgcolor: '#ffffff',
+                      fontSize: '14px',
+                      lineHeight: '1.5',
+                      padding: '16px',
+                      '& textarea': {
+                        resize: 'vertical',
+                        padding: '8px',
+                        wordBreak: 'keep-all',
+                        overflowWrap: 'normal',
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontWeight: 600,
+                      color: '#333',
+                    },
+                  }}
+                  placeholder="Enter terms and conditions for this work order..."
                 />
                 <Box display="flex" alignItems="center" mt={1}>
                   <Checkbox />
@@ -597,7 +631,7 @@ const NewWorkOrder = () => {
                 </Box>
               </Paper>
             </Grid>
-            <Grid item xs={12} sm={5} md={5}>
+            <Grid item xs={0} sm={0} md={1} sx={{ display: { xs: 'none', sm: 'none', md: 'block' } }}>
               <Paper
                 variant="outlined"
                 sx={{
@@ -676,7 +710,7 @@ const NewWorkOrder = () => {
             </Grid>
           </Grid>
 
-          <Modal open={customerModalOpen} onClose={() => setCustomerModalOpen(false)}>
+          <Modal open={vendorModalOpen} onClose={() => setVendorModalOpen(false)}>
             <Box
               sx={{
                 position: 'absolute',
@@ -692,7 +726,7 @@ const NewWorkOrder = () => {
             >
               <TextField
                 fullWidth
-                placeholder="Search customer here..."
+                placeholder="Search vendor here..."
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -703,7 +737,7 @@ const NewWorkOrder = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <Tabs value={customerTab} onChange={(e, val) => setCustomerTab(val)} centered sx={{ mt: 2 }}>
+              <Tabs value={vendorTab} onChange={(e, val) => setVendorTab(val)} centered sx={{ mt: 2 }}>
                 <Tab label="Business" />
                 <Tab label="Individual" />
               </Tabs>
@@ -712,7 +746,7 @@ const NewWorkOrder = () => {
               </Box>
               <Box mt={2} textAlign="center">
                 <Button variant="text" size="small">
-                  + Add New Customer
+                  + Add New Vendor
                 </Button>
               </Box>
             </Box>

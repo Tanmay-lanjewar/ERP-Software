@@ -6,14 +6,18 @@ const WorkOrder = {
   create: (data, callback) => {
     try {
       const {
-        work_order_number, customer_name, work_order_date, due_date, payment_terms,
-        subject, customer_notes, terms_and_conditions, attachment_url,
+        work_order_number, vendor_name, customer_name, work_order_date, due_date, payment_terms,
+        subject, vendor_notes, customer_notes, terms_and_conditions, attachment_url,
         sub_total, cgst, sgst, grand_total, status , purchase_order_number, purchase_order_date
       } = data;
 
+      // Use vendor_name if provided, otherwise fall back to customer_name for backward compatibility
+      const finalVendorName = vendor_name || customer_name;
+      const finalVendorNotes = vendor_notes || customer_notes;
+
       // Validate required fields
-      if (!work_order_number || !customer_name || !work_order_date) {
-        return callback(new Error('Missing required fields: work_order_number, customer_name, work_order_date'), null);
+      if (!work_order_number || !finalVendorName || !work_order_date) {
+        return callback(new Error('Missing required fields: work_order_number, vendor_name/customer_name, work_order_date'), null);
       }
 
     const sql = `
@@ -25,8 +29,8 @@ const WorkOrder = {
     `;
 
     db.query(sql, [
-      work_order_number, customer_name, work_order_date, due_date, payment_terms,
-      subject, customer_notes, terms_and_conditions, attachment_url,
+      work_order_number, finalVendorName, work_order_date, due_date, payment_terms,
+      subject, finalVendorNotes, terms_and_conditions, attachment_url,
       sub_total, cgst, sgst, grand_total, status , purchase_order_number, purchase_order_date
     ], (err, result) => {
       if (err) {
@@ -77,12 +81,12 @@ const WorkOrder = {
     const sql = `
       SELECT
         wo.*,      
-        c.customer_name, c.billing_recipient_name, c.billing_address1, c.billing_address2, c.billing_city, c.billing_state, c.billing_pincode, c.billing_country, c.gst,
-        c.shipping_recipient_name, c.shipping_address1, c.shipping_address2, c.shipping_city, c.shipping_state, c.shipping_pincode, c.shipping_country
+        v.vendor_name, v.billing_recipient_name, v.billing_address1, v.billing_address2, v.billing_city, v.billing_state, v.billing_pincode, v.billing_country, v.gst,
+        v.shipping_recipient_name, v.shipping_address1, v.shipping_address2, v.shipping_city, v.shipping_state, v.shipping_pincode, v.shipping_country
       FROM
         work_orders wo
       LEFT JOIN
-        customers c ON wo.customer_name = c.customer_name
+        vendors v ON wo.customer_name = v.vendor_name
       WHERE
         wo.work_order_id = ?
     `;
@@ -91,23 +95,27 @@ const WorkOrder = {
 
   update: (id, data, callback) => {
     const {
-      customer_name, work_order_date, due_date, payment_terms,
-      subject, customer_notes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status 
+      work_order_number, vendor_name, customer_name, work_order_date, due_date, payment_terms,
+      subject, vendor_notes, customer_notes, terms_and_conditions, attachment_url,
+      sub_total, cgst, sgst, grand_total, status, purchase_order_number, purchase_order_date
     } = data;
+
+    // Use vendor_name if provided, otherwise fall back to customer_name for backward compatibility
+    const finalVendorName = vendor_name || customer_name;
+    const finalVendorNotes = vendor_notes || customer_notes;
 
     const sql = `
       UPDATE work_orders SET
-        customer_name = ?, work_order_date = ?, due_date = ?, payment_terms = ?,
+        work_order_number = ?, customer_name = ?, work_order_date = ?, due_date = ?, payment_terms = ?,
         subject = ?, customer_notes = ?, terms_and_conditions = ?, attachment_url = ?,
-        sub_total = ?, cgst = ?, sgst = ?, grand_total = ?, status = ? 
+        sub_total = ?, cgst = ?, sgst = ?, grand_total = ?, status = ?, purchase_order_number = ?, purchase_order_date = ?
       WHERE work_order_id = ?
     `;
 
     db.query(sql, [
-      customer_name, work_order_date, due_date, payment_terms,
-      subject, customer_notes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status, id 
+      work_order_number, finalVendorName, work_order_date, due_date, payment_terms,
+      subject, finalVendorNotes, terms_and_conditions, attachment_url,
+      sub_total, cgst, sgst, grand_total, status, purchase_order_number, purchase_order_date, id
     ], callback);
   },
 

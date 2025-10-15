@@ -154,7 +154,7 @@ const FinancialYearSettings = () => {
 
               <Grid container spacing={2}>
                 {[
-                  { label: 'Invoice Series', defaultValue: 'INV-000001' },
+                  { label: 'Invoice Series', defaultValue: 'ME-000001' },
                   { label: 'PO Series', defaultValue: 'PO-000001' },
                   { label: 'WO Series', defaultValue: 'WO-000001' },
                   { label: 'Proforma Invoice Series', defaultValue: 'PINV-000001' },

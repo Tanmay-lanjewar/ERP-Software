@@ -251,8 +251,10 @@ const NewInvoicePage = () => {
               <TextField
                 required
                 label="Invoice Number"
+                placeholder="Enter invoice number (e.g., INV-2025-001)"
                 value={invoiceNumber}
-                InputProps={{ readOnly: true }}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+                helperText="You can edit this number as per your format"
                 sx={{
                   width: 500,
                   "& .MuiOutlinedInput-root": {

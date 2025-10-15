@@ -47,7 +47,7 @@ const PurchaseOrderForm = () => {
   const [paymentTerms, setPaymentTerms] = useState("Due end of the month");
   const [dueDate, setDueDate] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
-  const [termsAndConditions, setTermsAndConditions] = useState("");
+  const [termsAndConditions, setTermsAndConditions] = useState("• Payment Terms: 100% After Delivery\n• PO Validity: 4 Month\n• Delivery: 1 to 2 Weeks (Immediate)\n• Document Required: Test Certificate");
   const [vendorModalOpen, setVendorModalOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [rows, setRows] = useState([
@@ -264,9 +264,11 @@ const PurchaseOrderForm = () => {
               <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
-                  label="Purchase Order*"
+                  label="Purchase Order Number*"
+                  placeholder="Enter PO number (e.g., PO-2025-001)"
                   value={purchaseOrderNo}
                   onChange={(e) => setPurchaseOrderNo(e.target.value)}
+                  helperText="You can edit this number as per your format"
                   sx={{
                     width: 500,
                     "& .MuiOutlinedInput-root": {
@@ -620,10 +622,20 @@ const PurchaseOrderForm = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
+                  multiline
+                  rows={6}
                   label="Terms & Conditions"
                   value={termsAndConditions}
                   onChange={(e) => setTermsAndConditions(e.target.value)}
                   helperText="Will be displayed on the purchase order"
+                  sx={{ 
+                    width: '100%', 
+                    maxWidth: '700px',
+                    '& .MuiInputBase-root': {
+                      fontSize: '14px',
+                      lineHeight: '1.5'
+                    }
+                  }}
                 />
                 <Box display="flex" alignItems="center" mt={1}>
                   <Checkbox />
@@ -879,6 +891,24 @@ const PurchaseOrderForm = () => {
                 <Typography>
                   {customerNotes || "Thanks for your business!"}
                 </Typography>
+                {termsAndConditions && (
+                  <Box mt={2} sx={{ border: '1px solid #e0e0e0', borderRadius: 1, p: 2, backgroundColor: '#f9f9f9' }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#1976d2' }}>
+                      Terms & Conditions:
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        whiteSpace: 'pre-line',
+                        lineHeight: '1.6',
+                        fontSize: '14px',
+                        color: '#333'
+                      }}
+                    >
+                      {termsAndConditions}
+                    </Typography>
+                  </Box>
+                )}
                 <Typography
                   variant="caption"
                   display="block"

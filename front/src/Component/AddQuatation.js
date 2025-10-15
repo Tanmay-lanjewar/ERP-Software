@@ -51,16 +51,16 @@ export default function NewQuotation() {
     "Thanks for your business."
   );
   const [termsAndConditions, setTermsAndConditions] = useState(
-    "Delivery Period: 3 to 4 weeks from the date of technically and commercially clear order.\n" +
-      "Installation Period: 2 to 3 weeks\n" +
-      "Transportation: Extra at Actual\n" +
-      "Payment Terms:\n" +
-      "a) 30% Advance along with Purchase order\n" +
-      "b) 65% Against proforma invoice prior to dispatch\n" +
-      "c) 5% after successfull Installation and commissioning\n" +
-      "Warranty: Offer a standard warranty of 15 months from date of dispatch or 12 months from date of satisfactory installation whichever is earlier\n" +
-      "Validity: Our offer shall remain valid for 15 days\n" +
-      "Exclusions: Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting arrangement for installation activities, Scrap folding, Scissor lift."
+    "• Delivery Period: 3 to 4 weeks from the date of technically and commercially clear order.\n" +
+      "• Installation Period: 2 to 3 weeks\n" +
+      "• Transportation: Extra at Actual\n" +
+      "• Payment Terms:\n" +
+      "  a) 30% Advance along with Purchase order\n" +
+      "  b) 65% Against proforma invoice prior to dispatch\n" +
+      "  c) 5% after successfull Installation and commissioning\n" +
+      "• Warranty: Offer a standard warranty of 15 months from date of dispatch or 12 months from date of satisfactory installation whichever is earlier\n" +
+      "• Validity: Our offer shall remain valid for 15 days\n" +
+      "• Exclusions: Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting arrangement for installation activities, Scrap folding, Scissor lift."
   );
 
   const [attachment, setAttachment] = useState(null);
@@ -86,7 +86,7 @@ export default function NewQuotation() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
-  const [quoteNumber, setQuoteNumber] = useState("");
+  const [quoteNumber, setQuoteNumber] = useState("ME/BESPL/001/2023-24");
 
   useEffect(() => {
     axios
@@ -114,8 +114,8 @@ export default function NewQuotation() {
   useEffect(() => {
     axios
       .get("http://localhost:5000/api/quotation/next-number")
-      .then((res) => setQuoteNumber(res.data.nextQuoteNumber))
-      .catch(() => setQuoteNumber(""));
+      .then((res) => setQuoteNumber(res.data.nextQuoteNumber || "ME/BESPL/001/2023-24"))
+      .catch(() => setQuoteNumber("ME/BESPL/001/2023-24"));
   }, []);
 
   const handleAddRow = () => {
@@ -326,10 +326,12 @@ export default function NewQuotation() {
             <Grid container spacing={2} mb={2}>
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
-                  label="Quote"
+                  label="Quotation Number"
                   fullWidth
-                  value={quoteNumber ? quoteNumber : "Number Was Generated"}
-                  InputProps={{ readOnly: true }}
+                  value={quoteNumber}
+                  onChange={(e) => setQuoteNumber(e.target.value)}
+                  placeholder="Enter quotation number (e.g., ME/BESPL/001/2023-24)"
+                  helperText="You can edit this number as per your format"
                   sx={{
                     width: { xs: "100%", sm: "100%", md: 400 },
                     "& .MuiOutlinedInput-root": {
