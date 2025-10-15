@@ -70,6 +70,7 @@ exports.create = (data, callback) => {
     customer_notes: data.customer_notes,
     terms_and_conditions: data.terms_and_conditions,
     sub_total: data.sub_total,
+    freight: data.freight,
     cgst: data.cgst,
     sgst: data.sgst,
     total: data.total,
@@ -87,12 +88,14 @@ exports.create = (data, callback) => {
       item.qty,
       item.rate,
       item.discount,
-      item.amount
+      item.amount,
+      item.uom_description || '',
+      item.uom_amount || 0
     ]);
 
     db.query(`
       INSERT INTO purchase_order_items 
-      (purchase_order_id, item_name, qty, rate, discount, amount) 
+      (purchase_order_id, item_name, qty, rate, discount, amount, uom_description, uom_amount) 
       VALUES ?
     `, [items], callback);
   });
@@ -104,18 +107,48 @@ exports.update = (id, data, callback) => {
     UPDATE purchase_orders SET 
       purchase_order_no = ?, delivery_to = ?, delivery_address = ?, vendor_name = ?, vendor_id = ?,
       purchase_order_date = ?, delivery_date = ?, payment_terms = ?, due_date = ?,
-      customer_notes = ?, terms_and_conditions = ?, sub_total = ?, cgst = ?, sgst = ?, total = ?, attachment = ?
+      customer_notes = ?, terms_and_conditions = ?, sub_total = ?, freight = ?, cgst = ?, sgst = ?, total = ?, attachment = ?
     WHERE id = ?
   `;
 
   const values = [
     data.purchase_order_no, data.delivery_to, data.delivery_address, data.vendor_name, data.vendor_id,
     data.purchase_order_date, data.delivery_date, data.payment_terms, data.due_date,
-    data.customer_notes, data.terms_and_conditions, data.sub_total,
+    data.customer_notes, data.terms_and_conditions, data.sub_total, data.freight,
     data.cgst, data.sgst, data.total, data.attachment, id
   ];
 
-  db.query(updateQuery, values, callback);
+  db.query(updateQuery, values, (err, result) => {
+    if (err) return callback(err);
+    
+    // If items are provided, update them as well
+    if (data.items && data.items.length > 0) {
+      // First delete existing items
+      db.query('DELETE FROM purchase_order_items WHERE purchase_order_id = ?', [id], (deleteErr) => {
+        if (deleteErr) return callback(deleteErr);
+        
+        // Then insert new items
+        const items = data.items.map(item => [
+          id,
+          item.item_name,
+          item.qty,
+          item.rate,
+          item.discount,
+          item.amount,
+          item.uom_description || '',
+          item.uom_amount || 0
+        ]);
+
+        db.query(`
+          INSERT INTO purchase_order_items 
+          (purchase_order_id, item_name, qty, rate, discount, amount, uom_description, uom_amount) 
+          VALUES ?
+        `, [items], callback);
+      });
+    } else {
+      callback(null, result);
+    }
+  });
 };
 
 // Get next purchase order number

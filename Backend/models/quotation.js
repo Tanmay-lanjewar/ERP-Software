@@ -112,9 +112,11 @@ const quotation = {
     });
 
     sub_total = parseFloat(sub_total.toFixed(2));
-    const cgst = parseFloat((sub_total * 0.09).toFixed(2));
-    const sgst = parseFloat((sub_total * 0.09).toFixed(2));
-    const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
+    const freight = parseFloat(data.freight || 0);
+    const subtotalWithFreight = sub_total + freight;
+    const cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+    const sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+    const grand_total = parseFloat((subtotalWithFreight + cgst + sgst).toFixed(2));
 
     quotation.getNextQuoteNumber((err, result) => {
       if (err) return callback(err);
@@ -124,8 +126,8 @@ const quotation = {
         INSERT INTO quotation (
           customer_name, quote_number, quotation_date, expiry_date, subject,
           customer_notes, terms_and_conditions,
-          sub_total, cgst, sgst, grand_total, attachment_url, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          sub_total, freight, cgst, sgst, grand_total, attachment_url, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const quotationValues = [
@@ -137,6 +139,7 @@ const quotation = {
         data.customer_notes,
         data.terms_and_conditions,
         sub_total,
+        freight,
         cgst,
         sgst,
         grand_total,
@@ -151,7 +154,7 @@ const quotation = {
 
         const itemSql = `
           INSERT INTO quotation_items (
-            quotation_id, item_detail, quantity, rate, discount, amount
+            quotation_id, item_detail, quantity, rate, discount, amount, uom_amount, uom_description
           ) VALUES ?
         `;
 
@@ -161,7 +164,9 @@ const quotation = {
           item.quantity,
           item.rate,
           item.discount,
-          item.amount
+          item.amount,
+          item.uom_amount || 0,
+          item.uom_description || ""
         ]);
 
         db.query(itemSql, [itemValues], (itemErr, itemResult) => {
@@ -171,6 +176,7 @@ const quotation = {
             quoteNumber,
             itemsInserted: itemResult.affectedRows,
             sub_total,
+            freight,
             cgst,
             sgst,
             grand_total
@@ -192,15 +198,17 @@ const quotation = {
     });
 
     sub_total = parseFloat(sub_total.toFixed(2));
-    const cgst = parseFloat((sub_total * 0.09).toFixed(2));
-    const sgst = parseFloat((sub_total * 0.09).toFixed(2));
-    const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
+    const freight = parseFloat(data.freight || 0);
+    const subtotalWithFreight = sub_total + freight;
+    const cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+    const sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+    const grand_total = parseFloat((subtotalWithFreight + cgst + sgst).toFixed(2));
 
     const quotationSql = `
       UPDATE quotation SET
         customer_name = ?, quotation_date = ?, expiry_date = ?, subject = ?,
         customer_notes = ?, terms_and_conditions = ?,
-        sub_total = ?, cgst = ?, sgst = ?, grand_total = ?, attachment_url = ?, status = ?
+        sub_total = ?, freight = ?, cgst = ?, sgst = ?, grand_total = ?, attachment_url = ?, status = ?
       WHERE quotation_id = ?
     `;
 
@@ -212,6 +220,7 @@ const quotation = {
       data.customer_notes,
       data.terms_and_conditions,
       sub_total,
+      freight,
       cgst,
       sgst,
       grand_total,
@@ -229,7 +238,7 @@ const quotation = {
         if (items.length > 0) {
           const itemSql = `
             INSERT INTO quotation_items (
-              quotation_id, item_detail, quantity, rate, discount, amount
+              quotation_id, item_detail, quantity, rate, discount, amount, uom_amount, uom_description
             ) VALUES ?
           `;
 
@@ -239,7 +248,9 @@ const quotation = {
             item.quantity,
             item.rate,
             item.discount,
-            item.amount
+            item.amount,
+            item.uom_amount || 0,
+            item.uom_description || ""
           ]);
 
           db.query(itemSql, [itemValues], (itemErr, itemResult) => {
@@ -248,13 +259,14 @@ const quotation = {
               quotationId: id,
               itemsUpdated: itemResult.affectedRows,
               sub_total,
+              freight,
               cgst,
               sgst,
               grand_total
             });
           });
         } else {
-          callback(null, { quotationId: id, itemsUpdated: 0, sub_total, cgst, sgst, grand_total });
+          callback(null, { quotationId: id, itemsUpdated: 0, sub_total, freight, cgst, sgst, grand_total });
         }
       });
     });

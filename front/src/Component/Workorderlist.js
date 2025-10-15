@@ -154,7 +154,7 @@ const WorkOrderlist = () => {
           <td style="border: 1px solid #000; padding: 3px;">${item.item_detail || 'N/A'}</td>
           <td style="border: 1px solid #000; padding: 3px; text-align: center;">32149090</td>
           <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.quantity || 0}</td>
-          <td style="border: 1px solid #000; padding: 3px; text-align: center;">Box</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.uom_description || 'Box'}</td>
           <td style="border: 1px solid #000; padding: 3px; text-align: right;">${item.rate || 0}</td>
           <td style="border: 1px solid #000; padding: 3px; text-align: right;">${item.amount || (item.quantity * item.rate).toFixed(2)}</td>
         </tr>

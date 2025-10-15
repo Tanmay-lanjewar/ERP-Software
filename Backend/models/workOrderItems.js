@@ -11,12 +11,14 @@ exports.createItems = (workOrderId, items, cb) => {
     item.quantity,
     item.rate,
     item.discount,
-    item.amount
+    item.amount,
+    item.uom_description || '',
+    item.uom_amount || 0
   ]);
 
   const sql = `
     INSERT INTO work_order_items
-    (work_order_id, item_detail, quantity, rate, discount, amount)
+    (work_order_id, item_detail, quantity, rate, discount, amount, uom_description, uom_amount)
     VALUES ?
   `;
 
