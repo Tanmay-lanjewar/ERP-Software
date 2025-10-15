@@ -36,6 +36,7 @@ import FinancialYearSettings from './Component/Financialyearsetting';
 import PaymentsSettings from './Component/Paymentsetting';
 import AddPaymentsEntry from './Component/Addpaymententry';
 import ReportsAndAnalytics from './Component/ReportandAnalytics';
+import SalesAnalytics from './Component/SalesAnalytics';
 import FinancialYearGuard from './Component/financial_year_check';
 import AddFinancialYear from './Component/add_financial_year';
 import FinancialYearMain from './Component/financial-year-home';
@@ -55,12 +56,7 @@ const ProtectedRoute = ({ children }) => {
   }
 
   // Hide Invoice and Quotation sections for Admin role
-  if (role === 'admin') {
-    const path = window.location.pathname;
-    if (path.includes('/invoice') || path.includes('/quotation')) {
-      return <Navigate to="/dashboard" />;
-    }
-  }
+  //  
 
   return children;
 };
@@ -255,6 +251,11 @@ function App() {
           <Route path="/Report-and-analytics" element={
             <ProtectedRoute>
               <ReportsAndAnalytics />
+            </ProtectedRoute>
+          } />
+          <Route path="/sales-analytics" element={
+            <ProtectedRoute>
+              <SalesAnalytics />
             </ProtectedRoute>
           } />
           <Route path="/add/financial_year" element={

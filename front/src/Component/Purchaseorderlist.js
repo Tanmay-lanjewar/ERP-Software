@@ -222,6 +222,10 @@ const PurchaseOrderActions = () => {
                             <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(poData.sub_total)}</td>
                         </tr>
                         <tr>
+                            <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Freight</td>
+                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(poData.freight || 0)}</td>
+                        </tr>
+                        <tr>
                             <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">CGST @${(poData.cgst / poData.sub_total * 100).toFixed(2)}%</td>
                             <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(poData.cgst)}</td>
                         </tr>

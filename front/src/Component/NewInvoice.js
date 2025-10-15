@@ -52,9 +52,10 @@ const NewInvoicePage = () => {
   const [subject, setSubject] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
   const [termsAndConditions, setTermsAndConditions] = useState("");
+  const [freight, setFreight] = useState(0);
   const [products, setProducts] = useState([]);
   const [rows, setRows] = useState([
-    { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0 },
+    { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" },
   ]);
 
   useEffect(() => {
@@ -116,7 +117,7 @@ const NewInvoicePage = () => {
   const addNewRow = () => {
     setRows([
       ...rows,
-      { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0 },
+      { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" },
     ]);
   };
 
@@ -127,8 +128,9 @@ const NewInvoicePage = () => {
   };
 
   const subtotal = rows.reduce((sum, row) => sum + calculateAmount(row), 0);
-  const gst = subtotal * 0.09;
-  const total = subtotal + gst * 2;
+  const subtotalWithFreight = subtotal + parseFloat(freight || 0);
+  const gst = subtotalWithFreight * 0.09;
+  const total = subtotalWithFreight + gst * 2;
 
   const handleSubmit = async (saveAsDraft = false) => {
     const customerObj = customers.find((c) => c.id === selectedCustomer);
@@ -144,6 +146,7 @@ const NewInvoicePage = () => {
       subject: subject,
       customer_notes: customerNotes,
       terms_and_conditions: termsAndConditions,
+      freight: parseFloat(freight || 0),
       status: saveAsDraft ? "Draft" : status,
       sub_total: subtotal,
       cgst: gst,
@@ -155,6 +158,8 @@ const NewInvoicePage = () => {
         rate: row.rate,
         discount: row.discount,
         amount: calculateAmount(row),
+        uom_amount: row.uom_amount || 0,
+        uom_description: row.uom_description || "",
       })),
     };
 
@@ -394,6 +399,7 @@ const NewInvoicePage = () => {
                   <TableRow>
                     <TableCell>Item Details</TableCell>
                     <TableCell>Quantity</TableCell>
+                    <TableCell>UOM</TableCell>
                     <TableCell>Rate</TableCell>
                     <TableCell>Discount</TableCell>
                     <TableCell>Amount</TableCell>
@@ -439,6 +445,16 @@ const NewInvoicePage = () => {
                           type="number"
                           value={row.qty}
                           onChange={(e) => updateRow(index, "qty", e.target.value)}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          type="text"
+                          value={row.uom_description}
+                          onChange={(e) => updateRow(index, "uom_description", e.target.value)}
+                          placeholder="Unit"
                           size="small"
                         />
                       </TableCell>
@@ -508,6 +524,7 @@ const NewInvoicePage = () => {
                 >
                   {[
                     { label: "Sub Total", value: `₹${subtotal.toFixed(2)}` },
+                    { label: "Freight", value: `₹${parseFloat(freight || 0).toFixed(2)}` },
                     { label: "CGST (9%)", value: `₹${gst.toFixed(2)}` },
                     { label: "SGST (9%)", value: `₹${gst.toFixed(2)}` },
                   ].map((item, i) => (
@@ -537,6 +554,15 @@ const NewInvoicePage = () => {
           </Box>
           <Grid container spacing={2} mt={3}>
             <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Freight"
+                type="number"
+                value={freight}
+                onChange={(e) => setFreight(e.target.value)}
+                placeholder="Enter freight amount"
+                sx={{ mb: 2 }}
+              />
               <TextField
                 fullWidth
                 label="Terms & Conditions"
@@ -760,6 +786,7 @@ const NewInvoicePage = () => {
                 ))}
                 <Box mt={2} mb={2} sx={{ textAlign: "right", fontSize: 13 }}>
                   <Typography>Subtotal: ₹{subtotal.toFixed(2)}</Typography>
+                  <Typography>Freight: ₹{parseFloat(freight || 0).toFixed(2)}</Typography>
                   <Typography>CGST (9%): ₹{gst.toFixed(2)}</Typography>
                   <Typography>SGST (9%): ₹{gst.toFixed(2)}</Typography>
                   <Typography fontWeight="bold" mt={1}>

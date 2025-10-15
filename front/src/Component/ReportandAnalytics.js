@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -16,6 +17,8 @@ import Sidebar from './Sidebar';
 import UserMenu from './UserMenu';
 
 const ReportsAndAnalytics = () => {
+  const navigate = useNavigate();
+
   const sections = [
     {
       title: 'Sales Report',
@@ -34,6 +37,13 @@ const ReportsAndAnalytics = () => {
       reports: ['PO Summaries', 'Vendor Spend Analysis'],
     },
   ];
+
+  const handleReportClick = (reportName) => {
+    if (reportName === 'Sales By Time Period') {
+      navigate('/sales-analytics');
+    }
+    // Add other report navigation logic here as needed
+  };
 
   return (
     <Box sx={{ display: 'flex', bgcolor: '#f4f5fa', minHeight: '100vh' }}>
@@ -110,6 +120,7 @@ const ReportsAndAnalytics = () => {
                         <Button
                           variant="contained"
                           endIcon={<ArrowOutwardIcon />}
+                          onClick={() => handleReportClick(report)}
                           sx={{
                             background: '#f3f4f6',
                             color: '#000',

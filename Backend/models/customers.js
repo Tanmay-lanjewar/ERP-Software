@@ -46,7 +46,7 @@ const Customer = {
     );
   },
 
-  update: async (id, data) => {
+  update: (id, data, cb) => {
     const {
       customer_type, title, customer_name, company_name, display_name,
       email, mobile, office_no, pan, gst, currency, document_path,
@@ -77,18 +77,15 @@ const Customer = {
       remark, status || 'Active', id
     ];
 
-    const [result] = await pool.query(sql, values);
-    return result;
+    db.query(sql, values, cb);
   },
 
-  remove: async (id) => {
-    const [result] = await pool.query('DELETE FROM customers WHERE id=?', [id]);
-    return result;
+  remove: (id, cb) => {
+    db.query('DELETE FROM customers WHERE id=?', [id], cb);
   },
 
-  updateStatus: async (id, status) => {
-    const [result] = await pool.query('UPDATE customers SET status = ? WHERE id = ?', [status, id]);
-    return result;
+  updateStatus: (id, status, cb) => {
+    db.query('UPDATE customers SET status = ? WHERE id = ?', [status, id], cb);
   },
 };
 

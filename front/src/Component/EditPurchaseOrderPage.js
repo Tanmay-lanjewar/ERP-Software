@@ -44,7 +44,9 @@ export default function EditPurchaseOrderPage() {
           rate: item.rate || 0,
           discount: item.discount || 0,
           amount: item.amount || 0,
-        })) : [{ id: Date.now(), item: "", item_name: "", qty: 0, rate: 0, discount: 0, amount: 0 }]);
+          uom_amount: item.uom_amount || 0,
+          uom_description: item.uom_description || "",
+        })) : [{ id: Date.now(), item: "", item_name: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" }]);
       } catch (err) {
         setError('Failed to fetch purchase order');
       } finally {
@@ -93,7 +95,7 @@ export default function EditPurchaseOrderPage() {
   const addNewRow = () => {
     setItems([
       ...items,
-      { id: Date.now(), item: "", item_name: "", qty: 0, rate: 0, discount: 0, amount: 0 },
+      { id: Date.now(), item: "", item_name: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" },
     ]);
   };
 
@@ -108,6 +110,8 @@ export default function EditPurchaseOrderPage() {
         rate: 0,
         discount: 0,
         amount: 0,
+        uom_amount: 0,
+        uom_description: "",
       });
     }
     setItems(updated);
@@ -137,6 +141,8 @@ export default function EditPurchaseOrderPage() {
           rate: item.rate,
           discount: item.discount,
           amount: item.amount,
+          uom_amount: item.uom_amount || 0,
+          uom_description: item.uom_description || "",
         })),
       });
       alert('Purchase order updated successfully!');
@@ -254,6 +260,7 @@ export default function EditPurchaseOrderPage() {
                     <TableRow>
                       <TableCell>Item Details</TableCell>
                       <TableCell>Quantity</TableCell>
+                      <TableCell>UOM</TableCell>
                       <TableCell>Rate</TableCell>
                       <TableCell>Discount</TableCell>
                       <TableCell>Amount</TableCell>
@@ -297,6 +304,17 @@ export default function EditPurchaseOrderPage() {
                               updateRow(index, "qty", e.target.value)
                             }
                             size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            fullWidth
+                            value={row.uom_description || ""}
+                            onChange={(e) =>
+                              updateRow(index, "uom_description", e.target.value)
+                            }
+                            size="small"
+                            placeholder="Unit"
                           />
                         </TableCell>
                         <TableCell>

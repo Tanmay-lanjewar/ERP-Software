@@ -153,8 +153,9 @@ export default function NewQuotation() {
   };
 
   const subtotal = rows.reduce((sum, row) => sum + calculateAmount(row), 0);
-  const gst = subtotal * 0.09;
-  const total = subtotal + gst * 2;
+  const subtotalWithFreight = subtotal + (parseFloat(freight) || 0);
+  const gst = subtotalWithFreight * 0.09;
+  const total = subtotalWithFreight + gst * 2;
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -194,6 +195,7 @@ export default function NewQuotation() {
       subject,
       customer_notes: customerNotes,
       terms_and_conditions: termsAndConditions,
+      freight: parseFloat(freight) || 0,
       sub_total: subtotal,
       cgst: gst,
       sgst: gst,
@@ -202,10 +204,11 @@ export default function NewQuotation() {
       items: rows.map((row) => ({
         item_detail: row.item,
         quantity: row.qty,
-        uom : row.uom,
         rate: row.rate,
         discount: row.discount,
         amount: calculateAmount(row),
+        uom_amount: 0,
+        uom_description: row.uom || "",
       })),
     };
 
@@ -627,6 +630,7 @@ export default function NewQuotation() {
                   >
                     {[
                       { label: "Sub Total", value: `₹${subtotal.toFixed(2)}` },
+                      { label: "Freight", value: `₹${(parseFloat(freight) || 0).toFixed(2)}` },
                       { label: "CGST (9%)", value: `₹${gst.toFixed(2)}` },
                       { label: "SGST (9%)", value: `₹${gst.toFixed(2)}` },
                     ].map((item, i) => (
