@@ -21,14 +21,17 @@ exports.getOne = (req, res) => {
       if (itemErr) return res.status(500).json({ error: itemErr.message });
 
       const sub_total = items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-      const cgst = parseFloat((sub_total * 0.09).toFixed(2));
-      const sgst = parseFloat((sub_total * 0.09).toFixed(2));
-      const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
+      const freight = parseFloat(quotationData.freight || 0);
+      const subtotalWithFreight = sub_total + freight;
+      const cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+      const sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+      const grand_total = parseFloat((subtotalWithFreight + cgst + sgst).toFixed(2));
 
       res.json({
         quotation: quotationData,
         items,
         sub_total,
+        freight,
         cgst,
         sgst,
         grand_total
@@ -59,6 +62,7 @@ exports.create = (req, res) => {
       quoteNumber: result.quoteNumber,
       itemsInserted: result.itemsInserted,
       sub_total: result.sub_total,
+      freight: result.freight,
       cgst: result.cgst,
       sgst: result.sgst,
       grand_total: result.grand_total
@@ -152,6 +156,7 @@ exports.update = (req, res) => {
       quotationId: result.quotationId,
       itemsUpdated: result.itemsUpdated,
       sub_total: result.sub_total,
+      freight: result.freight,
       cgst: result.cgst,
       sgst: result.sgst,
       grand_total: result.grand_total,

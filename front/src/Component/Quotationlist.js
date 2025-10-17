@@ -270,8 +270,12 @@ const handlePrintQuotation = async () => {
             <tbody>
                 ${itemsRows}
                 <tr>
-                    <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Total Basic</td>
+                    <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Sub Total</td>
                     <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹ ${sub_total || 0}</td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Freight</td>
+                    <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: right;">₹ ${(quotation.freight || 0).toFixed(2)}</td>
                 </tr>
                 <tr>
                     <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">GST @18%</td>
