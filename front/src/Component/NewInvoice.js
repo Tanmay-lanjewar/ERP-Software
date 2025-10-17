@@ -57,6 +57,7 @@ const NewInvoicePage = () => {
   const [rows, setRows] = useState([
     { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" },
   ]);
+  const [customerBillingStateCode, setCustomerBillingStateCode] = useState("");
 
   useEffect(() => {
     // Fetch customers
@@ -100,6 +101,17 @@ const NewInvoicePage = () => {
       });
   }, []);
 
+  const fetchCustomerBillingStateCode = async (customerId) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/customers/${customerId}`);
+      const customer = response.data;
+      setCustomerBillingStateCode(customer.billing_state_code || "");
+    } catch (error) {
+      console.error("Error fetching customer billing state code:", error);
+      setCustomerBillingStateCode("");
+    }
+  };
+
   const updateRow = (index, field, value) => {
     const updated = [...rows];
     updated[index][field] = ["qty", "rate", "discount"].includes(field)
@@ -129,8 +141,25 @@ const NewInvoicePage = () => {
 
   const subtotal = rows.reduce((sum, row) => sum + calculateAmount(row), 0);
   const subtotalWithFreight = subtotal + parseFloat(freight || 0);
-  const gst = subtotalWithFreight * 0.09;
-  const total = subtotalWithFreight + gst * 2;
+  
+  // Conditional GST calculation based on customer billing state code
+  let cgst = 0, sgst = 0, igst = 0, total = 0;
+  
+  console.log("NewInvoice - Customer billing state code:", customerBillingStateCode);
+  console.log("NewInvoice - Subtotal with freight:", subtotalWithFreight);
+  
+  if (customerBillingStateCode === '27') {
+    // Maharashtra - apply CGST and SGST
+    cgst = subtotalWithFreight * 0.09;
+    sgst = subtotalWithFreight * 0.09;
+    total = subtotalWithFreight + cgst + sgst;
+    console.log("NewInvoice - Using CGST/SGST - CGST:", cgst, "SGST:", sgst);
+  } else {
+    // Other states - apply IGST
+    igst = subtotalWithFreight * 0.18;
+    total = subtotalWithFreight + igst;
+    console.log("NewInvoice - Using IGST:", igst);
+  }
 
   const handleSubmit = async (saveAsDraft = false) => {
     const customerObj = customers.find((c) => c.id === selectedCustomer);
@@ -149,8 +178,9 @@ const NewInvoicePage = () => {
       freight: parseFloat(freight || 0),
       status: saveAsDraft ? "Draft" : status,
       sub_total: subtotal,
-      cgst: gst,
-      sgst: gst,
+      cgst: cgst,
+      sgst: sgst,
+      igst: igst,
       grand_total: total,
       items: rows.map((row) => ({
         item_detail: row.item,
@@ -273,7 +303,12 @@ const NewInvoicePage = () => {
                   <InputLabel>Customer Name</InputLabel>
                   <Select
                     value={selectedCustomer}
-                    onChange={(e) => setSelectedCustomer(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedCustomer(e.target.value);
+                      if (e.target.value) {
+                        fetchCustomerBillingStateCode(e.target.value);
+                      }
+                    }}
                     displayEmpty
                     sx={{
                       bgcolor: "#f9fafb",
@@ -420,6 +455,7 @@ const NewInvoicePage = () => {
                               .then((res) => res.json())
                               .then((product) => {
                                 updateRow(index, "rate", product.sale_price || 0);
+                                updateRow(index, "uom_description", product.unit || "");
                               })
                               .catch((err) => {
                                 console.error("Error fetching product details:", err);
@@ -525,8 +561,12 @@ const NewInvoicePage = () => {
                   {[
                     { label: "Sub Total", value: `₹${subtotal.toFixed(2)}` },
                     { label: "Freight", value: `₹${parseFloat(freight || 0).toFixed(2)}` },
-                    { label: "CGST (9%)", value: `₹${gst.toFixed(2)}` },
-                    { label: "SGST (9%)", value: `₹${gst.toFixed(2)}` },
+                    ...(customerBillingStateCode === '27' ? [
+                      { label: "CGST (9%)", value: `₹${cgst.toFixed(2)}` },
+                      { label: "SGST (9%)", value: `₹${sgst.toFixed(2)}` },
+                    ] : [
+                      { label: "IGST (18%)", value: `₹${igst.toFixed(2)}` },
+                    ])
                   ].map((item, i) => (
                     <Box
                       key={i}
@@ -787,8 +827,14 @@ const NewInvoicePage = () => {
                 <Box mt={2} mb={2} sx={{ textAlign: "right", fontSize: 13 }}>
                   <Typography>Subtotal: ₹{subtotal.toFixed(2)}</Typography>
                   <Typography>Freight: ₹{parseFloat(freight || 0).toFixed(2)}</Typography>
-                  <Typography>CGST (9%): ₹{gst.toFixed(2)}</Typography>
-                  <Typography>SGST (9%): ₹{gst.toFixed(2)}</Typography>
+                  {customerBillingStateCode === '27' ? (
+                    <>
+                      <Typography>CGST (9%): ₹{cgst.toFixed(2)}</Typography>
+                      <Typography>SGST (9%): ₹{sgst.toFixed(2)}</Typography>
+                    </>
+                  ) : (
+                    <Typography>IGST (18%): ₹{igst.toFixed(2)}</Typography>
+                  )}
                   <Typography fontWeight="bold" mt={1}>
                     Total: ₹{total.toFixed(2)}
                   </Typography>

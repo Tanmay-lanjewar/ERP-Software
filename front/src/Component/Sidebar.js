@@ -63,7 +63,7 @@ const salesItems = [
     icon: <RequestQuote />,
     path: '/quotation',
     matchPaths: ['/quotation', '/add-quotation', '/quotation-list'],
-    roles: ['admin', 'superadmin']  // Added admin role
+    roles: ['superadmin']  // Removed admin role, only superadmin access
   },
   {
     text: 'Invoice',
@@ -94,7 +94,7 @@ const purchaseItems = [
     icon: <Construction />,
     path: '/Work-Order',
     matchPaths: ['/Work-Order','/add-Work-Order','/Work-Order-list'],
-    roles: ['superadmin']
+    roles: ['admin', 'superadmin']  // Added admin role
   },
 ];
 

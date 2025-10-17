@@ -87,6 +87,7 @@ export default function NewQuotation() {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [quoteNumber, setQuoteNumber] = useState("");
+  const [customerBillingStateCode, setCustomerBillingStateCode] = useState("");
 
   useEffect(() => {
     axios
@@ -118,6 +119,30 @@ export default function NewQuotation() {
       .catch(() => setQuoteNumber(""));
   }, []);
 
+  // Fetch customer billing state code when customer is selected
+  const fetchCustomerBillingStateCode = async (customerName) => {
+    if (!customerName) {
+      setCustomerBillingStateCode("");
+      return;
+    }
+    
+    try {
+      const response = await axios.get(`http://localhost:5000/api/customers`);
+      const customer = response.data.find(c => c.customer_name === customerName);
+      if (customer) {
+        console.log("Found customer:", customer);
+        console.log("Billing state code:", customer.billing_state_code);
+        setCustomerBillingStateCode(customer.billing_state_code || "");
+      } else {
+        console.log("Customer not found:", customerName);
+        setCustomerBillingStateCode("");
+      }
+    } catch (error) {
+      console.error("Error fetching customer billing state code:", error);
+      setCustomerBillingStateCode("");
+    }
+  };
+
   const handleAddRow = () => {
     setRows([
       ...rows,
@@ -140,7 +165,7 @@ export default function NewQuotation() {
 
   const updateRow = (index, field, value) => {
     const updated = [...rows];
-    updated[index][field] = ["qty", "rate","uom" ,"discount"].includes(field)
+    updated[index][field] = ["qty", "rate", "discount"].includes(field)
       ? Number(value)
       : value;
     updated[index].amount = calculateAmount(updated[index]);
@@ -154,8 +179,28 @@ export default function NewQuotation() {
 
   const subtotal = rows.reduce((sum, row) => sum + calculateAmount(row), 0);
   const subtotalWithFreight = subtotal + (parseFloat(freight) || 0);
-  const gst = subtotalWithFreight * 0.09;
-  const total = subtotalWithFreight + gst * 2;
+  
+  // Conditional GST calculation based on customer billing state code
+  let cgst = 0, sgst = 0, igst = 0;
+  
+  console.log("Customer billing state code:", customerBillingStateCode);
+  console.log("Subtotal with freight:", subtotalWithFreight);
+  
+  if (customerBillingStateCode === '27') {
+    // Maharashtra - use CGST/SGST
+    cgst = subtotalWithFreight * 0.09;
+    sgst = subtotalWithFreight * 0.09;
+    igst = 0;
+    console.log("Using CGST/SGST - CGST:", cgst, "SGST:", sgst);
+  } else {
+    // Other states - use IGST
+    cgst = 0;
+    sgst = 0;
+    igst = subtotalWithFreight * 0.18;
+    console.log("Using IGST:", igst);
+  }
+  
+  const total = subtotalWithFreight + cgst + sgst + igst;
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -197,8 +242,9 @@ export default function NewQuotation() {
       terms_and_conditions: termsAndConditions,
       freight: parseFloat(freight) || 0,
       sub_total: subtotal,
-      cgst: gst,
-      sgst: gst,
+      cgst: cgst,
+      sgst: sgst,
+      igst: igst,
       total_amount: total,
       status: saveAsDraft ? "Draft" : "Sent",
       items: rows.map((row) => ({
@@ -358,7 +404,11 @@ export default function NewQuotation() {
                   <InputLabel>Customer Name*</InputLabel>
                   <Select
                     value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
+                    onChange={(e) => {
+                      const selectedCustomerName = e.target.value;
+                      setCustomerName(selectedCustomerName);
+                      fetchCustomerBillingStateCode(selectedCustomerName);
+                    }}
                   >
                     <MenuItem value="">
                       <em>Select or add a customer</em>
@@ -501,6 +551,11 @@ export default function NewQuotation() {
                                     "rate",
                                     product.sale_price || 0
                                   );
+                                  updateRow(
+                                    index,
+                                    "uom",
+                                    product.unit || ""
+                                  );
                                 })
                                 .catch((err) => {
                                   console.error(
@@ -631,8 +686,12 @@ export default function NewQuotation() {
                     {[
                       { label: "Sub Total", value: `₹${subtotal.toFixed(2)}` },
                       { label: "Freight", value: `₹${(parseFloat(freight) || 0).toFixed(2)}` },
-                      { label: "CGST (9%)", value: `₹${gst.toFixed(2)}` },
-                      { label: "SGST (9%)", value: `₹${gst.toFixed(2)}` },
+                      ...(customerBillingStateCode === '27' ? [
+                        { label: "CGST (9%)", value: `₹${cgst.toFixed(2)}` },
+                        { label: "SGST (9%)", value: `₹${sgst.toFixed(2)}` },
+                      ] : [
+                        { label: "IGST (18%)", value: `₹${igst.toFixed(2)}` },
+                      ])
                     ].map((item, i) => (
                       <Box
                         key={i}

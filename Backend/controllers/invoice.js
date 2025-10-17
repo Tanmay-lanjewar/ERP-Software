@@ -6,7 +6,7 @@ exports.getAll = (req, res) => {
   invoice.getAll((err, result) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(result);
-  });
+  });   
 };
 
 exports.getDashboardSummary = (req, res) => {
@@ -52,9 +52,24 @@ exports.getOne = (req, res) => {
         const sub_total = items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
         const freight = parseFloat(invoiceData.freight || 0);
         const subtotalWithFreight = sub_total + freight;
-        const cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
-        const sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
-        const grand_total = parseFloat((subtotalWithFreight + cgst + sgst).toFixed(2));
+        
+        // Conditional GST calculation based on customer billing state code
+        const billingStateCode = customer.billing_state_code || '';
+        let cgst = 0, sgst = 0, igst = 0;
+        
+        if (billingStateCode === '27') {
+          // Maharashtra - use CGST/SGST
+          cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+          sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+          igst = 0;
+        } else {
+          // Other states - use IGST
+          cgst = 0;
+          sgst = 0;
+          igst = parseFloat((subtotalWithFreight * 0.18).toFixed(2));
+        }
+        
+        const grand_total = parseFloat((subtotalWithFreight + cgst + sgst + igst).toFixed(2));
         res.json({
           invoice: invoiceData,
           items,
@@ -63,6 +78,7 @@ exports.getOne = (req, res) => {
           freight,
           cgst,
           sgst,
+          igst,
           grand_total,
         });
       });

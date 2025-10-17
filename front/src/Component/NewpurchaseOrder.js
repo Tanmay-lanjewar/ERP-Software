@@ -485,6 +485,11 @@ const PurchaseOrderForm = () => {
                                     "rate",
                                     product.sale_price || 0
                                   );
+                                  updateRow(
+                                    index,
+                                    "uom_description",
+                                    product.unit || ""
+                                  );
                                 })
                                 .catch((err) => {
                                   console.error(

@@ -27,6 +27,7 @@ const AddCustomerForm = () => {
     billing_address2: '',
     billing_city: '',
     billing_state: '',
+    billing_state_code: '',
     billing_pincode: '',
     billing_fax: '',
     billing_phone: '',
@@ -36,6 +37,7 @@ const AddCustomerForm = () => {
     shipping_address2: '',
     shipping_city: '',
     shipping_state: '',
+    shipping_state_code: '',
     shipping_pincode: '',
     shipping_fax: '',
     shipping_phone: '',
@@ -133,7 +135,7 @@ const AddCustomerForm = () => {
 
               {renderTextFields([
                 'billing_recipient_name', 'billing_country', 'billing_address1',
-                'billing_address2', 'billing_city', 'billing_state',
+                'billing_address2', 'billing_city', 'billing_state', 'billing_state_code',
                 'billing_pincode', 'billing_fax', 'billing_phone'
               ])}
               </Grid>
@@ -148,7 +150,7 @@ const AddCustomerForm = () => {
 
               {renderTextFields([
                 'shipping_recipient_name', 'shipping_country', 'shipping_address1',
-                'shipping_address2', 'shipping_city', 'shipping_state',
+                'shipping_address2', 'shipping_city', 'shipping_state', 'shipping_state_code',
                 'shipping_pincode', 'shipping_fax', 'shipping_phone'
               ])}
 

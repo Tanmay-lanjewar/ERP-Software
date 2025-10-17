@@ -30,7 +30,7 @@ const invoice = {
         SELECT 
           i.invoice_id, i.invoice_number, i.customer_id, i.customer_name, i.invoice_date, 
           i.expiry_date, i.subject, i.customer_notes, i.terms_and_conditions, 
-          i.sub_total, i.freight, i.cgst, i.sgst, i.grand_total, i.status,
+          i.sub_total, i.freight, i.cgst, i.sgst, i.igst, i.grand_total, i.status,
           fy.start_date as fy_start_date,
           fy.end_date as fy_end_date,
           CONCAT('FY ', YEAR(fy.start_date), '-', RIGHT(YEAR(fy.end_date), 2)) as financial_year_name
@@ -48,7 +48,7 @@ const invoice = {
 
   getById: (id, callback) => {
     db.query(
-      'SELECT invoice_id, invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject, customer_notes, terms_and_conditions, sub_total, freight, cgst, sgst, grand_total, status FROM invoice WHERE invoice_id = ?',
+      'SELECT invoice_id, invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject, customer_notes, terms_and_conditions, sub_total, freight, cgst, sgst, igst, grand_total, status FROM invoice WHERE invoice_id = ?',
       [id],
       (err, results) => {
         if (err) return callback(err);
@@ -143,38 +143,159 @@ const invoice = {
       return callback(new Error('At least one item is required'));
     }
 
-    let sub_total = 0;
-    items.forEach(item => {
-      const quantity = parseFloat(item.quantity) || 0;
-      const rate = parseFloat(item.rate) || 0;
-      const discount = parseFloat(item.discount) || 0;
-      const amount = (quantity * rate) - discount;
-      item.amount = parseFloat(amount.toFixed(2));
-      sub_total += amount;
-      // Assuming getProductNameById is also callback based or handled separately
-      // If item.item_detail needs a lookup, it will also need to be callback-based
+    // First, get customer billing state code
+    db.query('SELECT billing_state_code FROM customers WHERE id = ?', [data.customer_id], (custErr, custResult) => {
+      if (custErr) return callback(custErr);
+      
+      const billingStateCode = custResult.length > 0 ? (custResult[0].billing_state_code || '') : '';
+
+      let sub_total = 0;
+      items.forEach(item => {
+        const quantity = parseFloat(item.quantity) || 0;
+        const rate = parseFloat(item.rate) || 0;
+        const discount = parseFloat(item.discount) || 0;
+        const amount = (quantity * rate) - discount;
+        item.amount = parseFloat(amount.toFixed(2));
+        sub_total += amount;
+      });
+
+      sub_total = parseFloat(sub_total.toFixed(2));
+      const freight = parseFloat(data.freight || 0);
+      const subtotalWithFreight = sub_total + freight;
+      
+      // Conditional GST calculation based on customer billing state code
+      let cgst = 0, sgst = 0, igst = 0;
+      
+      if (billingStateCode === '27') {
+        // Maharashtra - use CGST/SGST
+        cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+        sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+        igst = 0;
+      } else {
+        // Other states - use IGST
+        cgst = 0;
+        sgst = 0;
+        igst = parseFloat((subtotalWithFreight * 0.18).toFixed(2));
+      }
+      
+      const grand_total = parseFloat((subtotalWithFreight + cgst + sgst + igst).toFixed(2));
+
+      invoice.getNextInvoiceNumber((err, result) => {
+        if (err) return callback(err);
+        const invoiceNumber = result.nextInvoiceNumber;
+
+        const invoiceSql = `
+          INSERT INTO invoice (
+            invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject,
+            customer_notes, terms_and_conditions, sub_total, freight, cgst, sgst, igst, grand_total, status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const invoiceValues = [
+          invoiceNumber,
+          data.customer_id,
+          data.customer_name,
+          data.invoice_date,
+          data.expiry_date,
+          data.subject,
+          data.customer_notes,
+          data.terms_and_conditions,
+          sub_total,
+          freight,
+          cgst,
+          sgst,
+          igst,
+          grand_total,
+          data.status || 'Draft',
+        ];
+
+        db.query(invoiceSql, invoiceValues, (err, result) => {
+          if (err) return callback(err);
+          const invoiceId = result.insertId;
+
+          const itemSql = `
+            INSERT INTO invoice_items (
+              invoice_id, item_detail, quantity, rate, discount, amount, uom_amount, uom_description
+            ) VALUES ?
+          `;
+
+          const itemValues = items.map(item => [
+            invoiceId,
+            item.item_detail,
+            item.quantity,
+            item.rate,
+            item.discount,
+            item.amount,
+            item.uom_amount || 0,
+            item.uom_description || "",
+          ]);
+
+          db.query(itemSql, [itemValues], (itemErr, itemResult) => {
+            if (itemErr) return callback(itemErr);
+            callback(null, {
+              invoiceId,
+              invoiceNumber,
+              itemsInserted: itemResult.affectedRows,
+              sub_total,
+              freight,
+              cgst,
+              sgst,
+              igst,
+              grand_total,
+            });
+          });
+        });
+      });
     });
+  },
 
-    sub_total = parseFloat(sub_total.toFixed(2));
-    const freight = parseFloat(data.freight || 0);
-    const subtotalWithFreight = sub_total + freight;
-    const cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
-    const sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
-    const grand_total = parseFloat((subtotalWithFreight + cgst + sgst).toFixed(2));
+  update: (id, data, items = [], callback) => {
+    // First, get customer billing state code
+    db.query('SELECT billing_state_code FROM customers WHERE id = ?', [data.customer_id], (custErr, custResult) => {
+      if (custErr) return callback(custErr);
+      
+      const billingStateCode = custResult.length > 0 ? (custResult[0].billing_state_code || '') : '';
 
-    invoice.getNextInvoiceNumber((err, result) => {
-      if (err) return callback(err);
-      const invoiceNumber = result.nextInvoiceNumber;
+      let sub_total = 0;
+      items.forEach(item => {
+        const quantity = parseFloat(item.quantity) || 0;
+        const rate = parseFloat(item.rate) || 0;
+        const discount = parseFloat(item.discount) || 0;
+        const amount = (quantity * rate) - discount;
+        item.amount = parseFloat(amount.toFixed(2));
+        sub_total += amount;
+      });
+
+      sub_total = parseFloat(sub_total.toFixed(2));
+      const freight = parseFloat(data.freight || 0);
+      const subtotalWithFreight = sub_total + freight;
+      
+      // Conditional GST calculation based on customer billing state code
+      let cgst = 0, sgst = 0, igst = 0;
+      
+      if (billingStateCode === '27') {
+        // Maharashtra - use CGST/SGST
+        cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+        sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+        igst = 0;
+      } else {
+        // Other states - use IGST
+        cgst = 0;
+        sgst = 0;
+        igst = parseFloat((subtotalWithFreight * 0.18).toFixed(2));
+      }
+      
+      const grand_total = parseFloat((subtotalWithFreight + cgst + sgst + igst).toFixed(2));
 
       const invoiceSql = `
-        INSERT INTO invoice (
-          invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject,
-          customer_notes, terms_and_conditions, sub_total, freight, cgst, sgst, grand_total, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        UPDATE invoice SET
+          customer_id = ?, customer_name = ?, invoice_date = ?, expiry_date = ?,
+          subject = ?, customer_notes = ?, terms_and_conditions = ?,
+          sub_total = ?, freight = ?, cgst = ?, sgst = ?, igst = ?, grand_total = ?, status = ?
+        WHERE invoice_id = ?
       `;
 
       const invoiceValues = [
-        invoiceNumber,
         data.customer_id,
         data.customer_name,
         data.invoice_date,
@@ -186,126 +307,49 @@ const invoice = {
         freight,
         cgst,
         sgst,
+        igst,
         grand_total,
         data.status || 'Draft',
+        id,
       ];
 
-      db.query(invoiceSql, invoiceValues, (err, result) => {
+      db.query(invoiceSql, invoiceValues, (err) => {
         if (err) return callback(err);
-        const invoiceId = result.insertId;
 
-        const itemSql = `
-          INSERT INTO invoice_items (
-            invoice_id, item_detail, quantity, rate, discount, amount, uom_amount, uom_description
-          ) VALUES ?
-        `;
+        db.query(`DELETE FROM invoice_items WHERE invoice_id = ?`, [id], (deleteErr) => {
+          if (deleteErr) return callback(deleteErr);
 
-        const itemValues = items.map(item => [
-          invoiceId,
-          item.item_detail,
-          item.quantity,
-          item.rate,
-          item.discount,
-          item.amount,
-          item.uom_amount || 0,
-          item.uom_description || "",
-        ]);
-
-        db.query(itemSql, [itemValues], (itemErr, itemResult) => {
-          if (itemErr) return callback(itemErr);
-          callback(null, {
-            invoiceId,
-            invoiceNumber,
-            itemsInserted: itemResult.affectedRows,
-            sub_total,
-            freight,
-            cgst,
-            sgst,
-            grand_total,
-          });
-        });
-      });
-    });
-  },
-
-  update: (id, data, items = [], callback) => {
-    let sub_total = 0;
-    items.forEach(item => {
-      const quantity = parseFloat(item.quantity) || 0;
-      const rate = parseFloat(item.rate) || 0;
-      const discount = parseFloat(item.discount) || 0;
-      const amount = (quantity * rate) - discount;
-      item.amount = parseFloat(amount.toFixed(2));
-      sub_total += amount;
-    });
-
-    sub_total = parseFloat(sub_total.toFixed(2));
-    const freight = parseFloat(data.freight || 0);
-    const subtotalWithFreight = sub_total + freight;
-    const cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
-    const sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
-    const grand_total = parseFloat((subtotalWithFreight + cgst + sgst).toFixed(2));
-
-    const invoiceSql = `
-      UPDATE invoice SET
-        customer_id = ?, customer_name = ?, invoice_date = ?, expiry_date = ?,
-        subject = ?, customer_notes = ?, terms_and_conditions = ?,
-        sub_total = ?, freight = ?, cgst = ?, sgst = ?, grand_total = ?, status = ?
-      WHERE invoice_id = ?
-    `;
-
-    const invoiceValues = [
-      data.customer_id,
-      data.customer_name,
-      data.invoice_date,
-      data.expiry_date,
-      data.subject,
-      data.customer_notes,
-      data.terms_and_conditions,
-      sub_total,
-      freight,
-      cgst,
-      sgst,
-      grand_total,
-      data.status || 'Draft',
-      id,
-    ];
-
-    db.query(invoiceSql, invoiceValues, (err) => {
-      if (err) return callback(err);
-
-      db.query(`DELETE FROM invoice_items WHERE invoice_id = ?`, [id], (deleteErr) => {
-        if (deleteErr) return callback(deleteErr);
-
-        if (items.length > 0) {
-          const itemSql = `
-            INSERT INTO invoice_items (
-              invoice_id, item_detail, quantity, rate, discount, amount
-            ) VALUES ?
-          `;
-          const itemValues = items.map(item => [
-            id,
-            item.item_detail,
-            item.quantity,
-            item.rate,
-            item.discount,
-            item.amount,
-          ]);
-          db.query(itemSql, [itemValues], (itemErr, itemResult) => {
-            if (itemErr) return callback(itemErr);
-            callback(null, {
-              invoiceId: id,
-              itemsUpdated: itemResult.affectedRows,
-              sub_total,
-              freight,
-              cgst,
-              sgst,
-              grand_total,
+          if (items.length > 0) {
+            const itemSql = `
+              INSERT INTO invoice_items (
+                invoice_id, item_detail, quantity, rate, discount, amount
+              ) VALUES ?
+            `;
+            const itemValues = items.map(item => [
+              id,
+              item.item_detail,
+              item.quantity,
+              item.rate,
+              item.discount,
+              item.amount,
+            ]);
+            db.query(itemSql, [itemValues], (itemErr, itemResult) => {
+              if (itemErr) return callback(itemErr);
+              callback(null, {
+                invoiceId: id,
+                itemsUpdated: itemResult.affectedRows,
+                sub_total,
+                freight,
+                cgst,
+                sgst,
+                igst,
+                grand_total,
+              });
             });
-          });
-        } else {
-          callback(null, { invoiceId: id, itemsUpdated: 0, sub_total, freight, cgst, sgst, grand_total });
-        }
+          } else {
+            callback(null, { invoiceId: id, itemsUpdated: 0, sub_total, freight, cgst, sgst, igst, grand_total });
+          }
+        });
       });
     });
   },
