@@ -206,3 +206,41 @@ CREATE TABLE IF NOT EXISTS work_order_items (
   amount FLOAT,
   FOREIGN KEY (work_order_id) REFERENCES work_orders(work_order_id) ON DELETE CASCADE
 );
+
+-- Create table for pro_forma_invoice
+CREATE TABLE IF NOT EXISTS pro_forma_invoice (
+  proforma_id INT AUTO_INCREMENT PRIMARY KEY,
+  proforma_number VARCHAR(20) NOT NULL UNIQUE,
+  customer_id INT,
+  customer_name VARCHAR(255) NOT NULL,
+  proforma_date DATE NOT NULL,
+  due_date DATE NOT NULL,
+  payment_terms VARCHAR(255),
+  subject VARCHAR(255),
+  customer_notes TEXT,
+  terms_and_conditions TEXT,
+  attachment_url VARCHAR(500),
+  sub_total DOUBLE,
+  freight DOUBLE DEFAULT 0,
+  cgst DOUBLE,
+  sgst DOUBLE,
+  igst DOUBLE DEFAULT 0,
+  grand_total DOUBLE,
+  status ENUM('Draft', 'Sent', 'Accepted', 'Rejected') DEFAULT 'Draft',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Create table for pro_forma_invoice_items
+CREATE TABLE IF NOT EXISTS pro_forma_invoice_items (
+  item_id INT AUTO_INCREMENT PRIMARY KEY,
+  proforma_id INT,
+  item_detail VARCHAR(255),
+  hsn_sac VARCHAR(50),
+  quantity INT,
+  unit VARCHAR(50),
+  rate DOUBLE,
+  discount FLOAT,
+  amount FLOAT,
+  FOREIGN KEY (proforma_id) REFERENCES pro_forma_invoice(proforma_id) ON DELETE CASCADE
+);

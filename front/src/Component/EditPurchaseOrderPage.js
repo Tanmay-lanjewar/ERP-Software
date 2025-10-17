@@ -280,6 +280,7 @@ export default function EditPurchaseOrderPage() {
                               updateRow(index, "item", selectedProductId);
                               updateRow(index, "item_name", product ? product.product_name : '');
                               updateRow(index, "rate", product ? product.sale_price || 0 : 0);
+                              updateRow(index, "uom_description", product ? product.unit || '' : '');
                             }}
                             size="small"
                             displayEmpty

@@ -17,6 +17,7 @@ import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../redux/slices/authSlice';
+import uiImage from '../assets/ui.png';
 
 // Custom styled components
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -131,15 +132,28 @@ const Login = () => {
         }}
       >
         <StyledPaper elevation={6}>
-          <StyledAvatar>
+          {/* UI Image replacing the blue circle avatar */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              mb: 0,
+            }}
+          >
             <img 
-              src="/meraki-logo.png" 
-              alt="Meraki Logo"
-              style={{ width: '100%', height: '100%', padding: '8px' }}
+              src={uiImage} 
+              alt="ERP UI"
+              style={{ 
+                width: '250px', 
+                height: 'auto', 
+                maxWidth: '100%',
+                objectFit: 'contain'
+              }}
             />
-          </StyledAvatar>
-          <Typography component="h1" variant="h5" sx={{ mt: 2, fontWeight: 600 }}>
-            Welcome to Meraki
+          </Box>
+          <Typography component="h1" variant="h5" sx={{ mt: 2, mb: 2, fontWeight: 600 }}>
+            Welcome to ERP
           </Typography>
           <Form onSubmit={handleSubmit}>
             <FormControl 

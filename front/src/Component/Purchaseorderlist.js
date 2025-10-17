@@ -136,9 +136,9 @@ const PurchaseOrderActions = () => {
         
             </div>
             <div style="text-align: right;">
-                <div style="margin-bottom: 2px;margin-right: 53px;"><strong>PO No:</strong> ${poData.purchase_order_no}</div>
-                <div style="margin-bottom: 2px; margin-right: 9px;"><strong>Date:</strong> ${formatDate(poData.purchase_order_date)}</div>
-                <div style="margin-right: 48px;"><strong>JO ID:</strong> ${poData.jo_id || 'N/A'}</div>
+                <div style="margin-bottom: 2px;margin-right: 53px; text-align : justify ;"; ><strong>PO No:</strong> ${poData.purchase_order_no}</div>
+                <div style="margin-bottom: 2px; margin-right: 9px;text-align : justify ;"><strong>Date:</strong> ${formatDate(poData.purchase_order_date)}</div>
+                <div style="margin-right: 48px;text-align : justify ;"><strong>JO ID:</strong> ${poData.jo_id || 'N/A'}</div>
             </div>
         </div>
 
