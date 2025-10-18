@@ -74,6 +74,7 @@ const NewWorkOrder = () => {
   const [purchaseorderdate, setpurchaseorderdate] = useState('');
 
   const [products, setProducts] = useState([]);
+  const [units, setUnits] = useState([]);
 
   const [rows, setRows] = useState([{ item: '', itemName: '', qty: 0, rate: 0, discount: 0, amount: 0, uom_description: '', uom_amount: 0 }]);
   const [subtotal, setSubtotal] = useState(0);
@@ -109,6 +110,23 @@ const NewWorkOrder = () => {
       })
       .catch((error) => {
         console.error('Error fetching products:', error);
+      });
+  }, []);
+  
+  useEffect(() => {
+    fetch('http://localhost:5000/api/product_units')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setUnits(data);
+      })
+      .catch((error) => {
+        console.error('Error fetching units:', error);
+        setUnits([]);
       });
   }, []);
 
@@ -530,13 +548,22 @@ const NewWorkOrder = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <TextField
-                          fullWidth
-                          value={row.uom_description}
-                          onChange={(e) => updateRow(index, 'uom_description', e.target.value)}
-                          size="small"
-                          placeholder="Unit"
-                        />
+                        <FormControl fullWidth size="small">
+                          <Select
+                            value={row.uom_description}
+                            onChange={(e) => updateRow(index, 'uom_description', e.target.value)}
+                            displayEmpty
+                          >
+                            <MenuItem value="">
+                              <em>Select Unit</em>
+                            </MenuItem>
+                            {units.map((unit, idx) => (
+                              <MenuItem key={idx} value={unit.unit_name}>
+                                {unit.unit_name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
                       </TableCell>
                       <TableCell>
                         <TextField
@@ -598,51 +625,44 @@ const NewWorkOrder = () => {
 
           <Grid container spacing={2} mt={2} justifyContent="space-between" alignItems="flex-start">
             <Grid item xs={12} sm={12} md={11}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 3,
-                  borderRadius: 2,
-                  bgcolor: '#fafafa',
-                  width: '100%',
-                  height: '100%',
-                  minHeight: '400px',
-                }}
-              >
-                <TextField
+              <TextField
                   fullWidth
                   label="Terms & Conditions"
                   value={termsConditions}
-                  onChange={(e) => setTermsConditions(e.target.value)}
-                  multiline
-                  minRows={12}
-                  maxRows={20}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '8px',
-                      bgcolor: '#ffffff',
-                      fontSize: '14px',
-                      lineHeight: '1.5',
-                      padding: '16px',
-                      '& textarea': {
-                        resize: 'vertical',
-                        padding: '8px',
-                        wordBreak: 'keep-all',
-                        overflowWrap: 'normal',
-                      },
-                    },
-                    '& .MuiInputLabel-root': {
-                      fontWeight: 600,
-                      color: '#333',
-                    },
+                  onKeyDown={(e) => {
+                    // Add bullet point on Enter key press
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const cursorPosition = e.target.selectionStart;
+                      const currentValue = termsConditions;
+                      const newValue = currentValue.substring(0, cursorPosition) + '\n* ' + currentValue.substring(cursorPosition);
+                      setTermsConditions(newValue);
+                      // Set cursor position after the new bullet point
+                      setTimeout(() => {
+                        e.target.setSelectionRange(cursorPosition + 3, cursorPosition + 3);
+                      }, 0);
+                    }
                   }}
-                  placeholder="Enter terms and conditions for this work order..."
-                />
-                <Box display="flex" alignItems="center" mt={1}>
-                  <Checkbox />
-                  <Typography variant="body2">Use this in future for all Work Orders</Typography>
-                </Box>
-              </Paper>
+                  onChange={(e) => {
+                    // Ensure bullet points are preserved
+                    const lines = e.target.value.split('\n');
+                    const preservedLines = lines.map(line => {
+                      // If line doesn't start with bullet point, add it
+                      if (!line.trim().startsWith('*')) {
+                        return '* ' + line.trim();
+                      }
+                      return line;
+                    });
+                    setTermsConditions(preservedLines.join('\n'));
+                  }}
+                multiline
+                rows={8}
+                helperText="Each line will automatically start with a bullet point (*). Will be displayed on the work order"
+              />
+              <Box display="flex" alignItems="center" mt={1}>
+                <Checkbox />
+                <Typography variant="body2">Use this in future for all Work Orders</Typography>
+              </Box>
             </Grid>
             <Grid item xs={0} sm={0} md={1} sx={{ display: { xs: 'none', sm: 'none', md: 'block' } }}>
               <Paper

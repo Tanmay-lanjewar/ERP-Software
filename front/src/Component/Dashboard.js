@@ -5,7 +5,6 @@ import {
   Typography,
   InputBase,
   IconButton,
-  Avatar,
   Paper,
   Chip,
   Button,
@@ -348,17 +347,7 @@ const Dashboard = () => {
                   >
                     All Invoices
                   </Button>
-                  <Button
-                    variant="outlined"
-                    sx={{
-                      borderColor: "#f0f0f0",
-                      color: "#004085",
-                      textTransform: "none",
-                      "&:hover": { borderColor: "#ccc", color: "#003060" },
-                    }}
-                  >
-                    Customer
-                  </Button>
+                 
                 </Box>
               </Paper>
 

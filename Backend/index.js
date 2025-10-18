@@ -13,8 +13,9 @@ app.use(cors());
 
 app.use(bodyParser.json());
 
-//product units routes : /api/units
+//product units routes
 app.use('/api/units', productUnitRoutes);
+app.use('/api/product_units', productUnitRoutes);
 
 // Authentication routes: for /api/auth/register and /api/auth/login
 const authRoutes = require('./routes/auth');

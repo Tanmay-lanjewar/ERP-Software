@@ -13,7 +13,7 @@ import {
   Divider,
   Breadcrumbs,
   InputBase,
-  Avatar,
+  
   Table,
   TableBody,
   TableCell,
@@ -27,7 +27,6 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -47,10 +46,11 @@ const PurchaseOrderForm = () => {
   const [paymentTerms, setPaymentTerms] = useState("Due end of the month");
   const [dueDate, setDueDate] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
-  const [termsAndConditions, setTermsAndConditions] = useState("");
+  const [termsAndConditions, setTermsAndConditions] = useState("• Payment Terms: 100% After Delivery.\n• PO Validity : 4 Month\n• Delivery: 1 to 2 Weeks (Immediate)\n• Document Required: Test Certificate");
   const [freight, setFreight] = useState(0);
   const [vendorModalOpen, setVendorModalOpen] = useState(false);
   const [products, setProducts] = useState([]);
+  const [units, setUnits] = useState([]);
   const [rows, setRows] = useState([
     { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" },
   ]);
@@ -77,6 +77,15 @@ const PurchaseOrderForm = () => {
       })
       .catch((error) => {
         console.error("Error fetching products:", error);
+      });
+      
+    // Fetch units
+    axios
+      .get("http://localhost:5000/api/product_units")
+      .then((res) => setUnits(res.data))
+      .catch((error) => {
+        console.error("Error fetching units:", error);
+        setUnits([]);
       });
 
     // Fetch purchase order number (assuming a similar endpoint exists)
@@ -525,15 +534,24 @@ const PurchaseOrderForm = () => {
                           />
                         </TableCell>
                         <TableCell>
-                          <TextField
+                          <Select
                             fullWidth
                             value={row.uom_description || ""}
                             onChange={(e) =>
                               updateRow(index, "uom_description", e.target.value)
                             }
                             size="small"
-                            placeholder="Unit"
-                          />
+                            displayEmpty
+                          >
+                            <MenuItem value="">
+                              <em>Select Unit</em>
+                            </MenuItem>
+                            {units.map((unit) => (
+                              <MenuItem key={unit.id} value={unit.unit_name}>
+                                {unit.unit_name}
+                              </MenuItem>
+                            ))}
+                          </Select>
                         </TableCell>
                         <TableCell>
                           <TextField
@@ -588,12 +606,12 @@ const PurchaseOrderForm = () => {
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <TextField
                       multiline
-                      rows={1}
-                      label="Vendor Notes"
-                      value={customerNotes}
-                      onChange={(e) => setCustomerNotes(e.target.value)}
-                      helperText="Will be displayed on the purchase order"
-                      sx={{ bgcolor: "#f9fafb", borderRadius: 1, width: 500 }}
+                  rows={4}
+                  label="Vendor Notes"
+                  value={customerNotes}
+                  onChange={(e) => setCustomerNotes(e.target.value)}
+                  helperText="Will be displayed on the purchase order"
+                  sx={{ bgcolor: "#f9fafb", borderRadius: 1, width: 500 }}
                     />
                   </Paper>
                 </Grid>
@@ -654,9 +672,36 @@ const PurchaseOrderForm = () => {
                 />
                 <TextField
                   fullWidth
+                  multiline
+                  rows={4}
                   label="Terms & Conditions"
                   value={termsAndConditions}
-                  onChange={(e) => setTermsAndConditions(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Add bullet point on Enter key press
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const cursorPosition = e.target.selectionStart;
+                      const currentValue = termsAndConditions;
+                      const newValue = currentValue.substring(0, cursorPosition) + '\n• ' + currentValue.substring(cursorPosition);
+                      setTermsAndConditions(newValue);
+                      // Set cursor position after the new bullet point
+                      setTimeout(() => {
+                        e.target.setSelectionRange(cursorPosition + 3, cursorPosition + 3);
+                      }, 0);
+                    }
+                  }}
+                  onChange={(e) => {
+                    // Ensure bullet points are preserved
+                    const lines = e.target.value.split('\n');
+                    const preservedLines = lines.map(line => {
+                      // If line doesn't start with bullet point, add it
+                      if (!line.trim().startsWith('•') && !line.trim().startsWith('*')) {
+                        return '• ' + line.trim();
+                      }
+                      return line;
+                    });
+                    setTermsAndConditions(preservedLines.join('\n'));
+                  }}
                   helperText="Will be displayed on the purchase order"
                 />
                 <Box display="flex" alignItems="center" mt={1}>

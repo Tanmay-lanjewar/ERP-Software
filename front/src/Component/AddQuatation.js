@@ -51,16 +51,18 @@ export default function NewQuotation() {
     "Thanks for your business."
   );
   const [termsAndConditions, setTermsAndConditions] = useState(
-    "Delivery Period: 3 to 4 weeks from the date of technically and commercially clear order.\n" +
-      "Installation Period: 2 to 3 weeks\n" +
-      "Transportation: Extra at Actual\n" +
-      "Payment Terms:\n" +
-      "a) 30% Advance along with Purchase order\n" +
-      "b) 65% Against proforma invoice prior to dispatch\n" +
-      "c) 5% after successfull Installation and commissioning\n" +
-      "Warranty: Offer a standard warranty of 15 months from date of dispatch or 12 months from date of satisfactory installation whichever is earlier\n" +
-      "Validity: Our offer shall remain valid for 15 days\n" +
-      "Exclusions: Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting arrangement for installation activities, Scrap folding, Scissor lift."
+    "Delivery Period    : 3 to 4 weeks from the date of technically and commercially clear order.\n" +
+    "Installation Period: 2 to 3 weeks\n" +
+    "Transportation     : Extra at Actual\n" +
+    "Payment Terms      : Supply/Installation Terms\n" +
+    "                     a) 30% Advance along with Purchase order\n" +
+    "                     b) 65% Against proforma invoice prior to dispatch\n" +
+    "                     c) 5% after successfull Installation and commissioning\n" +
+    "Warranty           : Offer a standard warranty of 15 months from date of dispatch or 12 months from date of\n" +
+    "                     satisfactory installation whichever is earlier\n" +
+    "Validity           : Our Offer shall remain valid for 15 days\n" +
+    "Exclusions         : Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting arrangem\n" +
+    "                     -ent for installation activities, Scrap folding, Scissor lift."
   );
 
   const [attachment, setAttachment] = useState(null);
@@ -88,6 +90,17 @@ export default function NewQuotation() {
   const [customers, setCustomers] = useState([]);
   const [quoteNumber, setQuoteNumber] = useState("");
   const [customerBillingStateCode, setCustomerBillingStateCode] = useState("");
+  const [units, setUnits] = useState([]);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/product_units")
+      .then((res) => setUnits(res.data))
+      .catch((error) => {
+        console.error("Error fetching units:", error);
+        setUnits([]);
+      });
+  }, []);
 
   useEffect(() => {
     axios
@@ -590,15 +603,24 @@ export default function NewQuotation() {
                           />
                         </TableCell>
                          <TableCell>
-                          <TextField
+                          <Select
                             fullWidth
-                            type="text"
                             value={row.uom}
                             onChange={(e) =>
                               updateRow(index, "uom", e.target.value)
                             }
                             size="small"
-                          />
+                            displayEmpty
+                          >
+                            <MenuItem value="">
+                              <em>Select Unit</em>
+                            </MenuItem>
+                            {units.map((unit, idx) => (
+                              <MenuItem key={idx} value={unit.unit_name}>
+                                {unit.unit_name}
+                              </MenuItem>
+                            ))}
+                          </Select>
                         </TableCell>
                         <TableCell>
                           <TextField
@@ -728,16 +750,32 @@ export default function NewQuotation() {
                   fullWidth
                   label="Terms & Conditions"
                   value={termsAndConditions}
-                  onChange={(e) => setTermsAndConditions(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Add bullet point on Enter key press
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const cursorPosition = e.target.selectionStart;
+                      const currentValue = termsAndConditions;
+                      const newValue = currentValue.substring(0, cursorPosition) + '\n* ' + currentValue.substring(cursorPosition);
+                      setTermsAndConditions(newValue);
+                      // Set cursor position after the new bullet point
+                      setTimeout(() => {
+                        e.target.setSelectionRange(cursorPosition + 3, cursorPosition + 3);
+                      }, 0);
+                    }
+                  }}
+                  onChange={(e) => {
+                    setTermsAndConditions(e.target.value);
+                  }}
                   multiline
-                  rows={12}
+                  rows={8}
                   placeholder="Enter terms and conditions here..."
                   variant="outlined"
                   sx={{
-                    minHeight: 200,
+                    minHeight: 250,
                     bgcolor: "#f9fafb",
                     borderRadius: 1,
-                    width: "100%", // Take full width
+                    width: "207%", // Take full width
                     "& .MuiOutlinedInput-root": {
                       fontSize: 15,
                     },

@@ -147,7 +147,7 @@ const quotation = {
             customer_name, quote_number, quotation_date, expiry_date, subject,
             customer_notes, terms_and_conditions,
             sub_total, freight, cgst, sgst, igst, grand_total, attachment_url, status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const quotationValues = [

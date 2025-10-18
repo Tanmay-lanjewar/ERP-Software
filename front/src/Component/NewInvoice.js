@@ -54,6 +54,7 @@ const NewInvoicePage = () => {
   const [termsAndConditions, setTermsAndConditions] = useState("");
   const [freight, setFreight] = useState(0);
   const [products, setProducts] = useState([]);
+  const [units, setUnits] = useState([]);
   const [rows, setRows] = useState([
     { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" },
   ]);
@@ -98,6 +99,18 @@ const NewInvoicePage = () => {
       })
       .catch((error) => {
         console.error("Error fetching products:", error);
+      });
+      
+    // Fetch units
+    axios
+      .get("http://localhost:5000/api/product_units")
+      .then((res) => {
+        console.log('Units response:', res.data);
+        setUnits(res.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching units:", error);
+        setUnits([]);
       });
   }, []);
 
@@ -487,14 +500,22 @@ const NewInvoicePage = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <TextField
+                        <Select
                           fullWidth
-                          type="text"
                           value={row.uom_description}
                           onChange={(e) => updateRow(index, "uom_description", e.target.value)}
-                          placeholder="Unit"
                           size="small"
-                        />
+                          displayEmpty
+                        >
+                          <MenuItem value="">
+                            <em>Select Unit</em>
+                          </MenuItem>
+                          {units.map((unit) => (
+                            <MenuItem key={unit.id} value={unit.unit_name}>
+                              {unit.unit_name}
+                            </MenuItem>
+                          ))}
+                        </Select>
                       </TableCell>
                       <TableCell>
                         <TextField

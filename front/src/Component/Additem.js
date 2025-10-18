@@ -63,7 +63,7 @@ export default function AddItems() {
   // Fetch Units from backend
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/units")
+      .get("http://localhost:5000/api/product_units")
       .then((res) => {
         const unitNames = res.data.map(unit => unit.unit_name);
         setUnits(unitNames);
@@ -139,7 +139,7 @@ export default function AddItems() {
       
       try {
         // Save to backend first
-        await axios.post("http://localhost:5000/api/units", {
+        await axios.post("http://localhost:5000/api/product_units", {
           unit_name: trimmedUnit
         });
         
