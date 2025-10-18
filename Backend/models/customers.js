@@ -17,9 +17,9 @@ const Customer = {
       customer_type, title, customer_name, company_name, display_name,
       email, mobile, office_no, pan, gst, currency, document_path,
       billing_recipient_name, billing_country, billing_address1, billing_address2,
-      billing_city, billing_state, billing_pincode, billing_fax, billing_phone,
+      billing_city, billing_state, billing_state_code, billing_pincode, billing_fax, billing_phone,
       shipping_recipient_name, shipping_country, shipping_address1, shipping_address2,
-      shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
+      shipping_city, shipping_state, shipping_state_code, shipping_pincode, shipping_fax, shipping_phone,
       remark, status
     } = data;
 
@@ -28,32 +28,32 @@ const Customer = {
         customer_type, title, customer_name, company_name, display_name,
         email, mobile, office_no, pan, gst, currency, document_path,
         billing_recipient_name, billing_country, billing_address1, billing_address2,
-        billing_city, billing_state, billing_pincode, billing_fax, billing_phone,
+        billing_city, billing_state, billing_state_code, billing_pincode, billing_fax, billing_phone,
         shipping_recipient_name, shipping_country, shipping_address1, shipping_address2,
-        shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
+        shipping_city, shipping_state, shipping_state_code, shipping_pincode, shipping_fax, shipping_phone,
         remark, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         customer_type, title, customer_name, company_name, display_name,
         email, mobile, office_no, pan, gst, currency, document_path,
         billing_recipient_name, billing_country, billing_address1, billing_address2,
-        billing_city, billing_state, billing_pincode, billing_fax, billing_phone,
+        billing_city, billing_state, billing_state_code, billing_pincode, billing_fax, billing_phone,
         shipping_recipient_name, shipping_country, shipping_address1, shipping_address2,
-        shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
+        shipping_city, shipping_state, shipping_state_code, shipping_pincode, shipping_fax, shipping_phone,
         remark, status || 'Active'
       ],
       cb
     );
   },
 
-  update: async (id, data) => {
+  update: (id, data, cb) => {
     const {
       customer_type, title, customer_name, company_name, display_name,
       email, mobile, office_no, pan, gst, currency, document_path,
       billing_recipient_name, billing_country, billing_address1, billing_address2,
-      billing_city, billing_state, billing_pincode, billing_fax, billing_phone,
+      billing_city, billing_state, billing_state_code, billing_pincode, billing_fax, billing_phone,
       shipping_recipient_name, shipping_country, shipping_address1, shipping_address2,
-      shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
+      shipping_city, shipping_state, shipping_state_code, shipping_pincode, shipping_fax, shipping_phone,
       remark, status
     } = data;
 
@@ -61,9 +61,9 @@ const Customer = {
       customer_type=?, title=?, customer_name=?, company_name=?, display_name=?,
       email=?, mobile=?, office_no=?, pan=?, gst=?, currency=?, document_path=?,
       billing_recipient_name=?, billing_country=?, billing_address1=?, billing_address2=?,
-      billing_city=?, billing_state=?, billing_pincode=?, billing_fax=?, billing_phone=?,
+      billing_city=?, billing_state=?, billing_state_code=?, billing_pincode=?, billing_fax=?, billing_phone=?,
       shipping_recipient_name=?, shipping_country=?, shipping_address1=?, shipping_address2=?,
-      shipping_city=?, shipping_state=?, shipping_pincode=?, shipping_fax=?, shipping_phone=?,
+      shipping_city=?, shipping_state=?, shipping_state_code=?, shipping_pincode=?, shipping_fax=?, shipping_phone=?,
       remark=?, status=?
       WHERE id=?`;
 
@@ -71,24 +71,21 @@ const Customer = {
       customer_type, title, customer_name, company_name, display_name,
       email, mobile, office_no, pan, gst, currency, document_path,
       billing_recipient_name, billing_country, billing_address1, billing_address2,
-      billing_city, billing_state, billing_pincode, billing_fax, billing_phone,
+      billing_city, billing_state, billing_state_code, billing_pincode, billing_fax, billing_phone,
       shipping_recipient_name, shipping_country, shipping_address1, shipping_address2,
-      shipping_city, shipping_state, shipping_pincode, shipping_fax, shipping_phone,
+      shipping_city, shipping_state, shipping_state_code, shipping_pincode, shipping_fax, shipping_phone,
       remark, status || 'Active', id
     ];
 
-    const [result] = await pool.query(sql, values);
-    return result;
+    db.query(sql, values, cb);
   },
 
-  remove: async (id) => {
-    const [result] = await pool.query('DELETE FROM customers WHERE id=?', [id]);
-    return result;
+  remove: (id, cb) => {
+    db.query('DELETE FROM customers WHERE id=?', [id], cb);
   },
 
-  updateStatus: async (id, status) => {
-    const [result] = await pool.query('UPDATE customers SET status = ? WHERE id = ?', [status, id]);
-    return result;
+  updateStatus: (id, status, cb) => {
+    db.query('UPDATE customers SET status = ? WHERE id = ?', [status, id], cb);
   },
 };
 

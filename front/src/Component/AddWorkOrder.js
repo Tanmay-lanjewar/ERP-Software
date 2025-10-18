@@ -75,7 +75,7 @@ const NewWorkOrder = () => {
 
   const [products, setProducts] = useState([]);
 
-  const [rows, setRows] = useState([{ item: '', itemName: '', qty: 0, rate: 0, discount: 0, amount: 0 }]);
+  const [rows, setRows] = useState([{ item: '', itemName: '', qty: 0, rate: 0, discount: 0, amount: 0, uom_description: '', uom_amount: 0 }]);
   const [subtotal, setSubtotal] = useState(0);
   const [gst, setGst] = useState(0);
   const [total, setTotal] = useState(0);
@@ -135,7 +135,7 @@ const NewWorkOrder = () => {
   };
 
   const addNewRow = () => {
-    setRows([...rows, { item: '', qty: 0, rate: 0, discount: 0, amount: 0 }]);
+    setRows([...rows, { item: '', qty: 0, rate: 0, discount: 0, amount: 0, uom_description: '', uom_amount: 0 }]);
   };
 
   const deleteRow = (index) => {
@@ -177,6 +177,8 @@ const NewWorkOrder = () => {
         rate: row.rate,
         discount: row.discount,
         amount: calculateAmount(row),
+        uom_description: row.uom_description,
+        uom_amount: row.uom_amount,
       })),
     };
 
@@ -473,6 +475,7 @@ const NewWorkOrder = () => {
                   <TableRow>
                     <TableCell>Item Details</TableCell>
                     <TableCell>Quantity</TableCell>
+                    <TableCell>UOM</TableCell>
                     <TableCell>Rate</TableCell>
                     <TableCell>Discount</TableCell>
                     <TableCell>Amount</TableCell>
@@ -497,6 +500,7 @@ const NewWorkOrder = () => {
                               .then((res) => res.json())
                               .then((product) => {
                                 updateRow(index, 'rate', product.sale_price || 0);
+                                updateRow(index, 'uom_description', product.unit || '');
                               })
                               .catch((err) => {
                                 console.error('Error fetching product details:', err);
@@ -523,6 +527,15 @@ const NewWorkOrder = () => {
                           value={row.qty}
                           onChange={(e) => updateRow(index, 'qty', e.target.value)}
                           size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          value={row.uom_description}
+                          onChange={(e) => updateRow(index, 'uom_description', e.target.value)}
+                          size="small"
+                          placeholder="Unit"
                         />
                       </TableCell>
                       <TableCell>

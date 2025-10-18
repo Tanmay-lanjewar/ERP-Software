@@ -6,7 +6,7 @@ exports.getAll = (req, res) => {
   invoice.getAll((err, result) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(result);
-  });
+  });   
 };
 
 exports.getDashboardSummary = (req, res) => {
@@ -50,16 +50,35 @@ exports.getOne = (req, res) => {
         if (custErr) return res.status(500).json({ error: custErr.message });
         if (!customer) return res.status(404).json({ message: 'Customer not found' });
         const sub_total = items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-        const cgst = parseFloat((sub_total * 0.09).toFixed(2));
-        const sgst = parseFloat((sub_total * 0.09).toFixed(2));
-        const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
+        const freight = parseFloat(invoiceData.freight || 0);
+        const subtotalWithFreight = sub_total + freight;
+        
+        // Conditional GST calculation based on customer billing state code
+        const billingStateCode = customer.billing_state_code || '';
+        let cgst = 0, sgst = 0, igst = 0;
+        
+        if (billingStateCode === '27') {
+          // Maharashtra - use CGST/SGST
+          cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+          sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+          igst = 0;
+        } else {
+          // Other states - use IGST
+          cgst = 0;
+          sgst = 0;
+          igst = parseFloat((subtotalWithFreight * 0.18).toFixed(2));
+        }
+        
+        const grand_total = parseFloat((subtotalWithFreight + cgst + sgst + igst).toFixed(2));
         res.json({
           invoice: invoiceData,
           items,
           customer,
           sub_total,
+          freight,
           cgst,
           sgst,
+          igst,
           grand_total,
         });
       });
@@ -90,6 +109,7 @@ exports.create = (req, res) => {
       invoiceNumber: result.invoiceNumber,
       itemsInserted: result.itemsInserted,
       sub_total: result.sub_total,
+      freight: result.freight,
       cgst: result.cgst,
       sgst: result.sgst,
       grand_total: result.grand_total,
@@ -119,9 +139,46 @@ exports.update = (req, res) => {
       invoiceId: result.invoiceId,
       itemsUpdated: result.itemsUpdated,
       sub_total: result.sub_total,
+      freight: result.freight,
       cgst: result.cgst,
       sgst: result.sgst,
       grand_total: result.grand_total,
+    });
+  });
+};
+
+exports.getSalesAnalytics = (req, res) => {
+  const { period = 'monthly' } = req.query;
+  
+  invoice.getSalesAnalyticsByPeriod(period, (err, analytics) => {
+    if (err) {
+      console.error('Error fetching sales analytics:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(analytics);
+  });
+};
+
+exports.updateStatus = (req, res) => {
+  const id = req.params.id;
+  const { status } = req.body;
+
+  if (!status) {
+    return res.status(400).json({ error: 'Status is required' });
+  }
+
+  // Validate status values
+  const validStatuses = ['Draft', 'Partial', 'Paid'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status. Must be one of: Draft, Partial, Paid' });
+  }
+
+  invoice.updateStatus(id, status, (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({
+      message: 'Invoice status updated successfully',
+      invoiceId: id,
+      status: status
     });
   });
 };

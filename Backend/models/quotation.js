@@ -36,7 +36,7 @@ const quotation = {
   },
 
   getById: (id, callback) => {
-    db.query('SELECT * FROM quotation WHERE quotation_id = ?', [id], (err, results) => {
+    db.query('SELECT quotation_id, customer_name, quote_number, quotation_date, expiry_date, subject, customer_notes, terms_and_conditions, sub_total, freight, cgst, sgst, igst, grand_total, attachment_url, status FROM quotation WHERE quotation_id = ?', [id], (err, results) => {
       if (err) return callback(err);
       callback(null, results[0]);
     });
@@ -101,79 +101,108 @@ const quotation = {
       return callback(new Error("At least one item is required"));
     }
 
-    let sub_total = 0;
-    items.forEach(item => {
-      const quantity = parseFloat(item.quantity) || 0;
-      const rate = parseFloat(item.rate) || 0;
-      const discount = parseFloat(item.discount) || 0;
-      const amount = (quantity * rate) - discount;
-      item.amount = parseFloat(amount.toFixed(2));
-      sub_total += amount;
-    });
+    // First, try to get customer billing state code by customer name
+    db.query('SELECT billing_state_code FROM customers WHERE customer_name = ? LIMIT 1', [data.customer_name], (custErr, custResult) => {
+      if (custErr) return callback(custErr);
+      
+      const billingStateCode = custResult.length > 0 ? (custResult[0].billing_state_code || '') : '';
 
-    sub_total = parseFloat(sub_total.toFixed(2));
-    const cgst = parseFloat((sub_total * 0.09).toFixed(2));
-    const sgst = parseFloat((sub_total * 0.09).toFixed(2));
-    const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
+      let sub_total = 0;
+      items.forEach(item => {
+        const quantity = parseFloat(item.quantity) || 0;
+        const rate = parseFloat(item.rate) || 0;
+        const discount = parseFloat(item.discount) || 0;
+        const amount = (quantity * rate) - discount;
+        item.amount = parseFloat(amount.toFixed(2));
+        sub_total += amount;
+      });
 
-    quotation.getNextQuoteNumber((err, result) => {
-      if (err) return callback(err);
-      const quoteNumber = result.nextQuoteNumber;
+      sub_total = parseFloat(sub_total.toFixed(2));
+      const freight = parseFloat(data.freight || 0);
+      const subtotalWithFreight = sub_total + freight;
+      
+      // Conditional GST calculation based on customer billing state code
+      let cgst = 0, sgst = 0, igst = 0;
+      
+      if (billingStateCode === '27') {
+        // Maharashtra - use CGST/SGST
+        cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+        sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+        igst = 0;
+      } else {
+        // Other states - use IGST
+        cgst = 0;
+        sgst = 0;
+        igst = parseFloat((subtotalWithFreight * 0.18).toFixed(2));
+      }
+      
+      const grand_total = parseFloat((subtotalWithFreight + cgst + sgst + igst).toFixed(2));
 
-      const quotationSql = `
-        INSERT INTO quotation (
-          customer_name, quote_number, quotation_date, expiry_date, subject,
-          customer_notes, terms_and_conditions,
-          sub_total, cgst, sgst, grand_total, attachment_url, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-
-      const quotationValues = [
-        data.customer_name,
-        quoteNumber,
-        data.quotation_date,
-        data.expiry_date,
-        data.subject,
-        data.customer_notes,
-        data.terms_and_conditions,
-        sub_total,
-        cgst,
-        sgst,
-        grand_total,
-        data.attachment_url,
-        data.status || 'Draft'
-      ];
-
-      db.query(quotationSql, quotationValues, (err, result) => {
+      quotation.getNextQuoteNumber((err, result) => {
         if (err) return callback(err);
+        const quoteNumber = result.nextQuoteNumber;
 
-        const quotationId = result.insertId;
-
-        const itemSql = `
-          INSERT INTO quotation_items (
-            quotation_id, item_detail, quantity, rate, discount, amount
-          ) VALUES ?
+        const quotationSql = `
+          INSERT INTO quotation (
+            customer_name, quote_number, quotation_date, expiry_date, subject,
+            customer_notes, terms_and_conditions,
+            sub_total, freight, cgst, sgst, igst, grand_total, attachment_url, status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        const itemValues = items.map(item => [
-          quotationId,
-          item.item_detail,
-          item.quantity,
-          item.rate,
-          item.discount,
-          item.amount
-        ]);
+        const quotationValues = [
+          data.customer_name,
+          quoteNumber,
+          data.quotation_date,
+          data.expiry_date,
+          data.subject,
+          data.customer_notes,
+          data.terms_and_conditions,
+          sub_total,
+          freight,
+          cgst,
+          sgst,
+          igst,
+          grand_total,
+          data.attachment_url,
+          data.status || 'Draft'
+        ];
 
-        db.query(itemSql, [itemValues], (itemErr, itemResult) => {
-          if (itemErr) return callback(itemErr);
-          callback(null, {
+        db.query(quotationSql, quotationValues, (err, result) => {
+          if (err) return callback(err);
+
+          const quotationId = result.insertId;
+
+          const itemSql = `
+            INSERT INTO quotation_items (
+              quotation_id, item_detail, quantity, rate, discount, amount, uom_amount, uom_description
+            ) VALUES ?
+          `;
+
+          const itemValues = items.map(item => [
             quotationId,
-            quoteNumber,
-            itemsInserted: itemResult.affectedRows,
-            sub_total,
-            cgst,
-            sgst,
-            grand_total
+            item.item_detail,
+            item.quantity,
+            item.rate,
+            item.discount,
+            item.amount,
+            item.uom_amount || 0,
+            item.uom_description || ""
+          ]);
+
+          db.query(itemSql, [itemValues], (itemErr, itemResult) => {
+            if (itemErr) return callback(itemErr);
+            callback(null, {
+              quotationId,
+              quoteNumber,
+              itemsInserted: itemResult.affectedRows,
+              sub_total,
+              freight,
+              cgst,
+              sgst,
+              igst,
+              grand_total
+            });
           });
         });
       });
@@ -181,81 +210,110 @@ const quotation = {
   },
 
   update: (id, data, items = [], callback) => {
-    let sub_total = 0;
-    items.forEach(item => {
-      const quantity = parseFloat(item.quantity) || 0;
-      const rate = parseFloat(item.rate) || 0;
-      const discount = parseFloat(item.discount) || 0;
-      const amount = (quantity * rate) - discount;
-      item.amount = parseFloat(amount.toFixed(2));
-      sub_total += amount;
-    });
+    // First, try to get customer billing state code by customer name
+    db.query('SELECT billing_state_code FROM customers WHERE customer_name = ? LIMIT 1', [data.customer_name], (custErr, custResult) => {
+      if (custErr) return callback(custErr);
+      
+      const billingStateCode = custResult.length > 0 ? (custResult[0].billing_state_code || '') : '';
 
-    sub_total = parseFloat(sub_total.toFixed(2));
-    const cgst = parseFloat((sub_total * 0.09).toFixed(2));
-    const sgst = parseFloat((sub_total * 0.09).toFixed(2));
-    const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
+      let sub_total = 0;
+      items.forEach(item => {
+        const quantity = parseFloat(item.quantity) || 0;
+        const rate = parseFloat(item.rate) || 0;
+        const discount = parseFloat(item.discount) || 0;
+        const amount = (quantity * rate) - discount;
+        item.amount = parseFloat(amount.toFixed(2));
+        sub_total += amount;
+      });
 
-    const quotationSql = `
-      UPDATE quotation SET
-        customer_name = ?, quotation_date = ?, expiry_date = ?, subject = ?,
-        customer_notes = ?, terms_and_conditions = ?,
-        sub_total = ?, cgst = ?, sgst = ?, grand_total = ?, attachment_url = ?, status = ?
-      WHERE quotation_id = ?
-    `;
+      sub_total = parseFloat(sub_total.toFixed(2));
+      const freight = parseFloat(data.freight || 0);
+      const subtotalWithFreight = sub_total + freight;
+      
+      // Conditional GST calculation based on customer billing state code
+      let cgst = 0, sgst = 0, igst = 0;
+      
+      if (billingStateCode === '27') {
+        // Maharashtra - use CGST/SGST
+        cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+        sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+        igst = 0;
+      } else {
+        // Other states - use IGST
+        cgst = 0;
+        sgst = 0;
+        igst = parseFloat((subtotalWithFreight * 0.18).toFixed(2));
+      }
+      
+      const grand_total = parseFloat((subtotalWithFreight + cgst + sgst + igst).toFixed(2));
 
-    const quotationValues = [
-      data.customer_name,
-      data.quotation_date,
-      data.expiry_date,
-      data.subject,
-      data.customer_notes,
-      data.terms_and_conditions,
-      sub_total,
-      cgst,
-      sgst,
-      grand_total,
-      data.attachment_url,
-      data.status || 'Draft',
-      id
-    ];
+      const quotationSql = `
+        UPDATE quotation SET
+          customer_name = ?, quotation_date = ?, expiry_date = ?, subject = ?,
+          customer_notes = ?, terms_and_conditions = ?,
+          sub_total = ?, freight = ?, cgst = ?, sgst = ?, igst = ?, grand_total = ?, attachment_url = ?, status = ?
+        WHERE quotation_id = ?
+      `;
 
-    db.query(quotationSql, quotationValues, (err) => {
-      if (err) return callback(err);
+      const quotationValues = [
+        data.customer_name,
+        data.quotation_date,
+        data.expiry_date,
+        data.subject,
+        data.customer_notes,
+        data.terms_and_conditions,
+        sub_total,
+        freight,
+        cgst,
+        sgst,
+        igst,
+        grand_total,
+        data.attachment_url,
+        data.status || 'Draft',
+        id
+      ];
 
-      db.query(`DELETE FROM quotation_items WHERE quotation_id = ?`, [id], (deleteErr) => {
-        if (deleteErr) return callback(deleteErr);
+      db.query(quotationSql, quotationValues, (err) => {
+        if (err) return callback(err);
 
-        if (items.length > 0) {
-          const itemSql = `
-            INSERT INTO quotation_items (
-              quotation_id, item_detail, quantity, rate, discount, amount
-            ) VALUES ?
-          `;
+        db.query(`DELETE FROM quotation_items WHERE quotation_id = ?`, [id], (deleteErr) => {
+          if (deleteErr) return callback(deleteErr);
 
-          const itemValues = items.map(item => [
-            id,
-            item.item_detail,
-            item.quantity,
-            item.rate,
-            item.discount,
-            item.amount
-          ]);
+          if (items.length > 0) {
+            const itemSql = `
+              INSERT INTO quotation_items (
+                quotation_id, item_detail, quantity, rate, discount, amount, uom_amount, uom_description
+              ) VALUES ?
+            `;
 
-          db.query(itemSql, [itemValues], (itemErr, itemResult) => {
-            if (itemErr) return callback(itemErr);
-            callback(null, {
-              quotationId: id,
-              itemsUpdated: itemResult.affectedRows,
-              sub_total,
-              cgst,
-              sgst,
-              grand_total
+            const itemValues = items.map(item => [
+              id,
+              item.item_detail,
+              item.quantity,
+              item.rate,
+              item.discount,
+              item.amount,
+              item.uom_amount || 0,
+              item.uom_description || ""
+            ]);
+
+            db.query(itemSql, [itemValues], (itemErr, itemResult) => {
+              if (itemErr) return callback(itemErr);
+              callback(null, {
+                quotationId: id,
+                itemsUpdated: itemResult.affectedRows,
+                sub_total,
+                freight,
+                cgst,
+                sgst,
+                igst,
+                grand_total
+              });
             });
-          });
-        } else {
-          callback(null, { quotationId: id, itemsUpdated: 0, sub_total, cgst, sgst, grand_total });
-        }
+          } else {
+            callback(null, { quotationId: id, itemsUpdated: 0, sub_total, freight, cgst, sgst, igst, grand_total });
+          }
+        });
       });
     });
   },

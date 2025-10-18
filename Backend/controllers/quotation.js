@@ -21,14 +21,17 @@ exports.getOne = (req, res) => {
       if (itemErr) return res.status(500).json({ error: itemErr.message });
 
       const sub_total = items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-      const cgst = parseFloat((sub_total * 0.09).toFixed(2));
-      const sgst = parseFloat((sub_total * 0.09).toFixed(2));
-      const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
+      const freight = parseFloat(quotationData.freight || 0);
+      const subtotalWithFreight = sub_total + freight;
+      const cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+      const sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+      const grand_total = parseFloat((subtotalWithFreight + cgst + sgst).toFixed(2));
 
       res.json({
         quotation: quotationData,
         items,
         sub_total,
+        freight,
         cgst,
         sgst,
         grand_total
@@ -59,8 +62,10 @@ exports.create = (req, res) => {
       quoteNumber: result.quoteNumber,
       itemsInserted: result.itemsInserted,
       sub_total: result.sub_total,
+      freight: result.freight,
       cgst: result.cgst,
       sgst: result.sgst,
+      igst: result.igst,
       grand_total: result.grand_total
     });
   });
@@ -108,28 +113,53 @@ exports.addItems = (req, res) => {
     quotation.getItemsByQuotationId(quotationId, (itemErr, allItems) => {
       if (itemErr) return res.status(500).json({ error: itemErr.message });
 
-      const sub_total = allItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-      const cgst = parseFloat((sub_total * 0.09).toFixed(2));
-      const sgst = parseFloat((sub_total * 0.09).toFixed(2));
-      const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
+      // Get quotation to find customer name, then get customer billing state code
+      quotation.getById(quotationId, (quotErr, quotationData) => {
+        if (quotErr) return res.status(500).json({ error: quotErr.message });
 
-      const updateSql = `
-        UPDATE quotation
-        SET sub_total = ?, cgst = ?, sgst = ?, grand_total = ?
-        WHERE quotation_id = ?
-      `;
+        pool.query('SELECT billing_state_code FROM customers WHERE customer_name = ? LIMIT 1', [quotationData.customer_name], (custErr, custResult) => {
+          if (custErr) return res.status(500).json({ error: custErr.message });
+          
+          const billingStateCode = custResult.length > 0 ? (custResult[0].billing_state_code || '') : '';
+          const sub_total = allItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+          
+          // Conditional GST calculation based on customer billing state code
+          let cgst = 0, sgst = 0, igst = 0;
+          
+          if (billingStateCode === '27') {
+            // Maharashtra - use CGST/SGST
+            cgst = parseFloat((sub_total * 0.09).toFixed(2));
+            sgst = parseFloat((sub_total * 0.09).toFixed(2));
+            igst = 0;
+          } else {
+            // Other states - use IGST
+            cgst = 0;
+            sgst = 0;
+            igst = parseFloat((sub_total * 0.18).toFixed(2));
+          }
+          
+          const grand_total = parseFloat((sub_total + cgst + sgst + igst).toFixed(2));
 
-      pool.query(updateSql, [sub_total, cgst, sgst, grand_total, quotationId], (updateErr) => {
-        if (updateErr) return res.status(500).json({ error: updateErr.message });
+          const updateSql = `
+            UPDATE quotation
+            SET sub_total = ?, cgst = ?, sgst = ?, igst = ?, grand_total = ?
+            WHERE quotation_id = ?
+          `;
 
-        res.json({
-          message: 'Items added and quotation updated successfully',
-          quotationId,
-          addedItems: result.affectedRows,
-          sub_total,
-          cgst,
-          sgst,
-          grand_total
+          pool.query(updateSql, [sub_total, cgst, sgst, igst, grand_total, quotationId], (updateErr) => {
+            if (updateErr) return res.status(500).json({ error: updateErr.message });
+
+            res.json({
+              message: 'Items added and quotation updated successfully',
+              quotationId,
+              addedItems: result.affectedRows,
+              sub_total,
+              cgst,
+              sgst,
+              igst,
+              grand_total
+            });
+          });
         });
       });
     });
@@ -152,8 +182,10 @@ exports.update = (req, res) => {
       quotationId: result.quotationId,
       itemsUpdated: result.itemsUpdated,
       sub_total: result.sub_total,
+      freight: result.freight,
       cgst: result.cgst,
       sgst: result.sgst,
+      igst: result.igst,
       grand_total: result.grand_total,
     });
   });

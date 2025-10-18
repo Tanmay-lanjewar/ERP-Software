@@ -51,16 +51,16 @@ export default function NewQuotation() {
     "Thanks for your business."
   );
   const [termsAndConditions, setTermsAndConditions] = useState(
-    "• Delivery Period: 3 to 4 weeks from the date of technically and commercially clear order.\n" +
-      "• Installation Period: 2 to 3 weeks\n" +
-      "• Transportation: Extra at Actual\n" +
-      "• Payment Terms:\n" +
-      "  a) 30% Advance along with Purchase order\n" +
-      "  b) 65% Against proforma invoice prior to dispatch\n" +
-      "  c) 5% after successfull Installation and commissioning\n" +
-      "• Warranty: Offer a standard warranty of 15 months from date of dispatch or 12 months from date of satisfactory installation whichever is earlier\n" +
-      "• Validity: Our offer shall remain valid for 15 days\n" +
-      "• Exclusions: Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting arrangement for installation activities, Scrap folding, Scissor lift."
+    "Delivery Period: 3 to 4 weeks from the date of technically and commercially clear order.\n" +
+      "Installation Period: 2 to 3 weeks\n" +
+      "Transportation: Extra at Actual\n" +
+      "Payment Terms:\n" +
+      "a) 30% Advance along with Purchase order\n" +
+      "b) 65% Against proforma invoice prior to dispatch\n" +
+      "c) 5% after successfull Installation and commissioning\n" +
+      "Warranty: Offer a standard warranty of 15 months from date of dispatch or 12 months from date of satisfactory installation whichever is earlier\n" +
+      "Validity: Our offer shall remain valid for 15 days\n" +
+      "Exclusions: Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting arrangement for installation activities, Scrap folding, Scissor lift."
   );
 
   const [attachment, setAttachment] = useState(null);
@@ -86,7 +86,8 @@ export default function NewQuotation() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
-  const [quoteNumber, setQuoteNumber] = useState("ME/BESPL/001/2023-24");
+  const [quoteNumber, setQuoteNumber] = useState("");
+  const [customerBillingStateCode, setCustomerBillingStateCode] = useState("");
 
   useEffect(() => {
     axios
@@ -114,9 +115,33 @@ export default function NewQuotation() {
   useEffect(() => {
     axios
       .get("http://localhost:5000/api/quotation/next-number")
-      .then((res) => setQuoteNumber(res.data.nextQuoteNumber || "ME/BESPL/001/2023-24"))
-      .catch(() => setQuoteNumber("ME/BESPL/001/2023-24"));
+      .then((res) => setQuoteNumber(res.data.nextQuoteNumber))
+      .catch(() => setQuoteNumber(""));
   }, []);
+
+  // Fetch customer billing state code when customer is selected
+  const fetchCustomerBillingStateCode = async (customerName) => {
+    if (!customerName) {
+      setCustomerBillingStateCode("");
+      return;
+    }
+    
+    try {
+      const response = await axios.get(`http://localhost:5000/api/customers`);
+      const customer = response.data.find(c => c.customer_name === customerName);
+      if (customer) {
+        console.log("Found customer:", customer);
+        console.log("Billing state code:", customer.billing_state_code);
+        setCustomerBillingStateCode(customer.billing_state_code || "");
+      } else {
+        console.log("Customer not found:", customerName);
+        setCustomerBillingStateCode("");
+      }
+    } catch (error) {
+      console.error("Error fetching customer billing state code:", error);
+      setCustomerBillingStateCode("");
+    }
+  };
 
   const handleAddRow = () => {
     setRows([
@@ -140,7 +165,7 @@ export default function NewQuotation() {
 
   const updateRow = (index, field, value) => {
     const updated = [...rows];
-    updated[index][field] = ["qty", "rate","uom" ,"discount"].includes(field)
+    updated[index][field] = ["qty", "rate", "discount"].includes(field)
       ? Number(value)
       : value;
     updated[index].amount = calculateAmount(updated[index]);
@@ -153,8 +178,29 @@ export default function NewQuotation() {
   };
 
   const subtotal = rows.reduce((sum, row) => sum + calculateAmount(row), 0);
-  const gst = subtotal * 0.09;
-  const total = subtotal + gst * 2;
+  const subtotalWithFreight = subtotal + (parseFloat(freight) || 0);
+  
+  // Conditional GST calculation based on customer billing state code
+  let cgst = 0, sgst = 0, igst = 0;
+  
+  console.log("Customer billing state code:", customerBillingStateCode);
+  console.log("Subtotal with freight:", subtotalWithFreight);
+  
+  if (customerBillingStateCode === '27') {
+    // Maharashtra - use CGST/SGST
+    cgst = subtotalWithFreight * 0.09;
+    sgst = subtotalWithFreight * 0.09;
+    igst = 0;
+    console.log("Using CGST/SGST - CGST:", cgst, "SGST:", sgst);
+  } else {
+    // Other states - use IGST
+    cgst = 0;
+    sgst = 0;
+    igst = subtotalWithFreight * 0.18;
+    console.log("Using IGST:", igst);
+  }
+  
+  const total = subtotalWithFreight + cgst + sgst + igst;
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -194,18 +240,21 @@ export default function NewQuotation() {
       subject,
       customer_notes: customerNotes,
       terms_and_conditions: termsAndConditions,
+      freight: parseFloat(freight) || 0,
       sub_total: subtotal,
-      cgst: gst,
-      sgst: gst,
+      cgst: cgst,
+      sgst: sgst,
+      igst: igst,
       total_amount: total,
       status: saveAsDraft ? "Draft" : "Sent",
       items: rows.map((row) => ({
         item_detail: row.item,
         quantity: row.qty,
-        uom : row.uom,
         rate: row.rate,
         discount: row.discount,
         amount: calculateAmount(row),
+        uom_amount: 0,
+        uom_description: row.uom || "",
       })),
     };
 
@@ -326,12 +375,10 @@ export default function NewQuotation() {
             <Grid container spacing={2} mb={2}>
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
-                  label="Quotation Number"
+                  label="Quote"
                   fullWidth
-                  value={quoteNumber}
-                  onChange={(e) => setQuoteNumber(e.target.value)}
-                  placeholder="Enter quotation number (e.g., ME/BESPL/001/2023-24)"
-                  helperText="You can edit this number as per your format"
+                  value={quoteNumber ? quoteNumber : "Number Was Generated"}
+                  InputProps={{ readOnly: true }}
                   sx={{
                     width: { xs: "100%", sm: "100%", md: 400 },
                     "& .MuiOutlinedInput-root": {
@@ -357,7 +404,11 @@ export default function NewQuotation() {
                   <InputLabel>Customer Name*</InputLabel>
                   <Select
                     value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
+                    onChange={(e) => {
+                      const selectedCustomerName = e.target.value;
+                      setCustomerName(selectedCustomerName);
+                      fetchCustomerBillingStateCode(selectedCustomerName);
+                    }}
                   >
                     <MenuItem value="">
                       <em>Select or add a customer</em>
@@ -500,6 +551,11 @@ export default function NewQuotation() {
                                     "rate",
                                     product.sale_price || 0
                                   );
+                                  updateRow(
+                                    index,
+                                    "uom",
+                                    product.unit || ""
+                                  );
                                 })
                                 .catch((err) => {
                                   console.error(
@@ -629,8 +685,13 @@ export default function NewQuotation() {
                   >
                     {[
                       { label: "Sub Total", value: `₹${subtotal.toFixed(2)}` },
-                      { label: "CGST (9%)", value: `₹${gst.toFixed(2)}` },
-                      { label: "SGST (9%)", value: `₹${gst.toFixed(2)}` },
+                      { label: "Freight", value: `₹${(parseFloat(freight) || 0).toFixed(2)}` },
+                      ...(customerBillingStateCode === '27' ? [
+                        { label: "CGST (9%)", value: `₹${cgst.toFixed(2)}` },
+                        { label: "SGST (9%)", value: `₹${sgst.toFixed(2)}` },
+                      ] : [
+                        { label: "IGST (18%)", value: `₹${igst.toFixed(2)}` },
+                      ])
                     ].map((item, i) => (
                       <Box
                         key={i}

@@ -154,7 +154,7 @@ const WorkOrderlist = () => {
           <td style="border: 1px solid #000; padding: 3px;">${item.item_detail || 'N/A'}</td>
           <td style="border: 1px solid #000; padding: 3px; text-align: center;">32149090</td>
           <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.quantity || 0}</td>
-          <td style="border: 1px solid #000; padding: 3px; text-align: center;">Box</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.uom_description || 'Box'}</td>
           <td style="border: 1px solid #000; padding: 3px; text-align: right;">${item.rate || 0}</td>
           <td style="border: 1px solid #000; padding: 3px; text-align: right;">${item.amount || (item.quantity * item.rate).toFixed(2)}</td>
         </tr>
@@ -162,156 +162,462 @@ const WorkOrderlist = () => {
 
       const printWindow = window.open("", "_blank");
       printWindow.document.write(`
-      <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Order</title>
-</head>
-<body style="font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 20px;">
-    <div style="border: 2px solid #000; padding: 10px; width: 600px; margin: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 5px;">
-                <div style="display: flex; align-items: center;">
-                    <img src="https://example.com/logo.png" alt="Merraki Expert Logo" style="width: 50px; height: auto; margin-right: 10px;">
-                    <div style="font-size: 14px; font-weight: bold;">MERRAKI EXPERT</div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="margin-bottom: 2px;"><strong>Work No:</strong> ${workOrderData.work_order_number}</div>
-                    <div style="margin-bottom: 2px;"><strong>Date:</strong> ${formatDate(workOrderData.work_order_date)}</div>
-                    <div><strong>JO ID:</strong> ${workOrderData.job_order_id || 'N/A'}</div>
-                </div>
-            </div>
-
-        <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 2px solid #000;">
-            <div style="font-size: 10px;"><strong>GSTIN:</strong> 27AKUPY6544R1ZM</div>
-            <div style="font-size: 10px;"><strong>UDYAM-MH-20-0114278</strong></div>
-        </div>
-
-        <div style="border-bottom: 2px solid #000; padding: 5px 0;">
-            <div style="display: flex;">
-                <div style="width: 100px; font-weight: bold;">Billing Address:</div>
-                <div>101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</div>
-            </div>
-            <div style="display: flex;">
-                <div style="width: 100px; font-weight: bold;">Shipping Address:</div>
-                <div>Meraki Expert, 101, 2nd Floor, Shri Sai Appartment, Near Kachore Lawn, Nagpur - 440015</div>
-            </div>
-        </div>
-
-        <div style="text-align: center; font-weight: bold; padding: 5px 0; border-bottom: 2px solid #000;">
-            Work Order
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse;">
-            <tbody>
-                <tr>
-                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Customer:</td>
-                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">${customer.customer_name || 'N/A'}</td>
-                    <td style="width: 25%; border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">GSTIN</td>
-                    <td style="width: 25%; border: 1px solid #000; padding: 3px;">${customer.gst || 'N/A'}</td>
-                </tr>
-                <tr>
-                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Address:</td>
-                    <td style="border: 1px solid #000; padding: 3px;">${customer.billing_address1 || 'N/A'}</td>
-                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Kind Attn.</td>
-                    <td style="border: 1px solid #000; padding: 3px;">${customer.billing_recipient_name || 'N/A'}</td>
-                </tr>
-                <tr>
-                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Mobile No.</td>
-                    <td style="border: 1px solid #000; padding: 3px;">${workOrderData.customer_phone || 'N/A'}</td>
-                    <td style="border: 1px solid #000; padding: 3px; background-color: #f2f2f2; font-weight: bold;">Email</td>
-                    <td style="border: 1px solid #000; padding: 3px; color: #00f;">${workOrderData.customer_email || 'N/A'}</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
-            This is referance to our requirement,
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
-            <thead>
-                <tr style="background-color: #f2f2f2;">
-                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Sr. No.</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 35%;">Item Description</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 10%;">HSN Code</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">Qty.</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">MOU</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 15%;">Rate</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 25%;">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${itemsHTML}
-            </tbody>
-        </table>
-
-        <div style="display: flex; margin-top: 5px;">
-            <div style="width: 50%; border: 1px solid #000; padding: 5px;">
-                <div style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 5px;">Terms & Conditions</div>
-                <div>Payment Terms: 100% After Delivery.</div>
-                <div style="margin-top: 5px;">PO Validity : 4 Month</div>
-                <div>Delivery: 1 to 2 Weeks (Immediate)</div>
-                <div>Document Required: Test Certificate</div>
-            </div>
-            <div style="width: 50%;">
-                <table style="width: 100%; border-collapse: collapse; margin-left: -1px;">
-                    <tbody>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Amount</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">${sub_total.toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">CGST (9%)</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">${cgst.toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">SGST (9%)</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">${sgst.toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">IGST</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">0.00</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Freight Charges</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">Extra at Actual</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2;">Total (Tax Inclusive)</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">${grand_total.toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 3px; font-weight: bold; background-color: #f2f2f2; text-align: right;">ROUNDUP</td>
-                            <td style="border: 1px solid #000; padding: 3px; text-align: right;">${Math.round(grand_total).toFixed(2)}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
-            <strong>Amount (in words) :</strong> ${numberToWords(Math.round(grand_total))} Rupees Only
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 5px;">
-            <div style="width: 70%;">
-                <div style="border: 1px solid #000; padding: 3px;">
-                    Email : merakkiexpert@gmail.com | Mobile : +91-8793484326 / +91-9130801011 | www.merakkiexpert.in
-                </div>
-            </div>
-            <div style="width: 30%; text-align: center; margin-left: 10px;">
-                <div style="font-weight: bold;">For MERAKI EXPERT</div>
-                <div style="height: 50px; display: flex; align-items: center; justify-content: center;">
-                    <img src="https://example.com/signature.png" alt="Signature" style="height: 50px;">
-                </div>
-                <div>(Authorized Signatory)</div>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
+      <!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+  <meta charset="UTF-8" /> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+  <title>Work Order - Meraki Expert</title> 
+  <link 
+    rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" 
+    integrity="sha512
+2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxl
+ mVmzTWnetw==" 
+    crossorigin="anonymous" 
+    referrerpolicy="no-referrer" 
+  /> 
+   
+</head> 
+<style> 
+  /* Reset */ 
+* { 
+  margin: 0; 
+  padding: 0; 
+  box-sizing: border-box; 
+} 
+ 
+/* Body */ 
+body { 
+  font-family: Arial, sans-serif; 
+  background-color: #f5f5f5; 
+  padding: 10px; 
+  color: #222; 
+} 
+ 
+/* Work Order Container */ 
+.work-order { 
+  background: #fff; 
+  border: 1px solid #ccc; 
+  max-width: 900px; 
+  margin: auto; 
+  padding: 20px; 
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+} 
+ 
+/* Header */ 
+header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  border-bottom: 3px solid #1c71b8; 
+  padding-bottom: 10px; 
+  flex-wrap: wrap; 
+} 
+ 
+header img { 
+  height: 60px; 
+  margin-right: 10px; 
+} 
+ 
+header .header-left { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+} 
+ 
+.first{ 
+  color: #1c71b8; 
+  text-align: center; 
+} 
+header h2 { 
+  color: #1c71b8; 
+} 
+ 
+.header-right p { 
+  font-size: 12px; 
+  text-align: justify; 
+  padding-right: 35px; 
+} 
+ 
+/* GST Info */ 
+.gst-info { 
+  display: flex; 
+  justify-content: space-between; 
+  border-bottom: 2px solid #000; 
+  font-size: 12px; 
+  padding: 5px 0; 
+f
+ lex-wrap: wrap; 
+} 
+/* Address */ 
+.address-block { 
+border-bottom: 2px solid #000; 
+padding: 10px 0; 
+font-size: 12px; 
+} 
+/* Table */ 
+.table-container { 
+overflow-x: auto; 
+} 
+table { 
+width: 100%; 
+border-collapse: collapse; 
+font-size: 11px; 
+margin: 15px 0; 
+} 
+th, td { 
+border: 1px solid #999; 
+padding: 6px; 
+text-align: left; 
+} 
+th { 
+background-color: #e5eff8; 
+} 
+.text-right { 
+text-align: right; 
+} 
+/* Terms */ 
+.terms { 
+border: 1px solid #ccc; 
+padding: 10px; 
+background: #f8f8f8; 
+border-radius: 4px; 
+} 
+.terms h3 { 
+color: #1c71b8; 
+margin-bottom: 10px; 
+} 
+.terms ul { 
+list-style: none; 
+} 
+.terms li { 
+border-bottom: 1px solid #ddd; 
+padding: 4px 0; 
+  font-size: 11px; 
+} 
+ 
+/* Footer */ 
+footer { 
+  display: flex; 
+  justify-content: space-between; 
+  font-size: 12px; 
+  margin-top: 20px; 
+  border-top: 2px solid #1c71b8; 
+  padding-top: 10px; 
+} 
+ 
+/* Contact Info */ 
+.address { 
+  
+     display: flex; 
+     justify-content: space-between; 
+     padding-bottom: 40px; 
+     bottom: 10px; 
+    } 
+ 
+    .highlight { 
+      color: #1c71b8; 
+      font-weight: bold; 
+    } 
+    .address-section{ 
+      display: flex; 
+       
+   
+    } 
+.office-address{ 
+  width: 500px; 
+  font-size: 12px; 
+  padding-bottom: 40px; 
+ 
+} 
+.registerd-address{ 
+ width: 400; 
+  font-size: 12px; 
+  padding-left: 20px; 
+ 
+} 
+.map{ 
+  padding-top: 60px; 
+} 
+.office-address p:first-child { 
+  font-weight: bold; 
+  color: #4caf50; 
+  padding-bottom: 30px; 
+} 
+  .registerd-address p:first-child{ 
+     font-weight: bold; 
+  color: #4caf50; 
+  padding-bottom: 30px; 
+  } 
+ 
+.contact-bar{ 
+  display: flex; 
+  position: absolute; 
+  color: white; 
+  font-weight: bold; 
+  font-size: 13px; 
+  height: 30px; 
+  width: 450px; 
+  top: 1040px; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 10px 20px; 
+  flex-wrap: wrap; 
+   
+ 
+} 
+.web-bar{ 
+  position: absolute; 
+  height: 5px; 
+  width: 430px; 
+  left:430px; 
+  margin-bottom: 7px; 
+   
+   
+} 
+.contact-left{ 
+  background-color: #a6ce39; 
+padding: 10px ; 
+width: 470px; 
+height: 35px; 
+display: flex; 
+align-items: center; 
+f
+ lex-wrap: wrap; 
+gap: 15px; 
+font-size: 14px; 
+} 
+.contact-right{ 
+background-color: #0b3d91; 
+f
+ lex: 1; 
+text-align: center; 
+padding: 10px 20px; 
+display: flex; 
+align-items: center; 
+f
+ lex-wrap: wrap; 
+gap: 15px; 
+font-size: 14px; 
+bottom: 20px; 
+} 
+a{ 
+color: white; 
+text-decoration: underline; 
+transition: color 0.3s; 
+} 
+.contact-left i, .contact-right i{ 
+  margin-right: 6px; 
+} 
+ 
+/*      Responsive Layouts */ 
+@media (max-width: 768px) { 
+  .contact-bar{ 
+    flex-direction: column; 
+    text-align: center; 
+  } 
+  header { 
+    flex-direction: column; 
+    text-align: center; 
+  } 
+ 
+  .gst-info { 
+    flex-direction: column; 
+    align-items: flex-start; 
+  } 
+ 
+  .address { 
+    flex-direction: column; 
+    gap: 10px; 
+  } 
+   
+ 
+  table { 
+    font-size: 10px; 
+  } 
+} 
+ 
+@media (max-width: 480px) { 
+  body { 
+    padding: 5px; 
+  } 
+ 
+  header h2 { 
+    font-size: 1.2rem; 
+  } 
+ 
+  .work-order { 
+    padding: 10px; 
+  } 
+ 
+  table { 
+    font-size: 9px; 
+  } 
+ 
+  footer { 
+    flex-direction: column; 
+    text-align: center; 
+    gap: 5px; 
+  } 
+  .contact-left, .contact-right{ 
+    flex-direction: column; 
+    gap: 8px; 
+    font-size: 13px; 
+  } 
+  .contact-bar{ 
+    padding: 15px 10px; 
+  } 
+} 
+</style> 
+<body> 
+  <div class="work-order"> 
+ 
+    <!-- Header --> 
+    <header> 
+      <div class="header-left"> 
+        <img src="C:\Users\USER\Documents\ERP-Software\front\src\assets\mera.jpg" 
+alt="Merraki Expert Logo" /> 
+        <h2>MERRAKI EXPERT</h2> 
+      </div> 
+      <div class="header-right"> 
+        <p><strong>Work No:</strong> WO-1023</p> 
+        <p><strong>Date:</strong> 14-Oct-2025</p> 
+        <p><strong>JO ID:</strong> 102</p> 
+      </div> 
+    </header> 
+ 
+    <div class="gst-info"> 
+      <p><strong>GSTIN:</strong> 27AKUPY6544R1ZM</p> 
+      <p><strong>UDYAM-MH-20-0114278</strong></p> 
+    </div> 
+ 
+    <!-- Address --> 
+    <div class="address-block"> 
+      <div> 
+        <strong>Billing Address:</strong> 
+        <p>101, 2nd Floor, Shri Sai Apartment, Near Kachore Lawn, Nagpur - 440015</p> 
+      </div> 
+      <div> 
+        <strong>Shipping Address:</strong> 
+        <p>Meraki Expert, 101, 2nd Floor, Shri Sai Apartment, Near Kachore Lawn, Nagpur - 
+440015</p> 
+      </div> 
+    </div> 
+ 
+    <h3 class="first">Work Order against (M/s. Jai Maa Santoshi Cold Storage, Goa.)</h3> 
+ 
+    <!-- Table --> 
+    <div class="table-container"> 
+      <table> 
+        <thead> 
+          <tr> 
+            <th>S.No.</th> 
+            <th>Description</th> 
+            <th>Quantity</th> 
+            <th>Unit</th> 
+            <th>Rate</th> 
+            <th>Amount</th> 
+          </tr> 
+        </thead> 
+        <tbody> 
+          <tr> 
+            <td>1</td> 
+            <td>PUF Insulated Wall & Roof Panel Installation with Finishing.</td> 
+            <td>4430.63</td> 
+            <td>Sq.Mtr.</td> 
+            <td>140</td> 
+            <td>₹ 620,288.20</td> 
+          </tr> 
+          <tr><td>2</td><td>Cutouts included if 
+any</td><td></td><td></td><td></td><td></td></tr> 
+          <tr><td>3</td><td>Loading, Unloading & Lifting 
+included</td><td></td><td></td><td></td><td></td></tr> 
+          <tr><td>4</td><td>Material Handling on site 
+included</td><td></td><td></td><td></td><td></td></tr> 
+          <tr><td>5</td><td>Accessories Handling 
+included</td><td></td><td></td><td></td><td></td></tr> 
+          <tr> 
+            <td colspan="5" class="text-right"><strong>Total Amount</strong></td> 
+            <td>₹620,288.20</td> 
+          </tr> 
+          <tr> 
+            <td colspan="6" class="text-right"><strong>Rs. Six Lakh Twenty Thousand Two 
+Hundred Eight and Twenty Paisa Only</strong></td> 
+          </tr> 
+        </tbody> 
+      </table> 
+    </div> 
+ 
+    <!-- Terms --> 
+    <div class="terms"> 
+      <h3>Terms & Conditions</h3> 
+      <ul> 
+        <li>Advance Payment 20%.</li> 
+        <li>80% payment after 15 Days WCC Report.</li> 
+        <li>Payment as per work order.</li> 
+        <li>Measurement as per installation of Panel (Sq.Mtr).</li> 
+        <li>Ensure minimum wastage of materials.</li> 
+        <li>Work quality must meet standards.</li> 
+        <li>All work with safety equipment.</li> 
+        <li>PPE Kit compulsory on site.</li> 
+        <li>No smoking, alcohol, or chewing Gutkha on site.</li> 
+        <li>No child labour allowed.</li> 
+        <li>Work per approved drawing.</li> 
+        <li>Misconduct will be penalized.</li> 
+        <li>Tools ready with safety before site work.</li> 
+        <li>Debris cleaning mandatory after installation.</li> 
+      </ul> 
+    </div> 
+ 
+    <!-- Footer --> 
+    <footer> 
+      <div> 
+        <strong>Contractor Signature</strong> 
+      </div> 
+      <div> 
+        <strong>Meraki Expert</strong> 
+      </div> 
+    </footer> 
+ 
+    <!-- Contact Section --> 
+    
+    <div class="address"> 
+      <div class="address-section"> 
+        <div class="office-address"> 
+        <div class="map"> <p><i class="fas fa-map-marker-alt"></i>Office Address:</p></div>  
+          <p> 101, 2nd Floor, Shri Sai Apartment, Near Kachore Lawn, Manish Nagar, Nagpur - 
+440015 (MH)</p> 
+        </div> 
+        <div class="registerd-address"> 
+        <div class="map"><p><i class="fas fa-map-marker-alt"></i>Registered Address</p></div 
+        >3863, Prabhag No.5, Ganesh Square, Teacher Colony Road, Deori, Gondia - 441901</> 
+      </div> 
+      </div> 
+       
+      <div class="contact-bar"> 
+        <div class="contact-left"> 
+          <i class="fas fa-phone-alt"></i>+91 77220 01802 
+           
+           
+            <i class="fas fa-envelope"></i>info@merakiexpert.in 
+           
+          </div> 
+      
+      <div class="web-bar"> 
+        <div class="contact-right"><a href="https://www.mrakiexpert.in" target="_blank"> 
+          <i class="fas fa-globe"></i> www.merakiexpert.in 
+          </a> 
+        </div> 
+         
+      </div> 
+      </div> 
+       
+       
+ 
+</body> 
+</html> 
+ 
       `);
       printWindow.document.close();
       printWindow.print();

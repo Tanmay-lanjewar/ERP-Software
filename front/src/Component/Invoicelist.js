@@ -1422,14 +1422,14 @@ export default function Invoicelist() {
             </tr>
             <tr class="total-row">
                 <td colspan="8" class="col-label" style="border-right: 1px solid #000;">Add: Freight</td>
-                <td class="col-taxable-value text-right">0.00</td>
+                <td class="col-taxable-value text-right">${(invoice.freight || 0).toFixed(2)}</td>
                 <td class="col-tax-rate"></td>
                 <td class="col-tax-rs text-right">0.00</td>
                 <td class="col-tax-rate"></td>
                 <td class="col-tax-rs text-right">0.00</td>
                 <td class="col-tax-rate"></td>
                 <td class="col-igst-rs text-right">0.00</td>
-                <td class="col-total-rs text-right">0.00</td>
+                <td class="col-total-rs text-right">${(invoice.freight || 0).toFixed(2)}</td>
             </tr>
             <tr class="total-row">
                 <td colspan="8" class="col-label" style="border-right: 1px solid #000;">Sub Total</td>
@@ -1622,19 +1622,34 @@ export default function Invoicelist() {
                             <MenuItem onClick={() => handleSendEmail(row)}><EmailIcon fontSize="small" sx={{ mr: 1 }} /> Send Email</MenuItem>
                             <MenuItem onClick={() => handleShareLink(row)}><ShareIcon fontSize="small" sx={{ mr: 1 }} /> Share Link</MenuItem>
                             <MenuItem onClick={async () => {
-                              await axios.put(`http://localhost:5000/api/invoice/${row.invoice_id}`, { status: 'Paid' });
-                              setInvoices(prev => prev.map(inv => inv.invoice_id === row.invoice_id ? { ...inv, status: 'Paid' } : inv));
-                              handleMenuClose();
+                              try {
+                                await axios.patch(`http://localhost:5000/api/invoice/${row.invoice_id}/status`, { status: 'Paid' });
+                                setInvoices(prev => prev.map(inv => inv.invoice_id === row.invoice_id ? { ...inv, status: 'Paid' } : inv));
+                                handleMenuClose();
+                              } catch (error) {
+                                console.error('Error updating status:', error);
+                                alert('Failed to update invoice status');
+                              }
                             }}>Mark as Paid</MenuItem>
                             <MenuItem onClick={async () => {
-                              await axios.put(`http://localhost:5000/api/invoice/${row.invoice_id}`, { status: 'Partial' });
-                              setInvoices(prev => prev.map(inv => inv.invoice_id === row.invoice_id ? { ...inv, status: 'Partial' } : inv));
-                              handleMenuClose();
+                              try {
+                                await axios.patch(`http://localhost:5000/api/invoice/${row.invoice_id}/status`, { status: 'Partial' });
+                                setInvoices(prev => prev.map(inv => inv.invoice_id === row.invoice_id ? { ...inv, status: 'Partial' } : inv));
+                                handleMenuClose();
+                              } catch (error) {
+                                console.error('Error updating status:', error);
+                                alert('Failed to update invoice status');
+                              }
                             }}>Mark as Partial</MenuItem>
                             <MenuItem onClick={async () => {
-                              await axios.put(`http://localhost:5000/api/invoice/${row.invoice_id}`, { status: 'Draft' });
-                              setInvoices(prev => prev.map(inv => inv.invoice_id === row.invoice_id ? { ...inv, status: 'Draft' } : inv));
-                              handleMenuClose();
+                              try {
+                                await axios.patch(`http://localhost:5000/api/invoice/${row.invoice_id}/status`, { status: 'Draft' });
+                                setInvoices(prev => prev.map(inv => inv.invoice_id === row.invoice_id ? { ...inv, status: 'Draft' } : inv));
+                                handleMenuClose();
+                              } catch (error) {
+                                console.error('Error updating status:', error);
+                                alert('Failed to update invoice status');
+                              }
                             }}>Mark as Draft</MenuItem>
                           </Menu>
                         )}

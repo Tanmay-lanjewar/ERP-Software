@@ -30,7 +30,7 @@ const invoice = {
         SELECT 
           i.invoice_id, i.invoice_number, i.customer_id, i.customer_name, i.invoice_date, 
           i.expiry_date, i.subject, i.customer_notes, i.terms_and_conditions, 
-          i.sub_total, i.cgst, i.sgst, i.grand_total, i.status,
+          i.sub_total, i.freight, i.cgst, i.sgst, i.igst, i.grand_total, i.status,
           fy.start_date as fy_start_date,
           fy.end_date as fy_end_date,
           CONCAT('FY ', YEAR(fy.start_date), '-', RIGHT(YEAR(fy.end_date), 2)) as financial_year_name
@@ -48,7 +48,7 @@ const invoice = {
 
   getById: (id, callback) => {
     db.query(
-      'SELECT invoice_id, invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject, customer_notes, terms_and_conditions, sub_total, cgst, sgst, grand_total, status FROM invoice WHERE invoice_id = ?',
+      'SELECT invoice_id, invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject, customer_notes, terms_and_conditions, sub_total, freight, cgst, sgst, igst, grand_total, status FROM invoice WHERE invoice_id = ?',
       [id],
       (err, results) => {
         if (err) return callback(err);
@@ -143,36 +143,159 @@ const invoice = {
       return callback(new Error('At least one item is required'));
     }
 
-    let sub_total = 0;
-    items.forEach(item => {
-      const quantity = parseFloat(item.quantity) || 0;
-      const rate = parseFloat(item.rate) || 0;
-      const discount = parseFloat(item.discount) || 0;
-      const amount = (quantity * rate) - discount;
-      item.amount = parseFloat(amount.toFixed(2));
-      sub_total += amount;
-      // Assuming getProductNameById is also callback based or handled separately
-      // If item.item_detail needs a lookup, it will also need to be callback-based
+    // First, get customer billing state code
+    db.query('SELECT billing_state_code FROM customers WHERE id = ?', [data.customer_id], (custErr, custResult) => {
+      if (custErr) return callback(custErr);
+      
+      const billingStateCode = custResult.length > 0 ? (custResult[0].billing_state_code || '') : '';
+
+      let sub_total = 0;
+      items.forEach(item => {
+        const quantity = parseFloat(item.quantity) || 0;
+        const rate = parseFloat(item.rate) || 0;
+        const discount = parseFloat(item.discount) || 0;
+        const amount = (quantity * rate) - discount;
+        item.amount = parseFloat(amount.toFixed(2));
+        sub_total += amount;
+      });
+
+      sub_total = parseFloat(sub_total.toFixed(2));
+      const freight = parseFloat(data.freight || 0);
+      const subtotalWithFreight = sub_total + freight;
+      
+      // Conditional GST calculation based on customer billing state code
+      let cgst = 0, sgst = 0, igst = 0;
+      
+      if (billingStateCode === '27') {
+        // Maharashtra - use CGST/SGST
+        cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+        sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+        igst = 0;
+      } else {
+        // Other states - use IGST
+        cgst = 0;
+        sgst = 0;
+        igst = parseFloat((subtotalWithFreight * 0.18).toFixed(2));
+      }
+      
+      const grand_total = parseFloat((subtotalWithFreight + cgst + sgst + igst).toFixed(2));
+
+      invoice.getNextInvoiceNumber((err, result) => {
+        if (err) return callback(err);
+        const invoiceNumber = result.nextInvoiceNumber;
+
+        const invoiceSql = `
+          INSERT INTO invoice (
+            invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject,
+            customer_notes, terms_and_conditions, sub_total, freight, cgst, sgst, igst, grand_total, status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const invoiceValues = [
+          invoiceNumber,
+          data.customer_id,
+          data.customer_name,
+          data.invoice_date,
+          data.expiry_date,
+          data.subject,
+          data.customer_notes,
+          data.terms_and_conditions,
+          sub_total,
+          freight,
+          cgst,
+          sgst,
+          igst,
+          grand_total,
+          data.status || 'Draft',
+        ];
+
+        db.query(invoiceSql, invoiceValues, (err, result) => {
+          if (err) return callback(err);
+          const invoiceId = result.insertId;
+
+          const itemSql = `
+            INSERT INTO invoice_items (
+              invoice_id, item_detail, quantity, rate, discount, amount, uom_amount, uom_description
+            ) VALUES ?
+          `;
+
+          const itemValues = items.map(item => [
+            invoiceId,
+            item.item_detail,
+            item.quantity,
+            item.rate,
+            item.discount,
+            item.amount,
+            item.uom_amount || 0,
+            item.uom_description || "",
+          ]);
+
+          db.query(itemSql, [itemValues], (itemErr, itemResult) => {
+            if (itemErr) return callback(itemErr);
+            callback(null, {
+              invoiceId,
+              invoiceNumber,
+              itemsInserted: itemResult.affectedRows,
+              sub_total,
+              freight,
+              cgst,
+              sgst,
+              igst,
+              grand_total,
+            });
+          });
+        });
+      });
     });
+  },
 
-    sub_total = parseFloat(sub_total.toFixed(2));
-    const cgst = parseFloat((sub_total * 0.09).toFixed(2));
-    const sgst = parseFloat((sub_total * 0.09).toFixed(2));
-    const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
+  update: (id, data, items = [], callback) => {
+    // First, get customer billing state code
+    db.query('SELECT billing_state_code FROM customers WHERE id = ?', [data.customer_id], (custErr, custResult) => {
+      if (custErr) return callback(custErr);
+      
+      const billingStateCode = custResult.length > 0 ? (custResult[0].billing_state_code || '') : '';
 
-    invoice.getNextInvoiceNumber((err, result) => {
-      if (err) return callback(err);
-      const invoiceNumber = result.nextInvoiceNumber;
+      let sub_total = 0;
+      items.forEach(item => {
+        const quantity = parseFloat(item.quantity) || 0;
+        const rate = parseFloat(item.rate) || 0;
+        const discount = parseFloat(item.discount) || 0;
+        const amount = (quantity * rate) - discount;
+        item.amount = parseFloat(amount.toFixed(2));
+        sub_total += amount;
+      });
+
+      sub_total = parseFloat(sub_total.toFixed(2));
+      const freight = parseFloat(data.freight || 0);
+      const subtotalWithFreight = sub_total + freight;
+      
+      // Conditional GST calculation based on customer billing state code
+      let cgst = 0, sgst = 0, igst = 0;
+      
+      if (billingStateCode === '27') {
+        // Maharashtra - use CGST/SGST
+        cgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+        sgst = parseFloat((subtotalWithFreight * 0.09).toFixed(2));
+        igst = 0;
+      } else {
+        // Other states - use IGST
+        cgst = 0;
+        sgst = 0;
+        igst = parseFloat((subtotalWithFreight * 0.18).toFixed(2));
+      }
+      
+      const grand_total = parseFloat((subtotalWithFreight + cgst + sgst + igst).toFixed(2));
 
       const invoiceSql = `
-        INSERT INTO invoice (
-          invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject,
-          customer_notes, terms_and_conditions, sub_total, cgst, sgst, grand_total, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        UPDATE invoice SET
+          customer_id = ?, customer_name = ?, invoice_date = ?, expiry_date = ?,
+          subject = ?, customer_notes = ?, terms_and_conditions = ?,
+          sub_total = ?, freight = ?, cgst = ?, sgst = ?, igst = ?, grand_total = ?, status = ?
+        WHERE invoice_id = ?
       `;
 
       const invoiceValues = [
-        invoiceNumber,
         data.customer_id,
         data.customer_name,
         data.invoice_date,
@@ -181,121 +304,52 @@ const invoice = {
         data.customer_notes,
         data.terms_and_conditions,
         sub_total,
+        freight,
         cgst,
         sgst,
+        igst,
         grand_total,
         data.status || 'Draft',
+        id,
       ];
 
-      db.query(invoiceSql, invoiceValues, (err, result) => {
+      db.query(invoiceSql, invoiceValues, (err) => {
         if (err) return callback(err);
-        const invoiceId = result.insertId;
 
-        const itemSql = `
-          INSERT INTO invoice_items (
-            invoice_id, item_detail, quantity, rate, discount, amount
-          ) VALUES ?
-        `;
+        db.query(`DELETE FROM invoice_items WHERE invoice_id = ?`, [id], (deleteErr) => {
+          if (deleteErr) return callback(deleteErr);
 
-        const itemValues = items.map(item => [
-          invoiceId,
-          item.item_detail,
-          item.quantity,
-          item.rate,
-          item.discount,
-          item.amount,
-        ]);
-
-        db.query(itemSql, [itemValues], (itemErr, itemResult) => {
-          if (itemErr) return callback(itemErr);
-          callback(null, {
-            invoiceId,
-            invoiceNumber,
-            itemsInserted: itemResult.affectedRows,
-            sub_total,
-            cgst,
-            sgst,
-            grand_total,
-          });
-        });
-      });
-    });
-  },
-
-  update: (id, data, items = [], callback) => {
-    let sub_total = 0;
-    items.forEach(item => {
-      const quantity = parseFloat(item.quantity) || 0;
-      const rate = parseFloat(item.rate) || 0;
-      const discount = parseFloat(item.discount) || 0;
-      const amount = (quantity * rate) - discount;
-      item.amount = parseFloat(amount.toFixed(2));
-      sub_total += amount;
-    });
-
-    sub_total = parseFloat(sub_total.toFixed(2));
-    const cgst = parseFloat((sub_total * 0.09).toFixed(2));
-    const sgst = parseFloat((sub_total * 0.09).toFixed(2));
-    const grand_total = parseFloat((sub_total + cgst + sgst).toFixed(2));
-
-    const invoiceSql = `
-      UPDATE invoice SET
-        customer_id = ?, customer_name = ?, invoice_date = ?, expiry_date = ?,
-        subject = ?, customer_notes = ?, terms_and_conditions = ?,
-        sub_total = ?, cgst = ?, sgst = ?, grand_total = ?, status = ?
-      WHERE invoice_id = ?
-    `;
-
-    const invoiceValues = [
-      data.customer_id,
-      data.customer_name,
-      data.invoice_date,
-      data.expiry_date,
-      data.subject,
-      data.customer_notes,
-      data.terms_and_conditions,
-      sub_total,
-      cgst,
-      sgst,
-      grand_total,
-      data.status || 'Draft',
-      id,
-    ];
-
-    db.query(invoiceSql, invoiceValues, (err) => {
-      if (err) return callback(err);
-
-      db.query(`DELETE FROM invoice_items WHERE invoice_id = ?`, [id], (deleteErr) => {
-        if (deleteErr) return callback(deleteErr);
-
-        if (items.length > 0) {
-          const itemSql = `
-            INSERT INTO invoice_items (
-              invoice_id, item_detail, quantity, rate, discount, amount
-            ) VALUES ?
-          `;
-          const itemValues = items.map(item => [
-            id,
-            item.item_detail,
-            item.quantity,
-            item.rate,
-            item.discount,
-            item.amount,
-          ]);
-          db.query(itemSql, [itemValues], (itemErr, itemResult) => {
-            if (itemErr) return callback(itemErr);
-            callback(null, {
-              invoiceId: id,
-              itemsUpdated: itemResult.affectedRows,
-              sub_total,
-              cgst,
-              sgst,
-              grand_total,
+          if (items.length > 0) {
+            const itemSql = `
+              INSERT INTO invoice_items (
+                invoice_id, item_detail, quantity, rate, discount, amount
+              ) VALUES ?
+            `;
+            const itemValues = items.map(item => [
+              id,
+              item.item_detail,
+              item.quantity,
+              item.rate,
+              item.discount,
+              item.amount,
+            ]);
+            db.query(itemSql, [itemValues], (itemErr, itemResult) => {
+              if (itemErr) return callback(itemErr);
+              callback(null, {
+                invoiceId: id,
+                itemsUpdated: itemResult.affectedRows,
+                sub_total,
+                freight,
+                cgst,
+                sgst,
+                igst,
+                grand_total,
+              });
             });
-          });
-        } else {
-          callback(null, { invoiceId: id, itemsUpdated: 0, sub_total, cgst, sgst, grand_total });
-        }
+          } else {
+            callback(null, { invoiceId: id, itemsUpdated: 0, sub_total, freight, cgst, sgst, igst, grand_total });
+          }
+        });
       });
     });
   },
@@ -304,6 +358,134 @@ const invoice = {
     db.query('DELETE FROM invoice_items WHERE invoice_id = ?', [id], (err) => {
       if (err) return callback(err);
       db.query('DELETE FROM invoice WHERE invoice_id = ?', [id], callback);
+    });
+  },
+
+  getSalesAnalyticsByPeriod: (period, callback) => {
+    let dateCondition = '';
+    let groupBy = '';
+    let selectFields = '';
+    
+    const currentDate = new Date();
+    
+    switch (period) {
+      case 'monthly':
+        // Current month
+        dateCondition = `
+          YEAR(invoice_date) = YEAR(CURDATE()) 
+          AND MONTH(invoice_date) = MONTH(CURDATE())
+        `;
+        selectFields = `
+          'Current Month' as period_name,
+          MONTHNAME(CURDATE()) as period_label,
+          YEAR(CURDATE()) as year
+        `;
+        groupBy = 'YEAR(invoice_date), MONTH(invoice_date)';
+        break;
+        
+      case 'quarterly':
+        // Current quarter
+        dateCondition = `
+          YEAR(invoice_date) = YEAR(CURDATE()) 
+          AND QUARTER(invoice_date) = QUARTER(CURDATE())
+        `;
+        selectFields = `
+          'Current Quarter' as period_name,
+          CONCAT('Q', QUARTER(CURDATE()), ' ', YEAR(CURDATE())) as period_label,
+          QUARTER(CURDATE()) as quarter,
+          YEAR(CURDATE()) as year
+        `;
+        groupBy = 'YEAR(invoice_date), QUARTER(invoice_date)';
+        break;
+        
+      case 'yearly':
+        // Current year
+        dateCondition = `YEAR(invoice_date) = YEAR(CURDATE())`;
+        selectFields = `
+          'Current Year' as period_name,
+          YEAR(CURDATE()) as period_label,
+          YEAR(CURDATE()) as year
+        `;
+        groupBy = 'YEAR(invoice_date)';
+        break;
+        
+      case 'six_months':
+        // Last 6 months
+        dateCondition = `invoice_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)`;
+        selectFields = `
+          'Last 6 Months' as period_name,
+          'Last 6 Months' as period_label,
+          YEAR(CURDATE()) as year
+        `;
+        groupBy = '1'; // Group all together
+        break;
+        
+      default:
+        // Default to current month
+        dateCondition = `
+          YEAR(invoice_date) = YEAR(CURDATE()) 
+          AND MONTH(invoice_date) = MONTH(CURDATE())
+        `;
+        selectFields = `
+          'Current Month' as period_name,
+          MONTHNAME(CURDATE()) as period_label,
+          YEAR(CURDATE()) as year
+        `;
+        groupBy = 'YEAR(invoice_date), MONTH(invoice_date)';
+    }
+
+    const sql = `
+      SELECT 
+        ${selectFields},
+        COUNT(*) as total_invoices,
+        COUNT(CASE WHEN status = 'Paid' THEN 1 END) as completed_invoices,
+        COUNT(CASE WHEN status IN ('Draft', 'Pending', 'Partial') THEN 1 END) as pending_invoices,
+        COALESCE(SUM(grand_total), 0) as total_amount,
+        COALESCE(SUM(CASE WHEN status = 'Paid' THEN grand_total ELSE 0 END), 0) as completed_amount,
+        COALESCE(SUM(CASE WHEN status IN ('Draft', 'Pending', 'Partial') THEN grand_total ELSE 0 END), 0) as pending_amount,
+        COALESCE(AVG(grand_total), 0) as average_invoice_amount
+      FROM invoice 
+      WHERE ${dateCondition}
+      GROUP BY ${groupBy}
+    `;
+
+    db.query(sql, (err, results) => {
+      if (err) {
+        return callback(err);
+      }
+      
+      // If no results, return default structure
+      if (results.length === 0) {
+        const defaultResult = {
+          period_name: period === 'monthly' ? 'Current Month' : 
+                      period === 'quarterly' ? 'Current Quarter' :
+                      period === 'yearly' ? 'Current Year' : 'Last 6 Months',
+          period_label: period === 'monthly' ? new Date().toLocaleString('default', { month: 'long' }) :
+                       period === 'quarterly' ? `Q${Math.ceil((new Date().getMonth() + 1) / 3)} ${new Date().getFullYear()}` :
+                       period === 'yearly' ? new Date().getFullYear().toString() : 'Last 6 Months',
+          total_invoices: 0,
+          completed_invoices: 0,
+          pending_invoices: 0,
+          total_amount: 0,
+          completed_amount: 0,
+          pending_amount: 0,
+          average_invoice_amount: 0
+        };
+        return callback(null, [defaultResult]);
+      }
+      
+      callback(null, results);
+    });
+  },
+
+  updateStatus: (id, status, callback) => {
+    const sql = 'UPDATE invoice SET status = ? WHERE invoice_id = ?';
+    db.query(sql, [status, id], (err, result) => {
+      if (err) return callback(err);
+      if (result.affectedRows === 0) {
+        return callback(new Error('Invoice not found'));
+      }
+      callback(null, { invoiceId: id, status: status });
     });
   },
 };
