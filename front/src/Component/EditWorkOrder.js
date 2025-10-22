@@ -10,11 +10,23 @@ export default function EditWorkOrderPage() {
   const [formData, setFormData] = useState({
     work_order_id: '',
     work_order_number: '',
+    vendor_name: '',
     customer_name: '',
     work_order_date: '',
-    expiry_date: '',
-    status: '',
+    due_date: '',
+    payment_terms: '',
+    subject: '',
+    vendor_notes: '',
+    customer_notes: '',
+    terms_and_conditions: '',
+    attachment_url: '',
+    sub_total: '',
+    cgst: '',
+    sgst: '',
     grand_total: '',
+    status: '',
+    purchase_order_number: '',
+    purchase_order_date: ''
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -29,15 +41,27 @@ export default function EditWorkOrderPage() {
         if (!res.data) {
           throw new Error('No data returned from server');
         }
-        const wo = res.data.workorder || res.data;
+        const wo = res.data.workOrder || res.data;
         setFormData({
           work_order_id: wo.work_order_id || '',
           work_order_number: wo.work_order_number || '',
+          vendor_name: wo.vendor_name || '',
           customer_name: wo.customer_name || '',
           work_order_date: wo.work_order_date ? new Date(wo.work_order_date).toISOString().split('T')[0] : '',
-          expiry_date: wo.expiry_date ? new Date(wo.expiry_date).toISOString().split('T')[0] : '',
-          status: wo.status || '',
+          due_date: wo.due_date ? new Date(wo.due_date).toISOString().split('T')[0] : '',
+          payment_terms: wo.payment_terms || '',
+          subject: wo.subject || '',
+          vendor_notes: wo.vendor_notes || '',
+          customer_notes: wo.customer_notes || '',
+          terms_and_conditions: wo.terms_and_conditions || '',
+          attachment_url: wo.attachment_url || '',
+          sub_total: wo.sub_total || '',
+          cgst: wo.cgst || '',
+          sgst: wo.sgst || '',
           grand_total: wo.grand_total || '',
+          status: wo.status || '',
+          purchase_order_number: wo.purchase_order_number || '',
+          purchase_order_date: wo.purchase_order_date ? new Date(wo.purchase_order_date).toISOString().split('T')[0] : ''
         });
       } catch (err) {
         setError(`Failed to fetch work order: ${err.message}`);
@@ -175,10 +199,10 @@ export default function EditWorkOrderPage() {
             />
             <TextField
               fullWidth
-              name="expiry_date"
-              label="Expiry Date"
+              name="due_date"
+              label="Due Date"
               type="date"
-              value={formData.expiry_date}
+              value={formData.due_date}
               onChange={handleChange}
               margin="normal"
               InputLabelProps={{ shrink: true }}

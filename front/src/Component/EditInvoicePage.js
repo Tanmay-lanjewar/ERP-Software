@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, TextField, Button, Paper, Typography, MenuItem, FormControl, InputLabel, Select } from '@mui/material';
 import Sidebar from './Sidebar';
+import UserMenu from './UserMenu';
 import axios from 'axios';
 
 export default function EditInvoicePage() {
@@ -14,6 +15,11 @@ export default function EditInvoicePage() {
     expiry_date: '',
     status: '',
     grand_total: '',
+    subject: '',
+    customer_notes: '',
+    terms_and_conditions: '',
+    freight: '',
+    attachment_url: ''
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -33,6 +39,11 @@ export default function EditInvoicePage() {
           expiry_date: inv.expiry_date,
           status: inv.status || '',
           grand_total: res.data.grand_total || '',
+          subject: inv.subject || '',
+          customer_notes: inv.customer_notes || '',
+          terms_and_conditions: inv.terms_and_conditions || '',
+          freight: inv.freight || '',
+          attachment_url: inv.attachment_url || ''
         });
       } catch (err) {
         setError('Failed to fetch invoice');
@@ -59,10 +70,18 @@ export default function EditInvoicePage() {
     setError('');
     try {
       await axios.put(`http://localhost:5000/api/invoice/${id}`, {
-        customer_name: formData.customer_name,
-        invoice_date: formData.invoice_date,
-        expiry_date: formData.expiry_date,
-        status: formData.status,
+        invoice: {
+          customer_name: formData.customer_name,
+          invoice_date: formData.invoice_date,
+          expiry_date: formData.expiry_date,
+          status: formData.status,
+          subject: formData.subject,
+          customer_notes: formData.customer_notes,
+          terms_and_conditions: formData.terms_and_conditions,
+          freight: formData.freight,
+          attachment_url: formData.attachment_url
+        },
+        items: [] // Placeholder for items - can be enhanced later
       });
       alert('Invoice updated successfully!');
       navigate('/invoice-list');
@@ -76,13 +95,29 @@ export default function EditInvoicePage() {
   return (
     <Box sx={{ display: "flex" }}>
       <Sidebar />
+      <Box sx={{ flexGrow: 1 }}>
+        {/* Header */}
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          p: 2, 
+          borderBottom: "1px solid #e0e0e0" 
+        }}>
+          <Typography variant="h6" fontWeight={600}>
+            Edit Invoice
+          </Typography>
+          <UserMenu />
+        </Box>
 
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
-        <Paper sx={{ width: 600, p: 4, borderRadius: 3 }}>
+        {/* Main Content */}
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3, p: 2 }}>
+          <Paper sx={{ width: 800, p: 4, borderRadius: 3 }}>
           <Typography variant="h5" fontWeight={600} mb={3} textAlign="center">
             Edit Invoice
           </Typography>
           {error && <Typography color="error" mb={2}>{error}</Typography>}
+          {loading && <Typography color="primary" mb={2}>Loading...</Typography>}
           <form onSubmit={handleSubmit}>
           <TextField
             fullWidth
@@ -130,6 +165,33 @@ export default function EditInvoicePage() {
             margin="normal"
             InputLabelProps={{ shrink: true }}
           />
+          <TextField
+            fullWidth
+            name="subject"
+            label="Subject"
+            value={formData.subject}
+            onChange={handleChange}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            name="customer_notes"
+            label="Customer Notes"
+            value={formData.customer_notes}
+            onChange={handleChange}
+            margin="normal"
+            multiline
+            rows={2}
+          />
+          <TextField
+            fullWidth
+            name="freight"
+            label="Freight"
+            type="number"
+            value={formData.freight}
+            onChange={handleChange}
+            margin="normal"
+          />
           <FormControl fullWidth margin="normal">
             <InputLabel>Status</InputLabel>
             <Select
@@ -166,6 +228,7 @@ export default function EditInvoicePage() {
         </form>
       </Paper>
       </Box>
+    </Box>
     </Box>
   );
 }
