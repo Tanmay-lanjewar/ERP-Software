@@ -11,6 +11,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import jsPDF from "jspdf";
 import axios from 'axios';
+import UserMenu from './UserMenu';
 
 export default function EditQuotationPage() {
   const { id } = useParams();
@@ -22,6 +23,11 @@ export default function EditQuotationPage() {
     expiry_date: '',
     status: 'Draft',
     grand_total: '',
+    subject: '',
+    customer_notes: '',
+    terms_and_conditions: '',
+    freight: 0,
+    attachment_url: ''
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -41,6 +47,11 @@ export default function EditQuotationPage() {
           expiry_date: q.expiry_date,
           status: q.status || 'Draft',
           grand_total: res.data.grand_total || '',
+          subject: q.subject || '',
+          customer_notes: q.customer_notes || '',
+          terms_and_conditions: q.terms_and_conditions || '',
+          freight: q.freight || 0,
+          attachment_url: q.attachment_url || ''
         });
       } catch (err) {
         setError('Failed to fetch quotation');
@@ -67,16 +78,23 @@ export default function EditQuotationPage() {
     setError('');
     try {
       await axios.put(`http://localhost:5000/api/quotation/${id}`, {
-        customer_name: formData.customer_name,
-        quotation_date: formData.quotation_date,
-        expiry_date: formData.expiry_date,
-        status: formData.status,
-        // Add other fields if needed
+        quotation: {
+          customer_name: formData.customer_name,
+          quotation_date: formData.quotation_date,
+          expiry_date: formData.expiry_date,
+          status: formData.status,
+          subject: formData.subject || '',
+          customer_notes: formData.customer_notes || '',
+          terms_and_conditions: formData.terms_and_conditions || '',
+          freight: formData.freight || 0,
+          attachment_url: formData.attachment_url || ''
+        },
+        items: [] // For now, we'll handle basic quotation info only
       });
       alert('Quotation updated successfully!');
-      navigate('/Quotation');
+      navigate('/quotation-list');
     } catch (err) {
-      setError('Failed to update quotation');
+      setError('Failed to update quotation: ' + (err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
     }
@@ -86,12 +104,37 @@ export default function EditQuotationPage() {
   return (
     <Box sx={{ display: "flex" }}>
       <Sidebar />
+      <Box sx={{ flexGrow: 1 }}>
+        {/* Header */}
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          p: 2, 
+          borderBottom: "1px solid #e0e0e0" 
+        }}>
+          <Typography variant="h6" fontWeight={600}>
+            Edit Quotation
+          </Typography>
+          <UserMenu />
+        </Box>
 
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
-        <Paper sx={{ width: 600, p: 4, borderRadius: 3 }}>
+        {/* Main Content */}
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3, p: 2 }}>
+          <Paper sx={{ width: 800, p: 4, borderRadius: 3 }}>
           <Typography variant="h5" fontWeight={600} mb={3} textAlign="center">
             Edit Quotation
           </Typography>
+          {error && (
+            <Typography color="error" mb={2} textAlign="center">
+              {error}
+            </Typography>
+          )}
+          {loading && (
+            <Typography color="primary" mb={2} textAlign="center">
+              Loading...
+            </Typography>
+          )}
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
@@ -136,6 +179,33 @@ export default function EditQuotationPage() {
               onChange={handleChange}
               margin="normal"
             />
+            <TextField
+              fullWidth
+              name="subject"
+              label="Subject"
+              value={formData.subject}
+              onChange={handleChange}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              name="customer_notes"
+              label="Customer Notes"
+              value={formData.customer_notes}
+              onChange={handleChange}
+              margin="normal"
+              multiline
+              rows={2}
+            />
+            <TextField
+              fullWidth
+              name="freight"
+              label="Freight"
+              type="number"
+              value={formData.freight}
+              onChange={handleChange}
+              margin="normal"
+            />
             
             <FormControl fullWidth margin="normal">
               <InputLabel>Status</InputLabel>
@@ -173,6 +243,7 @@ export default function EditQuotationPage() {
           </form>
         </Paper>
       </Box>
+    </Box>
     </Box>
   );
 }
