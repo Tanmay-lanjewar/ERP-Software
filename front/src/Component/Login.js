@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
+import ui from '../assets/ui.png';
 
 // Custom styled components
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -125,15 +126,15 @@ const Login = () => {
         }}
       >
         <StyledPaper elevation={6}>
-          <StyledAvatar>
+          
             <img 
-              src="/meraki-logo.png" 
-              alt="Meraki Logo"
-              style={{ width: '100%', height: '100%', padding: '8px' }}
+              src={ui} 
+              alt="ERP Logo"
+              style={{ width: '300px', height: 'auto' ,margin : '-100px'}}
             />
-          </StyledAvatar>
+         
           <Typography component="h1" variant="h5" sx={{ mt: 2, fontWeight: 600 }}>
-            Welcome to Meraki
+            Welcome to ERP
           </Typography>
           <Form onSubmit={handleSubmit}>
             <FormControl 

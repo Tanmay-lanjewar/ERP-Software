@@ -162,460 +162,451 @@ const WorkOrderlist = () => {
 
       const printWindow = window.open("", "_blank");
       printWindow.document.write(`
-      <!DOCTYPE html> 
-<html lang="en"> 
-<head> 
-  <meta charset="UTF-8" /> 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
-  <title>Work Order - Meraki Expert</title> 
-  <link 
-    rel="stylesheet" 
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" 
-    integrity="sha512
-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxl
- mVmzTWnetw==" 
-    crossorigin="anonymous" 
-    referrerpolicy="no-referrer" 
-  /> 
-   
-</head> 
-<style> 
-  /* Reset */ 
-* { 
-  margin: 0; 
-  padding: 0; 
-  box-sizing: border-box; 
-} 
- 
-/* Body */ 
-body { 
-  font-family: Arial, sans-serif; 
-  background-color: #f5f5f5; 
-  padding: 10px; 
-  color: #222; 
-} 
- 
-/* Work Order Container */ 
-.work-order { 
-  background: #fff; 
-  border: 1px solid #ccc; 
-  max-width: 900px; 
-  margin: auto; 
-  padding: 20px; 
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
-} 
- 
-/* Header */ 
-header { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
-  border-bottom: 3px solid #1c71b8; 
-  padding-bottom: 10px; 
-  flex-wrap: wrap; 
-} 
- 
-header img { 
-  height: 60px; 
-  margin-right: 10px; 
-} 
- 
-header .header-left { 
-  display: flex; 
-  align-items: center; 
-  gap: 10px; 
-} 
- 
-.first{ 
-  color: #1c71b8; 
-  text-align: center; 
-} 
-header h2 { 
-  color: #1c71b8; 
-} 
- 
-.header-right p { 
-  font-size: 12px; 
-  text-align: justify; 
-  padding-right: 35px; 
-} 
- 
-/* GST Info */ 
-.gst-info { 
-  display: flex; 
-  justify-content: space-between; 
-  border-bottom: 2px solid #000; 
-  font-size: 12px; 
-  padding: 5px 0; 
-f
- lex-wrap: wrap; 
-} 
-/* Address */ 
-.address-block { 
-border-bottom: 2px solid #000; 
-padding: 10px 0; 
-font-size: 12px; 
-} 
-/* Table */ 
-.table-container { 
-overflow-x: auto; 
-} 
-table { 
-width: 100%; 
-border-collapse: collapse; 
-font-size: 11px; 
-margin: 15px 0; 
-} 
-th, td { 
-border: 1px solid #999; 
-padding: 6px; 
-text-align: left; 
-} 
-th { 
-background-color: #e5eff8; 
-} 
-.text-right { 
-text-align: right; 
-} 
-/* Terms */ 
-.terms { 
-border: 1px solid #ccc; 
-padding: 10px; 
-background: #f8f8f8; 
-border-radius: 4px; 
-} 
-.terms h3 { 
-color: #1c71b8; 
-margin-bottom: 10px; 
-} 
-.terms ul { 
-list-style: none; 
-} 
-.terms li { 
-border-bottom: 1px solid #ddd; 
-padding: 4px 0; 
-  font-size: 11px; 
-} 
- 
-/* Footer */ 
-footer { 
-  display: flex; 
-  justify-content: space-between; 
-  font-size: 12px; 
-  margin-top: 20px; 
-  border-top: 2px solid #1c71b8; 
-  padding-top: 10px; 
-} 
- 
-/* Contact Info */ 
-.address { 
-  
-     display: flex; 
-     justify-content: space-between; 
-     padding-bottom: 40px; 
-     bottom: 10px; 
-    } 
- 
-    .highlight { 
-      color: #1c71b8; 
-      font-weight: bold; 
-    } 
-    .address-section{ 
-      display: flex; 
-       
-   
-    } 
-.office-address{ 
-  width: 500px; 
-  font-size: 12px; 
-  padding-bottom: 40px; 
- 
-} 
-.registerd-address{ 
- width: 400; 
-  font-size: 12px; 
-  padding-left: 20px; 
- 
-} 
-.map{ 
-  padding-top: 60px; 
-} 
-.office-address p:first-child { 
-  font-weight: bold; 
-  color: #4caf50; 
-  padding-bottom: 30px; 
-} 
-  .registerd-address p:first-child{ 
-     font-weight: bold; 
-  color: #4caf50; 
-  padding-bottom: 30px; 
-  } 
- 
-.contact-bar{ 
-  display: flex; 
-  position: absolute; 
-  color: white; 
-  font-weight: bold; 
-  font-size: 13px; 
-  height: 30px; 
-  width: 450px; 
-  top: 1040px; 
-  justify-content: space-between; 
-  align-items: center; 
-  padding: 10px 20px; 
-  flex-wrap: wrap; 
-   
- 
-} 
-.web-bar{ 
-  position: absolute; 
-  height: 5px; 
-  width: 430px; 
-  left:430px; 
-  margin-bottom: 7px; 
-   
-   
-} 
-.contact-left{ 
-  background-color: #a6ce39; 
-padding: 10px ; 
-width: 470px; 
-height: 35px; 
-display: flex; 
-align-items: center; 
-f
- lex-wrap: wrap; 
-gap: 15px; 
-font-size: 14px; 
-} 
-.contact-right{ 
-background-color: #0b3d91; 
-f
- lex: 1; 
-text-align: center; 
-padding: 10px 20px; 
-display: flex; 
-align-items: center; 
-f
- lex-wrap: wrap; 
-gap: 15px; 
-font-size: 14px; 
-bottom: 20px; 
-} 
-a{ 
-color: white; 
-text-decoration: underline; 
-transition: color 0.3s; 
-} 
-.contact-left i, .contact-right i{ 
-  margin-right: 6px; 
-} 
- 
-/*      Responsive Layouts */ 
-@media (max-width: 768px) { 
-  .contact-bar{ 
-    flex-direction: column; 
-    text-align: center; 
-  } 
-  header { 
-    flex-direction: column; 
-    text-align: center; 
-  } 
- 
-  .gst-info { 
-    flex-direction: column; 
-    align-items: flex-start; 
-  } 
- 
-  .address { 
-    flex-direction: column; 
-    gap: 10px; 
-  } 
-   
- 
-  table { 
-    font-size: 10px; 
-  } 
-} 
- 
-@media (max-width: 480px) { 
-  body { 
-    padding: 5px; 
-  } 
- 
-  header h2 { 
-    font-size: 1.2rem; 
-  } 
- 
-  .work-order { 
-    padding: 10px; 
-  } 
- 
-  table { 
-    font-size: 9px; 
-  } 
- 
-  footer { 
-    flex-direction: column; 
-    text-align: center; 
-    gap: 5px; 
-  } 
-  .contact-left, .contact-right{ 
-    flex-direction: column; 
-    gap: 8px; 
-    font-size: 13px; 
-  } 
-  .contact-bar{ 
-    padding: 15px 10px; 
-  } 
-} 
-</style> 
-<body> 
-  <div class="work-order"> 
- 
-    <!-- Header --> 
-    <header> 
-      <div class="header-left"> 
-        <img src="C:\Users\USER\Documents\ERP-Software\front\src\assets\mera.jpg" 
-alt="Merraki Expert Logo" /> 
-        <h2>MERRAKI EXPERT</h2> 
-      </div> 
-      <div class="header-right"> 
-        <p><strong>Work No:</strong> WO-1023</p> 
-        <p><strong>Date:</strong> 14-Oct-2025</p> 
-        <p><strong>JO ID:</strong> 102</p> 
-      </div> 
-    </header> 
- 
-    <div class="gst-info"> 
-      <p><strong>GSTIN:</strong> 27AKUPY6544R1ZM</p> 
-      <p><strong>UDYAM-MH-20-0114278</strong></p> 
-    </div> 
- 
-    <!-- Address --> 
-    <div class="address-block"> 
-      <div> 
-        <strong>Billing Address:</strong> 
-        <p>101, 2nd Floor, Shri Sai Apartment, Near Kachore Lawn, Nagpur - 440015</p> 
-      </div> 
-      <div> 
-        <strong>Shipping Address:</strong> 
-        <p>Meraki Expert, 101, 2nd Floor, Shri Sai Apartment, Near Kachore Lawn, Nagpur - 
-440015</p> 
-      </div> 
-    </div> 
- 
-    <h3 class="first">Work Order against (M/s. Jai Maa Santoshi Cold Storage, Goa.)</h3> 
- 
-    <!-- Table --> 
-    <div class="table-container"> 
-      <table> 
-        <thead> 
-          <tr> 
-            <th>S.No.</th> 
-            <th>Description</th> 
-            <th>Quantity</th> 
-            <th>Unit</th> 
-            <th>Rate</th> 
-            <th>Amount</th> 
-          </tr> 
-        </thead> 
-        <tbody> 
-          <tr> 
-            <td>1</td> 
-            <td>PUF Insulated Wall & Roof Panel Installation with Finishing.</td> 
-            <td>4430.63</td> 
-            <td>Sq.Mtr.</td> 
-            <td>140</td> 
-            <td>₹ 620,288.20</td> 
-          </tr> 
-          <tr><td>2</td><td>Cutouts included if 
-any</td><td></td><td></td><td></td><td></td></tr> 
-          <tr><td>3</td><td>Loading, Unloading & Lifting 
-included</td><td></td><td></td><td></td><td></td></tr> 
-          <tr><td>4</td><td>Material Handling on site 
-included</td><td></td><td></td><td></td><td></td></tr> 
-          <tr><td>5</td><td>Accessories Handling 
-included</td><td></td><td></td><td></td><td></td></tr> 
-          <tr> 
-            <td colspan="5" class="text-right"><strong>Total Amount</strong></td> 
-            <td>₹620,288.20</td> 
-          </tr> 
-          <tr> 
-            <td colspan="6" class="text-right"><strong>Rs. Six Lakh Twenty Thousand Two 
-Hundred Eight and Twenty Paisa Only</strong></td> 
-          </tr> 
-        </tbody> 
-      </table> 
-    </div> 
- 
-    <!-- Terms --> 
-    <div class="terms"> 
-      <h3>Terms & Conditions</h3> 
-      <ul> 
-        <li>Advance Payment 20%.</li> 
-        <li>80% payment after 15 Days WCC Report.</li> 
-        <li>Payment as per work order.</li> 
-        <li>Measurement as per installation of Panel (Sq.Mtr).</li> 
-        <li>Ensure minimum wastage of materials.</li> 
-        <li>Work quality must meet standards.</li> 
-        <li>All work with safety equipment.</li> 
-        <li>PPE Kit compulsory on site.</li> 
-        <li>No smoking, alcohol, or chewing Gutkha on site.</li> 
-        <li>No child labour allowed.</li> 
-        <li>Work per approved drawing.</li> 
-        <li>Misconduct will be penalized.</li> 
-        <li>Tools ready with safety before site work.</li> 
-        <li>Debris cleaning mandatory after installation.</li> 
-      </ul> 
-    </div> 
- 
-    <!-- Footer --> 
-    <footer> 
-      <div> 
-        <strong>Contractor Signature</strong> 
-      </div> 
-      <div> 
-        <strong>Meraki Expert</strong> 
-      </div> 
-    </footer> 
- 
-    <!-- Contact Section --> 
+     <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Order (Image 1)</title>
+    <style>
+        /* --- Global & Container Styles --- */
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .work-order-container {
+            width: 794px; /* A4-like width for print */
+            margin: 0 auto;
+        }
+
+        /* --- Utility & Border Classes --- */
+        .full-border { border: 1px solid #000; }
+        .thick-top-border { border-top: 3px solid #333; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .bold { font-weight: bold; }
+        .padding-5 { padding: 5px; }
+
+        /* --- Header Section --- */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .header-table td {
+            padding: 0;
+            vertical-align: top;
+        }
+
+        /* Left Header (Logo/Company Info) */
+        .logo-section {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .logo-img-placeholder {
+            height: 35px; /* Size based on the image */
+            width: 35px;
+            background-color: #70AD47; /* Approximate green color */
+            border-radius: 5px;
+            margin-right: 5px;
+            flex-shrink: 0;
+        }
+
+        .logo-text-area {
+            line-height: 1.1;
+        }
+
+        .logo-main-text {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #0070c0; /* Blue color */
+        }
+        .logo-tagline {
+            font-size: 7pt;
+            color: #666;
+            font-style: italic;
+        }
+
+        .company-header-text {
+            margin-top: 10px;
+        }
+        .company-header-text div {
+            font-size: 10pt;
+            line-height: 1.2;
+        }
+        .company-header-text .name-large {
+            font-size: 12pt;
+            font-weight: bold;
+        }
+
+        /* Right Header (WO Details) */
+        .wo-details-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .wo-details-table td {
+            font-size: 10pt;
+            padding: 0 0 2px 0;
+        }
+        .wo-details-table .label {
+            width: 80px;
+            padding-right: 5px;
+            font-weight: bold;
+        }
+        .wo-details-table .value {
+            color: #0070c0; /* Blue color */
+        }
+
+        /* --- Vendor & WO Details Block --- */
+        .vendor-wo-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border-top: 1px solid #333; /* Line across the top */
+            padding-top: 5px;
+        }
+
+        .vendor-col, .wo-col {
+            width: 48%;
+        }
+
+        .vendor-details div {
+            line-height: 1.4;
+        }
+
+        .details-heading {
+            font-weight: bold;
+            font-size: 11pt;
+            border-bottom: 1px solid #333;
+            padding-bottom: 2px;
+            margin-bottom: 5px;
+        }
+
+        /* --- Main Work Order Table --- */
+        .main-wo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 9pt; /* Smaller font for the dense table */
+        }
+
+        .main-wo-table th, .main-wo-table td {
+            border: 1px solid #000;
+            padding: 3px 5px;
+            vertical-align: top;
+            height: 15px; /* Give empty cells a defined height */
+        }
+
+        .main-wo-table th {
+            background-color: #e0e0e0; /* Light grey header */
+            font-weight: bold;
+        }
+
+        /* Column widths to replicate spacing */
+        .col-sno { width: 5%; }
+        .col-qty, .col-mou, .col-rate, .col-amount { width: 10%; }
+        .col-desc { width: 55%; }
+
+        /* Merging for the total row */
+        .total-row .label-cell {
+            text-align: right;
+            border-right: none;
+            font-weight: bold;
+        }
+        .total-row .total-cell {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        /* --- Terms & Condition Section --- */
+        .terms-conditions {
+            margin-top: 20px;
+            border: 1px solid #000;
+        }
+        
+        .terms-heading-bar {
+            background-color: #e0e0e0;
+            font-weight: bold;
+            text-align: center;
+            padding: 5px;
+            border-bottom: 1px solid #000;
+        }
+        
+        .terms-list-container {
+            padding: 5px;
+        }
+
+        .terms-list {
+            list-style-type: none; /* Removes default bullet */
+            padding-left: 0;
+            margin: 0;
+            line-height: 1.3;
+            /* Use a simple list for the * bullet look from the original image */
+        }
+        
+        .terms-list li {
+            position: relative;
+            padding-left: 15px;
+            margin-bottom: 2px;
+        }
+
+        .terms-list li::before {
+            content: '*';
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+        
+        /* --- Signature Section --- */
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            padding-bottom: 5px;
+        }
+
+        .signature-box {
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            text-align: center;
+            width: 30%;
+            font-weight: bold;
+        }
+        .signature-box-left { text-align: left; }
+        .signature-box-right { text-align: right; }
+
+        /* --- Footer Section --- */
+        .footer {
+            margin-top: 50px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+            font-size: 8pt;
+        }
+
+        .footer-address-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .footer-address {
+            width: 48%;
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .footer-address::before {
+            content: '•';
+            color: #70AD47; /* Green dot */
+            font-size: 12pt;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .contact-bar {
+            background-color: #70AD47; /* Green bar */
+            color: white;
+            text-align: center;
+            padding: 5px 0;
+            display: flex;
+            justify-content: space-around;
+            font-size: 8pt;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .contact-bar a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .contact-bar span {
+            margin: 0 5px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="work-order-container">
     
-    <div class="address"> 
-      <div class="address-section"> 
-        <div class="office-address"> 
-        <div class="map"> <p><i class="fas fa-map-marker-alt"></i>Office Address:</p></div>  
-          <p> 101, 2nd Floor, Shri Sai Apartment, Near Kachore Lawn, Manish Nagar, Nagpur - 
-440015 (MH)</p> 
-        </div> 
-        <div class="registerd-address"> 
-        <div class="map"><p><i class="fas fa-map-marker-alt"></i>Registered Address</p></div 
-        >3863, Prabhag No.5, Ganesh Square, Teacher Colony Road, Deori, Gondia - 441901</> 
-      </div> 
-      </div> 
-       
-      <div class="contact-bar"> 
-        <div class="contact-left"> 
-          <i class="fas fa-phone-alt"></i>+91 77220 01802 
-           
-           
-            <i class="fas fa-envelope"></i>info@merakiexpert.in 
-           
-          </div> 
-      
-      <div class="web-bar"> 
-        <div class="contact-right"><a href="https://www.mrakiexpert.in" target="_blank"> 
-          <i class="fas fa-globe"></i> www.merakiexpert.in 
-          </a> 
-        </div> 
-         
-      </div> 
-      </div> 
-       
-       
- 
-</body> 
+    <table class="header-table">
+        <tr>
+            <td style="width: 50%;">
+                <div class="logo-section">
+                    <div class="logo-img-placeholder"></div>
+                    <div class="logo-text-area">
+                        <div class="logo-main-text">MERAKKI EXPERT™</div>
+                        <div class="logo-tagline">A Cool Reality...</div>
+                    </div>
+                </div>
+            </td>
+            <td style="width: 50%; text-align: right;">
+                <div class="company-header-text">
+                    <div class="bold text-right">MERAKKI EXPERT PVT. LTD.</div>
+                    <div class="name-large text-right">MERAKKI EXPERT</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <div class="vendor-wo-container">
+        <div class="vendor-col">
+            <div class="details-heading">Vendor Details</div>
+            <div class="vendor-details">
+                <div>Name:</div>
+                <div>Company Name:</div>
+                <div>Address:</div>
+                <div>Nagpur:</div>
+                <div>Mob. No.</div>
+                <div>Mail Id.</div>
+            </div>
+        </div>
+        <div class="wo-col text-right">
+            <div class="details-heading"></div> <table class="wo-details-table" style="float: right;">
+                <tr>
+                    <td class="label text-left">W/O No:</td>
+                    <td class="value text-left">ME/00/2024-25</td>
+                </tr>
+                <tr>
+                    <td class="label text-left">W/O Date:</td>
+                    <td class="value text-left">15-07-2024</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <table class="main-wo-table">
+        <thead>
+            <tr>
+                <th colspan="7">Work Order against (M/s. ) (Job No.)</th>
+            </tr>
+            <tr>
+                <th class="col-sno">S.NO.</th>
+                <th class="col-desc">Description</th>
+                <th class="col-qty">Quantity</th>
+                <th class="col-mou">Mou</th>
+                <th class="col-rate">Rate</th>
+                <th class="col-amount">Amount</th>
+                <th class="col-amount">₹0.00</th> </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="col-sno text-center"></td>
+                <td class="col-desc">PUF Panel Installation with Finishing.</td>
+                <td class="col-qty text-center"></td>
+                <td class="col-mou text-center"></td>
+                <td class="col-rate text-center"></td>
+                <td class="col-amount text-center"></td>
+                <td class="col-amount text-center"></td>
+            </tr>
+            <tr>
+                <td class="col-sno text-center"></td>
+                <td class="col-desc">Material Handeling on site included</td>
+                <td class="col-qty text-center"></td>
+                <td class="col-mou text-center"></td>
+                <td class="col-rate text-center"></td>
+                <td class="col-amount text-center"></td>
+                <td class="col-amount text-center"></td>
+            </tr>
+            <tr>
+                <td class="col-sno text-center"></td>
+                <td class="col-desc">Scaffolding & Unloading are included</td>
+                <td class="col-qty text-center"></td>
+                <td class="col-mou text-center"></td>
+                <td class="col-rate text-center"></td>
+                <td class="col-amount text-center"></td>
+                <td class="col-amount text-center"></td>
+            </tr>
+            <tr>
+                <td class="col-sno text-center"></td>
+                <td class="col-desc">Making & Installation of Hatch Door Included</td>
+                <td class="col-qty text-center"></td>
+                <td class="col-mou text-center"></td>
+                <td class="col-rate text-center"></td>
+                <td class="col-amount text-center"></td>
+                <td class="col-amount text-center"></td>
+            </tr>
+
+            <tr><td colspan="7"></td></tr>
+            <tr><td colspan="7"></td></tr>
+            <tr><td colspan="7"></td></tr>
+
+            <tr class="total-row">
+                <td colspan="5" style="border-right: none;"></td> <td class="label-cell">Extra</td>
+                <td class="total-cell"></td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="5" style="border-right: none;"></td> <td class="label-cell">Total Amount</td>
+                <td class="total-cell"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="terms-conditions">
+        <div class="terms-heading-bar">Terms & Condition</div>
+        <div class="terms-list-container">
+            <ul class="terms-list">
+                <li>Advance Payment **20%**</li>
+                <li>Payment will be done after 15 Days WCC Report.</li>
+                <li>Payment will be done as per work order.</li>
+                <li>Payment will be done as per measurment of Installation of Panel in Sq. Mtr.</li>
+                <li>Ensure minimum wastage of Materials.</li>
+                <li>The all labor equipment of the work shall be qualified.</li>
+                <li>All the work will be carried out with safety equipment.</li>
+                <li>Wearing **PPT Kit** is compalsory while working on site.</li>
+                <li>Chewing Gutkha, Smoking and Drinking Alcohol is not allowed while working on Site.</li>
+                <li>Child labour is not allowed.</li>
+                <li>All the work will be done as per given drawing.</li>
+                <li>As per drawing, if any misconduct is observed the contractor shall be penalized.</li>
+                <li>All The Machinies and Tools should be Ready with safety Before Reaching on site.</li>
+                <li>After completion of installation full site cleaning is mandatory.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="signature-section">
+        <div class="signature-box signature-box-left">
+            Contractor Signature
+        </div>
+        <div style="width: 30%;"></div> 
+        <div class="signature-box signature-box-right">
+            Merakki Expert
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-address-bar">
+            <div class="footer-address">
+                **Office Address:**
+                <br>
+                101, 2nd Floor, Shri Sai Apartment, Near Kachore Lawn,
+                Manish Nagar, Nagpur - 440015 (MH).
+            </div>
+            <div class="footer-address">
+                **Registered Address:**
+                <br>
+                3863, Prabhag No. 5, Ganesh Square,
+                Teacher Colony Road, Deori, Gondia - 441901.
+            </div>
+        </div>
+        
+        <div class="contact-bar">
+            <span>📞 +91 77220 01802</span> 
+            <span>📧 info@merakkiexpert.in</span> 
+            <span>🌐 www.merakkiexpert.in</span>
+        </div>
+    </div>
+
+</div>
+
+</body>
 </html> 
  
       `);
@@ -628,23 +619,164 @@ Hundred Eight and Twenty Paisa Only</strong></td>
     }
   };
 
-  const handlePrintWorkOrder = (order) => {
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(`
-      <html><head><title>Print Work Order</title>
-      <style>body{font-family:Arial;margin:40px;}h1{text-align:center;color:#003366;}p{font-size:16px;}</style>
-      </head><body>
-      <h1>Work Order Document</h1>
-      <p><b>Work Order #:</b> ${order.work_order_number}</p>
-      <p><b>Customer:</b> ${order.customer_name}</p>
-      <p><b>Created Date:</b> ${order.work_order_date ? new Date(order.work_order_date).toLocaleDateString() : 'N/A'}</p>
-      <p><b>Status:</b> ${order.status}</p>
-      <p><b>Amount:</b> ${order.grand_total}</p>
-      <p style="margin-top:40px;font-style:italic;text-align:center;">Generated by ERP Software</p>
-      </body></html>`);
-    printWindow.document.close();
-    printWindow.print();
-    handleClose();
+  const handlePrintWorkOrder = async (order) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/work-orders/${order.work_order_id}`);
+      const { workOrder, workOrderItems, customer } = response.data;
+
+      const formatDate = (dateString) => {
+        const d = new Date(dateString);
+        return `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
+      };
+
+      const vendorName = customer?.name || customer?.vendor_name || customer?.customer_name || '';
+      const companyName = customer?.company_name || vendorName || '';
+      const addressLine = customer?.address || customer?.city || 'Nagpur';
+      const mobile = customer?.mobile || customer?.phone || '';
+      const email = customer?.email || '';
+
+      const itemsHTML = workOrderItems.map((item, index) => `
+        <tr>
+          <td style="text-align:center;">${index + 1}.</td>
+          <td>${item.item_detail || ''}</td>
+          <td style="text-align:center;">${item.quantity || ''}</td>
+          <td style="text-align:center;">${item.uom_description || ''}</td>
+          <td style="text-align:right;">${item.rate || ''}</td>
+          <td style="text-align:right;">${item.amount || ''}</td>
+        </tr>
+      `).join('');
+
+      const total = workOrderItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>Work Order</title>
+          <style>
+            @page { size: A4; margin: 14mm; }
+            body { font-family: Arial, sans-serif; color: #000; }
+            .sheet { }
+            .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+            .top .left img { height:60px; }
+            .top .right { text-align:right; font-weight:bold; font-size:16px; line-height:1.2; }
+            .section { margin-top:6px; }
+            .vendor { display:flex; justify-content:space-between; font-size:12px; }
+            .vendor .left { width:58%; }
+            .vendor .right { width:40%; text-align:right; }
+            .table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+            .table, .table th, .table td { border: 1.5px solid #000; }
+            .table th, .table td { padding:6px; }
+            .title-row th { text-align:center; background:#e6e6e6; font-weight:bold; }
+            .table .col-no { width:8%; text-align:center; }
+            .table .col-desc { width:54%; }
+            .table .col-qty { width:10%; text-align:center; }
+            .table .col-uom { width:10%; text-align:center; }
+            .table .col-rate { width:9%; text-align:right; }
+            .table .col-amt { width:9%; text-align:right; }
+            .terms { border:1.5px solid #000; margin-top:12px; }
+            .terms .header { background:#e6e6e6; font-weight:bold; padding:6px 8px; border-bottom:1.5px solid #000; }
+            .terms .body { padding:8px 14px; }
+            .signatures { display:flex; justify-content:space-between; margin-top:18px; }
+            .signature { width:45%; text-align:center; border-top:1px solid #000; padding-top:10px; font-weight:bold; }
+            .footer { display:flex; justify-content:space-between; font-size:12px; margin-top:8px; }
+            .contact-bar { background:#2ECC71; color:#fff; text-align:center; padding:6px; font-size:12px; margin-top:6px; }
+            .website-bar { background:#2E86C1; color:#fff; text-align:center; padding:6px; font-size:12px; }
+          </style>
+        </head>
+        <body>
+          <div class="sheet">
+            <div class="top">
+              <div class="left"><img src="${ui}" alt="Meraki Expert"/></div>
+              <div class="right">MERRAKI EXPERT PVT. LTD.<br/>MERAKI EXPERT</div>
+            </div>
+
+            <div class="section vendor">
+              <div class="left">
+                <div style="font-weight:bold;">Vendor Details</div>
+                Name: ${vendorName}<br/>
+                Company Name: ${companyName}<br/>
+                Address: ${addressLine}<br/>
+                Nagpur.<br/>
+                Mob No. ${mobile}<br/>
+                Mail Id. ${email}
+              </div>
+              <div class="right">
+                W/O No ${workOrder.work_order_number || ''}<br/>
+                W/O Date: ${formatDate(workOrder.work_order_date) || ''}
+              </div>
+            </div>
+
+            <table class="table">
+              <thead>
+                <tr class="title-row"><th colspan="6">Work Order against (M/s. ${companyName || vendorName}.) (Job No.)</th></tr>
+                <tr>
+                  <th class="col-no">S.NO.</th>
+                  <th class="col-desc">Description</th>
+                  <th class="col-qty">Quantity</th>
+                  <th class="col-uom">Mou</th>
+                  <th class="col-rate">Rate</th>
+                  <th class="col-amt">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHTML}
+                <tr>
+                  <td colspan="5" style="text-align:right;font-weight:bold;">Extra</td>
+                  <td class="col-amt"></td>
+                </tr>
+                <tr>
+                  <td colspan="5" style="text-align:right;font-weight:bold;">Total Amount</td>
+                  <td class="col-amt">${total.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="terms">
+              <div class="header">Terms & Condition</div>
+              <div class="body">
+                <ul style="margin:0; padding-left:18px;">
+                  <li>Advance Payment 20%.</li>
+                  <li>80% Payment will be done after 15 Days WCC Report.</li>
+                  <li>Payment will be done as per work order.</li>
+                  <li>Payment will be done as per measurement of Installation of Panel in Sq. Mtr.</li>
+                  <li>Ensure minimum wastage of Materials.</li>
+                  <li>The quality requirement of the work shall be qualified.</li>
+                  <li>All the work will be carried out with safety equipment.</li>
+                  <li>Wearing PPT Kit is compulsory while working on site.</li>
+                  <li>Chewing Gutkha, Smoking and Drinking Alcohol is not allowed while working on Site.</li>
+                  <li>Child labour is not allowed.</li>
+                  <li>All the work will be done as per given drawing.</li>
+                  <li>As per drawing, if any misconduct is observed the contractor shall be penalized.</li>
+                  <li>All the Machines and Tools should be Ready with Safety Before Reaching on site.</li>
+                  <li>After completion of installation debris cleaning is mandatory.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="signatures">
+              <div class="signature">Contractor Signature</div>
+              <div class="signature">Meraki Expert</div>
+            </div>
+
+            <div class="footer">
+              <div>Office Address:<br/>101, 2nd Floor, Shri Sai Apartment, Near Kachore Lawn,<br/>Manish Nagar, Nagpur-440025 (MH).</div>
+              <div>Registered Address:<br/>3863, Prabhu No. 6 Ganesh Square,<br/>Teacher Colony Road, Deori, Gondia-441901.</div>
+            </div>
+
+            <div class="contact-bar">+91 77220 01802 | info@merakiexpert.in</div>
+            <div class="website-bar">www.merakiexpert.in</div>
+          </div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+      handleClose();
+    } catch (error) {
+      console.error("Error printing work order:", error);
+      alert("Failed to print work order. Please try again.");
+    }
   };
 
 
