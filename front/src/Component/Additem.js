@@ -63,7 +63,7 @@ export default function AddItems() {
   // Fetch Units from backend
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/product_units")
+      .get("http://168.231.102.6:5000/api/product_units")
       .then((res) => {
         const unitNames = res.data.map(unit => unit.unit_name);
         setUnits(unitNames);
@@ -78,7 +78,7 @@ export default function AddItems() {
   // Fetch Taxes
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/taxes")
+      .get("http://168.231.102.6:5000/api/taxes")
       .then((res) => {
         const activeTaxes = res.data.filter((tax) => tax.status === "Active");
         setTaxList(activeTaxes);
@@ -89,7 +89,7 @@ export default function AddItems() {
   // Fetch Vendors
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/vendors")
+      .get("http://168.231.102.6:5000/api/vendors")
       .then((res) => setVendors(res.data))
       .catch((err) => {
         console.error("Error fetching vendors:", err);
@@ -115,7 +115,7 @@ export default function AddItems() {
       sku: generateSKU(),
     };
     try {
-      await axios.post("http://localhost:5000/api/products", dataToSend);
+      await axios.post("http://168.231.102.6:5000/api/products", dataToSend);
       navigate("/item-list");
     } catch (error) {
       console.error("Error saving item:", error);
@@ -139,7 +139,7 @@ export default function AddItems() {
       
       try {
         // Save to backend first
-        await axios.post("http://localhost:5000/api/product_units", {
+        await axios.post("http://168.231.102.6:5000/api/product_units", {
           unit_name: trimmedUnit
         });
         

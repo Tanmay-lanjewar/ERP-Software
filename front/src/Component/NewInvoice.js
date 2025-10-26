@@ -63,7 +63,7 @@ const NewInvoicePage = () => {
   useEffect(() => {
     // Fetch customers
     axios
-      .get("http://localhost:5000/api/customers")
+      .get("http://168.231.102.6:5000/api/customers")
       .then((res) => {
         console.log('Customers response:', res.data);
         setCustomers(res.data);

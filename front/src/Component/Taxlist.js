@@ -38,7 +38,7 @@ const Taxlist = () => {
 
   const fetchTaxes = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/taxes');
+      const res = await axios.get('http://168.231.102.6:5000/api/taxes');
       setTaxes(res.data);
     } catch (err) {
       console.error("Error fetching taxes:", err);
@@ -55,7 +55,7 @@ const Taxlist = () => {
     const newStatus = selectedRowData.status === 'Active' ? 'Inactive' : 'Active';
 
     try {
-      await axios.patch(`http://localhost:5000/api/taxes/${selectedRowData.id}/status`, {
+      await axios.patch(`http://168.231.102.6:5000/api/taxes/${selectedRowData.id}/status`, {
         status: newStatus
       });
       fetchTaxes();

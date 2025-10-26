@@ -55,7 +55,7 @@ export default function QuotationListPage() {
       setLoading(true);
       setError("");
       try {
-        const res = await axios.get("http://localhost:5000/api/quotation");
+        const res = await axios.get("http://168.231.102.6:5000/api/quotation");
         setQuotations(res.data);
       } catch (err) {
         setError("Failed to fetch quotations");
@@ -71,7 +71,7 @@ export default function QuotationListPage() {
     if (!selectedQuote) return;
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/quotation/${selectedQuote.quotation_id}`
+        `http://168.231.102.6:5000/api/quotation/${selectedQuote.quotation_id}`
       );
       const { quotation, items, sub_total, cgst, sgst, grand_total } = res.data;
       const doc = new jsPDF();
@@ -188,7 +188,7 @@ export default function QuotationListPage() {
 
       // Fetch quotation data
       const quotationResponse = await axios.get(
-        `http://localhost:5000/api/quotation/${quotationId}`
+        `http://168.231.102.6:5000/api/quotation/${quotationId}`
       );
       if (!quotationResponse.data || !quotationResponse.data.quotation) {
         throw new Error("Failed to fetch quotation data");
@@ -202,7 +202,7 @@ export default function QuotationListPage() {
       if (quotation.customer_id) {
         try {
           const customerResponse = await axios.get(
-            `http://localhost:5000/api/customers/${quotation.customer_id}`
+            `http://168.231.102.6:5000/api/customers/${quotation.customer_id}`
           );
           if (customerResponse.data) {
             customerData = customerResponse.data;
@@ -759,7 +759,7 @@ export default function QuotationListPage() {
       return;
     try {
       await axios.delete(
-        `http://localhost:5000/api/quotation/${selectedQuote.quotation_id}`
+        `http://168.231.102.6:5000/api/quotation/${selectedQuote.quotation_id}`
       );
       setQuotations((prev) =>
         prev.filter((q) => q.quotation_id !== selectedQuote.quotation_id)
@@ -1030,7 +1030,7 @@ export default function QuotationListPage() {
                       selectedQuote.status === "Sent" ? "Draft" : "Sent";
                     try {
                       await axios.put(
-                        `http://localhost:5000/api/quotation/${selectedQuote.quotation_id}`,
+                        `http://168.231.102.6:5000/api/quotation/${selectedQuote.quotation_id}`,
                         { status: newStatus }
                       );
                       setQuotations((prev) =>

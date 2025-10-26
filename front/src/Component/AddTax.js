@@ -44,7 +44,7 @@ const AddTax = () => {
 
 
     try {
-      await axios.post("http://localhost:5000/api/taxes", payload);
+      await axios.post("http://168.231.102.6:5000/api/taxes", payload);
       alert("Tax added successfully!");
       navigate("/tax"); // Go back to tax list
     } catch (err) {
