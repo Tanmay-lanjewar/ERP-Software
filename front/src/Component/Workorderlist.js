@@ -15,7 +15,6 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ui from '../assets/mera.png';
 
-
 const statusColorMap = {
   Draft: { bg: '#E6F4EA', color: '#333' },
   'In Progress': { bg: '#E5F0FB', color: '#1565C0' },
@@ -41,11 +40,8 @@ const WorkOrderlist = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch('http://168.231.102.6:5000/api/work-orders');
-      if (!res.ok) {
-        throw new Error(`HTTP error! Status: ${res.status}`);
-      }
-      const data = await res.json();
+      const res = await axios.get('http://168.231.102.6:5000/api/work-orders');
+      const data = res.data;
       console.log("📦 Work Orders from backend:", data);
       setWorkOrders(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
@@ -111,8 +107,6 @@ const WorkOrderlist = () => {
     return `${convert(Math.floor(num))} Rupees Only`;
   };
 
-
-
   const handleDownloadPdf = async (workOrder) => {
     try {
       // Fetch work order details from API
@@ -147,7 +141,27 @@ const WorkOrderlist = () => {
         }).format(amount);
       };
 
-      // Generate items HTML
+      // Dynamic vendor/customer details - fallback if vendor join fails
+      const vendorName = customer?.billing_recipient_name || workOrderData.customer_name || 'N/A';
+      const companyName = customer?.customer_name || workOrderData.customer_name || 'N/A';
+      const addressParts = [
+        customer?.billing_address1 || '',
+        customer?.billing_address2 || '',
+        customer?.billing_city || 'Nagpur',
+        `${customer?.billing_state || ''} - ${customer?.billing_pincode || ''}`
+      ].filter(Boolean).join(', ');
+      const fullAddress = addressParts || 'Address not available';
+      const city = customer?.billing_city || 'Nagpur';
+      const mobile = customer?.mobile || customer?.phone || 'Not available';
+      const email = customer?.email || customer?.mail_id || 'Not available';
+      const woNumber = workOrderData.work_order_number || 'ME/00/2024-25';
+      const woDate = formatDate(workOrderData.work_order_date) || '15-07-2024';
+      const jobNo = workOrderData.purchase_order_number || '';
+      // Dynamic terms and conditions - strip leading bullets if any
+      const terms = workOrderData.terms_and_conditions || '';
+      const termsLines = terms.split('\n').filter(line => line.trim()).map(line => line.replace(/^[*]{1,2}\s*[-•]\s*/i, '').trim());
+      const termsListHTML = termsLines.map(line => `<li>${line}</li>`).join('') || '<li>No terms provided</li>';
+      // Generate dynamic items HTML
       const itemsHTML = workOrderItems.map((item, index) => `
         <tr>
           <td style="border: 1px solid #000; padding: 3px; text-align: center;">${index + 1}</td>
@@ -159,7 +173,6 @@ const WorkOrderlist = () => {
           <td style="border: 1px solid #000; padding: 3px; text-align: right;">${item.amount || (item.quantity * item.rate).toFixed(2)}</td>
         </tr>
       `).join('');
-
       const printWindow = window.open("", "_blank");
       printWindow.document.write(`
      <!DOCTYPE html>
@@ -177,17 +190,14 @@ const WorkOrderlist = () => {
             padding: 20px;
             color: #333;
         }
-
         @page {
   size: A4;
   margin: 10mm; /* you can adjust this to 5mm or 15mm */
 }
-
         .work-order-container {
             width: 90%; /* A4-like width for print */
             margin: 0 auto;
         }
-
         /* --- Utility & Border Classes --- */
         .full-border { border: 8px solid #000; }
         .thick-top-border { border-top: 3px solid #333; }
@@ -196,23 +206,19 @@ const WorkOrderlist = () => {
         .text-left { text-align: left; }
         .bold { font-weight: bold; }
         .padding-5 { padding: 5px; }
-
         /* --- Header Section --- */
+   
     
-     
         /* Left Header (Logo/Company Info) */
         .logo-section {
             display: flex;
             align-items: flex-start;
             margin-bottom: 15px;
         }
-
-      
-
+     
         .logo-text-area {
             line-height: 1.1;
         }
-
         .logo-main-text {
             font-size: 14pt;
             font-weight: bold;
@@ -223,7 +229,6 @@ const WorkOrderlist = () => {
             color: #666;
             font-style: italic;
         }
-
         .company-header-text {
             margin-top: 3px;
         }
@@ -235,7 +240,6 @@ const WorkOrderlist = () => {
             font-size: 12pt;
             font-weight: bold;
         }
-
         /* Right Header (WO Details) */
         .wo-details-table {
             width: 100%;
@@ -249,12 +253,11 @@ const WorkOrderlist = () => {
             width: 80px;
             padding-right: 5px;
             font-weight: bold;
-             color: #21407d; 
+             color: #21407d;
         }
         .wo-details-table .value {
-             color: #21407d;  /* Blue color */
+             color: #21407d; /* Blue color */
         }
-
         /* --- Vendor & WO Details Block --- */
         .vendor-wo-container {
             display: flex;
@@ -265,15 +268,12 @@ const WorkOrderlist = () => {
             margin-top: 20px;
       
         }
-
         .vendor-col, .wo-col {
             width:60%;
         }
-
         .vendor-details div {
             line-height: 1.6;
         }
-
         .details-heading {
             font-weight: bold;
             font-size: 11pt;
@@ -281,7 +281,6 @@ const WorkOrderlist = () => {
             margin-bottom: 5px;
             bo
         }
-
         /* --- Main Work Order Table --- */
         .main-wo-table {
             width: 80%;
@@ -292,24 +291,20 @@ const WorkOrderlist = () => {
             border: 1px solid #000;
                     
         }
-
         .main-wo-table th, .main-wo-table td {
             border: 1px solid #000;
             padding: 3px 5px;
             vertical-align: top;
             height: 15px; /* Give empty cells a defined height */
         }
-
         .main-wo-table th {
            /* Light grey header */
             font-weight: bold;
         }
-
         /* Column widths to replicate spacing */
         .col-sno { width: 5%; }
         .col-qty, .col-mou, .col-rate, .col-amount { width: 10%; }
         .col-desc { width: 55%; }
-
         /* Merging for the total row */
         .total-row .label-cell {
             text-align: right;
@@ -320,7 +315,6 @@ const WorkOrderlist = () => {
             text-align: right;
             font-weight: bold;
         }
-
         /* --- Terms & Condition Section --- */
         .terms-conditions {
             margin-top: 20px;
@@ -331,18 +325,16 @@ const WorkOrderlist = () => {
         }
         
         .terms-heading-bar {
-      
             font-weight: bold;
       font-size: 1rem;
             padding: 5px;
             border: 3px solid #000;
-                     color: #21407d; 
+                     color: #21407d;
         }
         
         .terms-list-container {
             padding: 5px;
         }
-
         .terms-list {
             list-style-type: none; /* Removes default bullet */
             padding-left: 0;
@@ -356,7 +348,6 @@ const WorkOrderlist = () => {
             padding-left: 15px;
             margin-bottom: 2px;
         }
-
         .terms-list li::before {
             content: '*';
             position: absolute;
@@ -374,7 +365,6 @@ const WorkOrderlist = () => {
             margin: 0 auto;
             margin-top: 50px;
         }
-
         .signature-box {
             border-top: 1px solid #000;
             padding-top: 5px;
@@ -384,7 +374,6 @@ const WorkOrderlist = () => {
         }
         .signature-box-left { text-align: left; }
         .signature-box-right { text-align: right; }
-
         /* --- Footer Section --- */
         .footer {
             margin-top: 50px;
@@ -395,19 +384,16 @@ const WorkOrderlist = () => {
             margin-top: 20px;
             width: 90%;
         }
-
         .footer-address-bar {
             display: flex;
             justify-content: space-between;
             margin-bottom: 10px;
         }
-
         .footer-address {
             width: 48%;
             padding-left: 15px;
             position: relative;
         }
-
         .footer-address::before {
             content: '•';
             color: #70AD47; /* Green dot */
@@ -416,7 +402,6 @@ const WorkOrderlist = () => {
             left: 0;
             top: 0;
         }
-
         .contact-bar {
             background-color: #70AD47; /* Green bar */
             color: white;
@@ -435,17 +420,14 @@ const WorkOrderlist = () => {
         .contact-bar span {
             margin: 0 5px;
         }
-
         .border{
             width: 90%;
             height: 3px;
             background-color: rgb(207, 207, 207);
             margin: 0 auto;
           margin-top: -45px;
-           
-
+          
         }
-
         .vendor-wo-container {
   display: flex;
   justify-content: space-between;
@@ -453,7 +435,7 @@ const WorkOrderlist = () => {
   margin-top: 20px;
   gap: 20px;
   width: 80%; /* use full available space */
-  box-sizing: border-box;
+  box: box-sizing: border-box;
   margin-bottom: 20px;
   font-size: 1rem;
   font-weight: bold;
@@ -472,7 +454,6 @@ const WorkOrderlist = () => {
   font-size: 9pt;
   border: px solid #000;
 }
-
 .main-wo-table th,
 .main-wo-table td {
   border: 1px solid #000;
@@ -481,30 +462,25 @@ const WorkOrderlist = () => {
   font-family: Arial, sans-serif;
   color: #000;
 }
-
 .main-wo-table th {
-
   font-weight: bold;
   text-align: center;
 }
-
 .total-row .label-cell {
   text-align: right;
   font-weight: bold;
   border-right: 1px solid #000;
 }
-
 .total-row .total-cell {
   text-align: right;
   font-weight: bold;
   border-left: 1px solid #000;
 }
 
-
         @media print {
   body {
-    width: 210mm;      /* exact width of A4 */
-    height: 297mm;     /* exact height of A4 */
+    width: 210mm; /* exact width of A4 */
+    height: 297mm; /* exact height of A4 */
     margin: 0;
     padding: 0;
     background: white;
@@ -519,60 +495,58 @@ const WorkOrderlist = () => {
 <body>
 
 <div class="work-order-container">
-    
+   
   <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div class="logo-section">
-                  
-        
+                 
+       
                          <img src=${ui} alt="Merraki Expert Logo" style="width: auto; height: 280px ; margin-top: -120px; margin-bottom: -60px" />
-            
+           
                 </div>
-         
         
+       
                 <div class="company-header-text" style=" color: #21407d; font-size: 2rem; font-weight: bold;" >
-                    <div class="bold text-right">MERAKKI EXPERT PVT. LTD.</div>
-                    <div class="name-large text-right">MERAKKI EXPERT</div>
+                    <div class="bold text-right">MERAKI EXPERT PVT. LTD.</div>
+                    <div class="name-large text-right">MERAKI EXPERT</div>
                 </div>
-
                 </div>
-
     </div>
                 <div class="border"> </div>
 
     <div class="vendor-wo-container">
-    
    
+  
         <div class="vendor-col">
             <div class="details-heading" style="color: #21407d; font-weight: bold; font-size: 1.2rem;">Vendor Details</div>
             <div class="vendor-details">
-                <div>Name:</div>
-                <div>Company Name:</div>
-                <div>Address:</div>
-                <div>Nagpur:</div>
-                <div>Mob. No.</div>
-                <div>Mail Id.</div>
+                <div>Name: ${vendorName}</div>
+                <div>Company Name: ${companyName}</div>
+                <div>Address: ${fullAddress}</div>
+                <div>${city}:</div>
+                <div>Mob. No. ${mobile}</div>
+                <div>Mail Id. ${email}</div>
             </div>
         </div>
         <div class="wo-col text-right">
             <div class="details-heading"></div> <table class="wo-details-table" style="float: right;">
                 <tr>
                     <td class="label text-left">W/O No:</td>
-                    <td class="value text-left">ME/00/2024-25</td>
+                    <td class="value text-left">${woNumber}</td>
                 </tr>
                 <tr>
                     <td class="label text-left">W/O Date:</td>
-                    <td class="value text-left">15-07-2024</td>
+                    <td class="value text-left">${woDate}</td>
                 </tr>
             </table>
         </div>
-                 
-        
+                
+       
     </div>
 <table class="main-wo-table">
   <thead>
     <tr>
-      <th colspan="6" style="border: 3px solid black;     font-weight: bold;
-      font-size: 1rem;          color: #21407d; ">Work Order against (M/s. ) (Job No.)</th>
+      <th colspan="6" style="border: 3px solid black; font-weight: bold;
+      font-size: 1rem; color: #21407d; ">Work Order against (M/s. ${companyName}) (Job No. ${jobNo})</th>
     </tr>
     <tr style="border: 3px solid black;">
       <th class="col-sno">S.NO.</th>
@@ -584,92 +558,40 @@ const WorkOrderlist = () => {
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <td class="text-center">1</td>
-      <td>PUF Panel Installation with Finishing.</td>
-      <td class="text-center">-</td>
-      <td class="text-center"></td>
-      <td class="text-right">-</td>
-      <td class="text-right">-</td>
-    </tr>
-    <tr>
-      <td class="text-center"></td>
-      <td>Material Handling on site included.</td>
-      <td class="text-center">-</td>
-      <td class="text-center"></td>
-      <td class="text-right">-</td>
-      <td class="text-right">-</td>
-    </tr>
-    <tr>
-      <td class="text-center"></td>
-      <td>Scaffolding & Unloading are included.</td>
-      <td class="text-center">-</td>
-      <td class="text-center"></td>
-      <td class="text-right">-</td>
-      <td class="text-right">-</td>
-    </tr>
-    <tr>
-      <td class="text-center"></td>
-      <td>Making & Installation of Hatch Door Included.</td>
-      <td class="text-center"></td>
-      <td class="text-center"></td>
-      <td class="text-right"></td>
-      <td class="text-right"></td>
-    </tr>
-
+    ${itemsHTML}
     <tr> <td class="text-center"></td>
       <td class="text-center"></td>
       <td class="text-right"></td>
             <td class="text-right"></td>
       <td class="text-right">Extra</td><td class="text-right"></td></tr>
-
           <tr style="border : 3px solid black"> <td class="text-center"></td>
       <td class="text-right" colspan="4" style="border: 3px solid black;">Total Amount</td>
-      <td class="text-right"></td>
-           
+      <td class="text-right">${grand_total.toFixed(2)}</td>
+          
  </tr>
-
          <tr> <td class="text-center" style="border: none; display: none;"></td>
       <td class="text-right" colspan="6"></td>
- 
-           
+          
  </tr>
-
-
   </tbody>
 </table>
     <div class="terms-conditions">
         <div class="terms-heading-bar" >Terms & Condition</div>
         <div class="terms-list-container">
             <ul class="terms-list">
-                <li>Advance Payment *20%*</li>
-                <li>Payment will be done after 15 Days WCC Report.</li>
-                <li>Payment will be done as per work order.</li>
-                <li>Payment will be done as per measurment of Installation of Panel in Sq. Mtr.</li>
-                <li>Ensure minimum wastage of Materials.</li>
-                <li>The all labor equipment of the work shall be qualified.</li>
-                <li>All the work will be carried out with safety equipment.</li>
-                <li>Wearing *PPT Kit* is compalsory while working on site.</li>
-                <li>Chewing Gutkha, Smoking and Drinking Alcohol is not allowed while working on Site.</li>
-                <li>Child labour is not allowed.</li>
-                <li>All the work will be done as per given drawing.</li>
-                <li>As per drawing, if any misconduct is observed the contractor shall be penalized.</li>
-                <li>All The Machinies and Tools should be Ready with safety Before Reaching on site.</li>
-                <li>After completion of installation full site cleaning is mandatory.</li>
+                ${termsListHTML}
             </ul>
         </div>
     </div>
-
     <div class="signature-section">
         <div class="signature-box signature-box-left">
             Contractor Signature
         </div>
-        <div style="width: 30%;"></div> 
+        <div style="width: 30%;"></div>
         <div class="signature-box signature-box-right">
-            Merakki Expert
+            Maraki Expert
         </div>
     </div>
-
     <div class="footer">
         <div class="footer-address-bar">
             <div class="footer-address">
@@ -681,24 +603,20 @@ const WorkOrderlist = () => {
             <div class="footer-address">
                 *Registered Address:*
                 <br>
-                3863, Prabhag No. 5, Ganesh Square,
+                3863, Prabag No. 5, Ganesh Square,
                 Teacher Colony Road, Deori, Gondia - 441901.
             </div>
         </div>
-        
+       
         <div class="contact-bar">
-            <span>📞 +91 77220 01802</span> 
-            <span>📧 info@merakkiexpert.in</span> 
+            <span>📞 +91 77220 01802</span>
+            <span>📧 info@merakkiexpert.in</span>
             <span>🌐 www.merakkiexpert.in</span>
         </div>
     </div>
-
 </div>
-
 </body>
 </html>
-
- 
       `);
       printWindow.document.close();
       printWindow.print();
@@ -719,11 +637,15 @@ const WorkOrderlist = () => {
         return `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
       };
 
-      const vendorName = customer?.name || customer?.vendor_name || customer?.customer_name || '';
-      const companyName = customer?.company_name || vendorName || '';
-      const addressLine = customer?.address || customer?.city || 'Nagpur';
-      const mobile = customer?.mobile || customer?.phone || '';
-      const email = customer?.email || '';
+      const vendorName = customer?.billing_recipient_name || workOrder.customer_name || 'N/A';
+      const companyName = customer?.customer_name || workOrder.customer_name || 'N/A';
+      const addressLine = [customer?.billing_address1, customer?.billing_address2, customer?.billing_city].filter(Boolean).join(', ') || 'Address not available';
+      const mobile = customer?.mobile || customer?.phone || 'Not available';
+      const email = customer?.email || customer?.mail_id || 'Not available';
+
+      const terms = workOrder.terms_and_conditions || '';
+      const termsLines = terms.split('\n').filter(line => line.trim()).map(line => line.replace(/^[*]{1,2}\s*[-•]\s*/i, '').trim());
+      const termsList = termsLines.map(line => `<li>${line}</li>`).join('') || '<li>No terms provided</li>';
 
       const itemsHTML = workOrderItems.map((item, index) => `
         <tr>
@@ -826,20 +748,7 @@ const WorkOrderlist = () => {
               <div class="header">Terms & Condition</div>
               <div class="body">
                 <ul style="margin:0; padding-left:18px;">
-                  <li>Advance Payment 20%.</li>
-                  <li>80% Payment will be done after 15 Days WCC Report.</li>
-                  <li>Payment will be done as per work order.</li>
-                  <li>Payment will be done as per measurement of Installation of Panel in Sq. Mtr.</li>
-                  <li>Ensure minimum wastage of Materials.</li>
-                  <li>The quality requirement of the work shall be qualified.</li>
-                  <li>All the work will be carried out with safety equipment.</li>
-                  <li>Wearing PPT Kit is compulsory while working on site.</li>
-                  <li>Chewing Gutkha, Smoking and Drinking Alcohol is not allowed while working on Site.</li>
-                  <li>Child labour is not allowed.</li>
-                  <li>All the work will be done as per given drawing.</li>
-                  <li>As per drawing, if any misconduct is observed the contractor shall be penalized.</li>
-                  <li>All the Machines and Tools should be Ready with Safety Before Reaching on site.</li>
-                  <li>After completion of installation debris cleaning is mandatory.</li>
+                  ${termsList}
                 </ul>
               </div>
             </div>
@@ -868,7 +777,6 @@ const WorkOrderlist = () => {
       alert("Failed to print work order. Please try again.");
     }
   };
-
 
   const getFilteredOrders = () => {
     return workOrders.filter(order => {
@@ -1020,7 +928,7 @@ const WorkOrderlist = () => {
       >
         <MenuItem onClick={handleEdit}>Edit</MenuItem>
         <MenuItem onClick={() => handleDownloadPdf(selectedOrder)}><PictureAsPdfIcon fontSize="small" sx={{ mr: 1 }} /> Download PDF</MenuItem>
-        <MenuItem onClick={() => handleDownloadPdf(selectedOrder)}><PrintIcon fontSize="small" sx={{ mr: 1 }} /> Print Work Order</MenuItem>
+        <MenuItem onClick={() => handlePrintWorkOrder(selectedOrder)}><PrintIcon fontSize="small" sx={{ mr: 1 }} /> Print Work Order</MenuItem>
         <MenuItem onClick={() => handleShareLink(selectedOrder)}>Share Link</MenuItem>
       </Menu>
     </Box>
