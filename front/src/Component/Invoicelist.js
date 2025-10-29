@@ -161,7 +161,7 @@ export default function Invoicelist() {
       // Open print window with dynamic data
       const printWindow = window.open("", "_blank");
       printWindow.document.write(`
-      <!DOCTYPE html>
+     <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -172,64 +172,65 @@ export default function Invoicelist() {
   
 
     <style>
+
+        * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
         @page {
-            size: 310mm 250mm;
+            size: 310mm 275mm;
             margin: 8mm;
         }
 
-        @media screen and (min-width: 1025px) {
-            body {
-                background-color: #f0f0f0;
-            }
+       body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* keep content top aligned */
+  min-height: 100vh;
+  padding: 20px; /* gives nice spacing around */
+}
 
-            .invoice-containerone {
-                width: 1022px;
-                height: 794px;
-                font-size: 0.9em;
-                padding: 50px;
-            }
+.invoice-containerone {
+  background: white;
+ 
+  width: 100%;
+  
+  max-width: 1000px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  display: flex;
 
-            .items-table {
-                font-size: 7pt;
-            }
-        }
+  align-items: center;
+  justify-content: center;
 
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            display: flex;
-            justify-content: center;
-            padding: 50px;
-        }
-
-     
-
-        .invoice-containerone {
-            transform: scale(1);
-            transform-origin: top left;
-            width: 1222px;
-            height: 794px;
-        }
-
+}
         .invoice-containerone {
             font-size: 0.85em;
-            width: 1222px;
-            height: 794px;
+            width: 100%;
+            height: auto;
             background-color: #fff;
-            padding: 50px;
+        
             box-sizing: border-box;
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-            position: relative;
+ 
+  padding: 30px !important; /
         }
 
         .invoice-containertwo {
             border: 1px solid rgb(177, 177, 177);
             background-color: #fff;
-            padding: 0px;
             box-sizing: border-box;
             font-size: 0.85em;
-            position: relative;
+             margin: 40px auto !important;
+  
+              width: 100%;
+  box-sizing: border-box;
         }
+
+ 
 
         .text-center {
             text-align: center;
@@ -278,9 +279,11 @@ export default function Invoicelist() {
             height: 40px;
             display: flex;
             align-items: center;
+            justify-content:space-between;
             font-size: 14pt;
             font-weight: bold;
             color: #041E42;
+            
         }
 
         .header-logo span {
@@ -368,15 +371,13 @@ export default function Invoicelist() {
 
         .consignee-col {
             width: 50%;
-            border-right: 1px solid #7d7d7d;
+          
             min-height: 110px;
             padding: 5px;
             box-sizing: border-box;
         }
 
-        .consignee-col {
-            width: 60%;
-        }
+
 
         .consignee-col:last-child {
             width: 40%;
@@ -406,7 +407,7 @@ export default function Invoicelist() {
             position: absolute;
             top: 0;
             bottom: 0;
-            left: 52.1%;
+            left: 51.8%;
             width: 1px;
             background: #8e8e8e;
         }
@@ -453,15 +454,17 @@ export default function Invoicelist() {
             font-size: 7.8pt;
             margin-bottom: 0px;
         }
+.items-table {
+    text-align: center;
+    width: 100%;
+    margin: 0 auto; /* center table */
+    border-collapse: collapse;
+    font-size: 7rem;
+    table-layout: fixed; /* required for wrapping to work properly */
+    box-sizing: border-box;
+}
 
-        .items-table {
-            text-align: center;
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 7pt;
-            table-layout: fixed;
-        }
-
+/* 
         .items-table th,
         .items-table td {
             border: 1px solid #818181;
@@ -470,7 +473,18 @@ export default function Invoicelist() {
             vertical-align: center;
             height: 12px;
             line-height: 1.15;
-        }
+        } */
+
+
+        .items-table th,
+.items-table td {
+    border: 1px solid #818181;
+    padding: 4px 8px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap; /* keep text on one line */
+    overflow: visible; /* allow table to stretch */
+}
 
         .items-table th {
             text-align: center;
@@ -582,14 +596,14 @@ export default function Invoicelist() {
         }
 
         .declaration-text {
-            width: 60%;
+            width:70%;
             float: left;
             line-height: 1.3;
-            font-size: 7.8pt;
+           
         }
 
         .signature-box {
-            width: 28%;
+            width: 30%;
             float: right;
             text-align: center;
             padding-left: 10px;
@@ -616,6 +630,34 @@ export default function Invoicelist() {
             padding-top: 8px;
             font-weight: bold;
         }
+
+        .items-table,
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* Define consistent column widths across both tables */
+.items-table th:nth-child(6),
+.items-table td:nth-child(6),
+.summary-table td:nth-child(6) {
+  width: 100%; /* 👈 Disc column */
+}
+
+.items-table th:nth-child(7),
+.items-table td:nth-child(7),
+.summary-table td:nth-child(7) {
+  width: 12%; /* 👈 Amount column */
+}
+
+/* Style consistency */
+.items-table th, .items-table td,
+.summary-table td {
+  border: 1px solid #ccc;
+  text-align: center;
+  padding: 6px;
+}
 
         @media screen and (max-width: 768px) {
             body {
@@ -682,6 +724,7 @@ export default function Invoicelist() {
                 font-size: 7pt;
                 text-align: left;
                 display: block;
+            
             }
 
             .declaration-section {
@@ -690,7 +733,7 @@ export default function Invoicelist() {
 
             .declaration-text,
             .signature-box {
-                width: 100%;
+                width: 80%;
                 float: none;
                 text-align: center;
                 margin-bottom: 10px;
@@ -708,6 +751,141 @@ export default function Invoicelist() {
             font-weight: 800 !important;
             font-size: 6.5pt;
         }
+
+.items-table {
+    width: 100%;                 /* always fits container */
+    border-collapse: collapse;
+    table-layout: auto;          /* let columns adjust automatically */
+    font-size: 7pt;
+}
+
+.items-table th,
+.items-table td {
+    border: 1px solid #818181;
+    padding: 4px 6px;
+    text-align: center;
+    vertical-align: middle;
+    word-wrap: break-word;       /* allow wrapping of long words */
+    white-space: normal !important; /* override nowrap */
+}
+
+.items-table .col-desc {
+    text-align: left;
+    max-width: 250px;           /* limit description width */
+    word-wrap: break-word;
+}
+
+.items-table .col-sno,
+.items-table .col-hsn,
+.items-table .col-qty,
+.items-table .col-unit,
+.items-table .col-rate,
+.items-table .col-total-value,
+.items-table .col-disc,
+.items-table .col-taxable-value,
+.items-table .col-tax-rate,
+.items-table .col-tax-rs,
+.items-table .col-igst-rs,
+.items-table .col-total-rs {
+    width: auto;                 /* flexible columns */
+    white-space: nowrap;          /* keep numbers in one line */
+}
+
+.invoice-table{
+      border-collapse: collapse;
+  
+}
+      @media screen and (min-width: 1025px) {
+            body {
+                background-color: #f0f0f0;
+            }
+
+            .invoice-containerone {
+                width: 1022px;
+                height: 794px;
+                font-size: 0.9em;
+                padding: 50px;
+            }
+
+            .items-table {
+                font-size: 7pt;
+            }
+        }
+
+        @media screen and (max-width: 600px){
+            .declaration-text p{
+                font-size: 1rem;
+            }
+        }
+
+     @media print {
+ 
+        .consignee-section {
+            display: flex;
+            border: 1px solid #696969;
+            border-top: none;
+            margin-bottom: -1px;
+        }
+
+        .consignee-col {
+            width: 50%;
+            border-right: 1px solid #7d7d7d;
+            min-height: 110px;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+
+            .consignee-col:first-child {
+            width: 51.8%;
+            border-right: 1px solid #7d7d7d;
+            min-height: 110px;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        .consignee-col:last-child {
+            width: 40%;
+            border-right: none;
+        }
+
+
+        .consignee-col p {
+            margin: 0 0 2px 0;
+            font-size: 7.8pt;
+            line-height: 1.2;
+        }
+
+        .consignee-col .title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 8pt;
+        }
+
+        .consignee-section {
+            display: flex;
+            position: relative;
+        }
+
+        .consignee-section::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 52.1%;
+            width: 1px;
+            background: #8e8e8e;
+        }
+
+        .consignee-col {
+            width: 52%;
+            border-right: none;
+        }
+
+
+
+}
+
     </style>
 </head>
 
@@ -716,7 +894,7 @@ export default function Invoicelist() {
         <div class="invoice-containertwo">
             <div class="header-section">
                 <div class="header-logo">
-                    <img src="${ui}" style="width: Auto; height: 230px; margin-top: -50px; margin-bottom: -70px;"
+                    <img  src=${ui} style="width: 230px; height: 160px; margin-top: -50px; margin-bottom: -70px;"
                         alt="Logo" />
 
                 </div>
@@ -768,14 +946,16 @@ export default function Invoicelist() {
             </div>
 
 
-             <div class="consignee-section">
+            <div class="consignee-section">
                 <div class="consignee-col">
                     <p class="title font-bold">Details of Receiver (Billed to)</p>
                     <p><strong>Name:</strong> <b> ${customer.billing_recipient_name || customer.customer_name ||
                             "N/A"}</b></p>
-                    <p><strong>Address :</strong> ${customer.billing_address1 || ""}
-                        <br>${customer.billing_address2}
-                        
+                    <p><strong>Address :</strong> ${customer.billing_address1 || ""}${customer.billing_address2 }
+                        <br>${customer.billing_address2} : ""}<br>
+                        ${customer.billing_city || ""}, ${customer.billing_state || ""} - ${customer.billing_pincode ||
+                        ""}<br>
+                        Pin Code - ${customer.billing_pincode || ""}, ${customer.billing_country || "India"}<br>
                     </p><br>
                     <p><strong>State Code:</strong> <b> ${customer.billing_state ? "27" : "N/A"}</b></p>
                     <p><strong>GSTIN:</strong> <b> ${customer.gst || "N/A"}</b></p>
@@ -785,8 +965,8 @@ export default function Invoicelist() {
                     <p class="title font-bold">Details of Consignee (Shipped to)</p>
                     <p><strong>Name: </strong> <b> ${customer.shipping_recipient_name || customer.customer_name ||
                             "N/A"}</b></p>
-                    <p><strong>Address:</strong> ${customer.shipping_address1 || ""}
-                        ${customer.shipping_address2}
+                    <p><strong>Address:</strong> ${customer.shipping_address1 || ""}${customer.shipping_address2}
+                        ${customer.shipping_address2} : ""}
                         ${customer.shipping_city || ""}, ${customer.shipping_state || ""} - ${customer.shipping_pincode
                         || ""}${customer.shipping_pincode || ""}, ${customer.shipping_country || "India"}</p><br>
                     <p><strong>State Code: </strong> <b> ${customer.shipping_state ? "27" : "N/A"}</b></p>
@@ -795,7 +975,7 @@ export default function Invoicelist() {
             </div>
 
 
-            <table class="items-table">
+            <table class="items-table invoice-table">
                 <thead>
                     <tr class="tax-header-row" style="font-weight: bold;">
                         <th class="col-sno" rowspan="2">S.No.</th>
@@ -836,7 +1016,7 @@ export default function Invoicelist() {
                         <td class="col-qty text-right">680.250</td>
                         <td class="col-unit text-center">Sq.M</td>
                         <td class="col-rate text-right">1430.00</td>
-                        <td class="col-total-value text-right">9,72,757.50</td>
+                        <td class="col-total-value text-right">9,72,757,88888.50</td>
                         <td class="col-disc text-center">-</td>
                         <td class="col-taxable-value text-right">9,72,757.500.</td>
                         <td class="col-tax-rate text-right">9%</td>
@@ -891,48 +1071,67 @@ export default function Invoicelist() {
 
                     <tr class="total-row bold-row">
                         <td colspan="8" class="col-label" style="border-right: 1px solid #777777;">Sub Total</td>
-                        <td class="col-taxable-value text-right">9,72,757.50</td>
+                        <td class="col-taxable-value text-right">9,72,757,79.50</td>
                         <td class="col-tax-rate"></td>
                         <td class="col-tax-rs text-right">87,548.18</td>
                         <td class="col-tax-rate"></td>
-                        <td class="col-tax-rs text-right">87,548.18</td>
+                        <td class="col-tax-rs text-right">87,548,84359.18</td>
                         <td class="col-tax-rate"></td>
                         <td class="col-igst-rs text-right">0.00</td>
-                        <td class="col-total-rs text-right">11,47,853.85</td>
+                        <td class="col-total-rs text-right">11,47,853,99.85</td>
                     </tr>
 
-                    <tr class="total-row">
-                        <td colspan="15" class="col-label" style="text-align: center; padding: 1px ; line-height: 1.8;">
-                            <b style="text-align: center; border-right: 1px solid #868686; padding: 2px; line-height: 1.1;padding-top: 7px;padding-bottom: 7px;position: relative;
-    right: 22px;">Grand Total (Inclusive of GST) </b>
-                        </td>
-                        <td class="col-total-rs text-center">11,47,854</td>
-                    </tr>
+                  <tr class="total-row">
+  <!-- Column 1: up to Discount -->
+  <td colspan="8" class="col-label text-right">
+    <b>Grand Total (Inclusive of GST)</b>
+  </td>
+
+  <!-- Column 2: IGST -->
+  <td colspan="7" class="col-igst text-center">
+    <b></b>
+  </td>
+
+  <!-- Column 3: Final Total -->
+  <td class="col-total-rs text-center">
+    <b>₹11,47,854</b>
+  </td>
+</tr>
+
+ <tr class="total-row">
+  <!-- Column 1: up to Discount -->
+  <td colspan="8" class="col-label text-right">
+    <b>Invoice Value (In words):</</b>
+  </td>
+
+  <!-- Column 2: IGST -->
+  <td colspan="8" class="col-igst text-center">
+    <b>Eleven Lac Fourty Seven Thausand Eight Hundred and Fifty Four Rupees only</b>
+  </td>
+</tr>
+ <tr class="total-row">
+  <!-- Column 1: up to Discount -->
+  <td colspan="8" class="col-label text-right">
+    <b>Whether Tax is payable on Reverse Charge:</b>
+  </td>
+
+  <!-- Column 2: IGST -->
+  <td colspan="8" class="col-igst text-center">
+    <b>No</b>
+  </td>
+</tr>
+
                 </tbody>
             </table>
 
-            <div class="value-in-words-row" style="margin-top: 0px;text-align: center;">
-                <p style="margin: 0;"><strong style="text-align: center; border-right: 1px solid #868686; padding: 3px; line-height: 1.3;padding-top: 2px;padding-bottom: 2px;position: relative;
-    left: 155.3px;">Invoice Value (In words):</strong> <strong style=" position: relative;
-    left: 156px;">Eleven Lac Fourty Seven Thausand Eight Hundred and Fifty Four Rupees only
-                    </strong></p>
-            </div>
-            <div class="reverse-charge-row" style="text-align: center;">
-                <p style="margin: 0; display: inline-block; text-align: center;position: relative;
-    right: 82px; "><strong
-                        style="text-align: center; border-right: 1px solid #868686; padding: 4px; line-height: 1.3;padding-top: 2px;padding-bottom: 2px;">Whether
-                        Tax is payable on Reverse Charge:</strong> </p>
-                <p style="margin: 0; display: inline-block; float: right; position: relative;
-    right: 290px;padding-right: 5px;">No</p>
-            </div>
+          
+           
 
             <div class="declaration-section clearfix">
                 <h5>Declaration :</h5>
                 <div class="declaration-text">
-                    <p style="margin: 0; font-size: 8.5pt; ">Certified that the particulars given above are true and
-                        correct and the amount indicated represents </p>
-                    <p style="margin: 0; font-size: 8.5pt; ">represents the Price actually charged and that there
-                        is no flow of additional consideration directly</p>
+                    <p style="margin: 0; font-size: 8.5pt; ">Certified that the particulars given above are true and correct and the amount indicated represents </p>
+                    <p style="margin: 0; font-size: 8.5pt; ">represents the Price actually charged and that thereis no f low of additional consideration directly</p>
                     <p style="margin: 0; font-size: 8.5pt; ">or indirectly from the Receiver [Buyer].</p>
                 </div>
                 <div class=" signature-box">
@@ -940,7 +1139,7 @@ export default function Invoicelist() {
                             MERAKI
                             EXPERT</b></p>
 
-                    <img src=" ${ne} " style="width: 90px; height: 70px;  margin-bottom: -60px;" alt="Logo" />
+                    <img src="new.png" style="width: 90px; height: 70px;  margin-bottom: -60px;" alt="Logo" />
 
 
                     <span class="auth-sign">Authorized Signatory</span>
@@ -957,6 +1156,8 @@ export default function Invoicelist() {
 </body>
 
 </html>
+
+
       `);
       printWindow.document.close();
       printWindow.print();
@@ -1618,7 +1819,7 @@ export default function Invoicelist() {
                           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose} PaperProps={{ sx: { width: 200 } }}>
                             <MenuItem onClick={() => handleEditInvoice(row.invoice_id)}><EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit</MenuItem>
                             <MenuItem onClick={() => handleDownloadPdf(row)}><PictureAsPdfIcon fontSize="small" sx={{ mr: 1 }} /> Download the PDF</MenuItem>
-                            <MenuItem onClick={() => handlePrintInvoice(row)}><PrintIcon fontSize="small" sx={{ mr: 1 }} /> Print Invoice</MenuItem>
+                            <MenuItem onClick={() => handleDownloadPdf(row)}><PrintIcon fontSize="small" sx={{ mr: 1 }} /> Print Invoice</MenuItem>
                             <MenuItem onClick={() => handleSendEmail(row)}><EmailIcon fontSize="small" sx={{ mr: 1 }} /> Send Email</MenuItem>
                             <MenuItem onClick={() => handleShareLink(row)}><ShareIcon fontSize="small" sx={{ mr: 1 }} /> Share Link</MenuItem>
                             <MenuItem onClick={async () => {

@@ -512,7 +512,7 @@ const PurchaseOrderActions = () => {
                           <MenuItem onClick={() => handleDownloadPdf(row)}>
                             Download PDF
                           </MenuItem>
-                          <MenuItem onClick={() => handlePrintOrder(row)}>
+                          <MenuItem onClick={() => handleDownloadPdf(row)}>
                             Print
                           </MenuItem>
                           <MenuItem onClick={() => handleSendEmail(row)}>
