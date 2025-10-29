@@ -178,13 +178,18 @@ const WorkOrderlist = () => {
             color: #333;
         }
 
+        @page {
+  size: A4;
+  margin: 10mm; /* you can adjust this to 5mm or 15mm */
+}
+
         .work-order-container {
-            width: 794px; /* A4-like width for print */
+            width: 90%; /* A4-like width for print */
             margin: 0 auto;
         }
 
         /* --- Utility & Border Classes --- */
-        .full-border { border: 1px solid #000; }
+        .full-border { border: 8px solid #000; }
         .thick-top-border { border-top: 3px solid #333; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
@@ -193,16 +198,8 @@ const WorkOrderlist = () => {
         .padding-5 { padding: 5px; }
 
         /* --- Header Section --- */
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        .header-table td {
-            padding: 0;
-            vertical-align: top;
-        }
-
+    
+     
         /* Left Header (Logo/Company Info) */
         .logo-section {
             display: flex;
@@ -210,14 +207,7 @@ const WorkOrderlist = () => {
             margin-bottom: 15px;
         }
 
-        .logo-img-placeholder {
-            height: 35px; /* Size based on the image */
-            width: 35px;
-            background-color: #70AD47; /* Approximate green color */
-            border-radius: 5px;
-            margin-right: 5px;
-            flex-shrink: 0;
-        }
+      
 
         .logo-text-area {
             line-height: 1.1;
@@ -226,7 +216,7 @@ const WorkOrderlist = () => {
         .logo-main-text {
             font-size: 14pt;
             font-weight: bold;
-            color: #0070c0; /* Blue color */
+            color: #21407d; /* Blue color */
         }
         .logo-tagline {
             font-size: 7pt;
@@ -235,7 +225,7 @@ const WorkOrderlist = () => {
         }
 
         .company-header-text {
-            margin-top: 10px;
+            margin-top: 3px;
         }
         .company-header-text div {
             font-size: 10pt;
@@ -259,42 +249,48 @@ const WorkOrderlist = () => {
             width: 80px;
             padding-right: 5px;
             font-weight: bold;
+             color: #21407d; 
         }
         .wo-details-table .value {
-            color: #0070c0; /* Blue color */
+             color: #21407d;  /* Blue color */
         }
 
         /* --- Vendor & WO Details Block --- */
         .vendor-wo-container {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
-            border-top: 1px solid #333; /* Line across the top */
-            padding-top: 5px;
+            align-items: center;
+            width: 80%;
+            margin: 0 auto;
+            margin-top: 20px;
+      
         }
 
         .vendor-col, .wo-col {
-            width: 48%;
+            width:60%;
         }
 
         .vendor-details div {
-            line-height: 1.4;
+            line-height: 1.6;
         }
 
         .details-heading {
             font-weight: bold;
             font-size: 11pt;
-            border-bottom: 1px solid #333;
             padding-bottom: 2px;
             margin-bottom: 5px;
+            bo
         }
 
         /* --- Main Work Order Table --- */
         .main-wo-table {
-            width: 100%;
+            width: 80%;
             border-collapse: collapse;
             margin-top: 20px;
             font-size: 9pt; /* Smaller font for the dense table */
+            margin: 0 auto;
+            border: 1px solid #000;
+                    
         }
 
         .main-wo-table th, .main-wo-table td {
@@ -305,7 +301,7 @@ const WorkOrderlist = () => {
         }
 
         .main-wo-table th {
-            background-color: #e0e0e0; /* Light grey header */
+           /* Light grey header */
             font-weight: bold;
         }
 
@@ -329,14 +325,18 @@ const WorkOrderlist = () => {
         .terms-conditions {
             margin-top: 20px;
             border: 1px solid #000;
+            width: 80%;
+            margin: 0 auto;
+            margin-top: 20px;
         }
         
         .terms-heading-bar {
-            background-color: #e0e0e0;
+      
             font-weight: bold;
-            text-align: center;
+      font-size: 1rem;
             padding: 5px;
-            border-bottom: 1px solid #000;
+            border: 3px solid #000;
+                     color: #21407d; 
         }
         
         .terms-list-container {
@@ -370,6 +370,9 @@ const WorkOrderlist = () => {
             justify-content: space-between;
             margin-top: 50px;
             padding-bottom: 5px;
+            width: 80%;
+            margin: 0 auto;
+            margin-top: 50px;
         }
 
         .signature-box {
@@ -388,6 +391,9 @@ const WorkOrderlist = () => {
             border-top: 1px solid #ccc;
             padding-top: 10px;
             font-size: 8pt;
+            margin: 0 auto;
+            margin-top: 20px;
+            width: 90%;
         }
 
         .footer-address-bar {
@@ -430,35 +436,114 @@ const WorkOrderlist = () => {
             margin: 0 5px;
         }
 
+        .border{
+            width: 90%;
+            height: 3px;
+            background-color: rgb(207, 207, 207);
+            margin: 0 auto;
+          margin-top: -45px;
+           
+
+        }
+
+        .vendor-wo-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 20px;
+  gap: 20px;
+  width: 80%; /* use full available space */
+  box-sizing: border-box;
+  margin-bottom: 20px;
+  font-size: 1rem;
+  font-weight: bold;
+}
+.vendor-col {
+  width: 100%;
+}
+.wo-col {
+  width: 35%;
+  text-align: right;
+}
+.main-wo-table {
+  width: 80%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 9pt;
+  border: px solid #000;
+}
+
+.main-wo-table th,
+.main-wo-table td {
+  border: 1px solid #000;
+  padding: 5px 6px;
+  vertical-align: top;
+  font-family: Arial, sans-serif;
+  color: #000;
+}
+
+.main-wo-table th {
+
+  font-weight: bold;
+  text-align: center;
+}
+
+.total-row .label-cell {
+  text-align: right;
+  font-weight: bold;
+  border-right: 1px solid #000;
+}
+
+.total-row .total-cell {
+  text-align: right;
+  font-weight: bold;
+  border-left: 1px solid #000;
+}
+
+
+        @media print {
+  body {
+    width: 210mm;      /* exact width of A4 */
+    height: 297mm;     /* exact height of A4 */
+    margin: 0;
+    padding: 0;
+    background: white;
+    -webkit-print-color-adjust: exact; /* ensures colors are printed */
+  }
+  .vendor-col {
+  width: 60%;
+}
+        }
     </style>
 </head>
 <body>
 
 <div class="work-order-container">
     
-    <table class="header-table">
-        <tr>
-            <td style="width: 50%;">
+  <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div class="logo-section">
-                    <div class="logo-img-placeholder"></div>
-                    <div class="logo-text-area">
-                        <div class="logo-main-text">MERAKKI EXPERT™</div>
-                        <div class="logo-tagline">A Cool Reality...</div>
-                    </div>
+                  
+        
+                         <img src=${ui} alt="Merraki Expert Logo" style="width: auto; height: 280px ; margin-top: -120px; margin-bottom: -60px" />
+            
                 </div>
-            </td>
-            <td style="width: 50%; text-align: right;">
-                <div class="company-header-text">
+         
+        
+                <div class="company-header-text" style=" color: #21407d; font-size: 2rem; font-weight: bold;" >
                     <div class="bold text-right">MERAKKI EXPERT PVT. LTD.</div>
                     <div class="name-large text-right">MERAKKI EXPERT</div>
                 </div>
-            </td>
-        </tr>
-    </table>
-    
+
+                </div>
+
+    </div>
+                <div class="border"> </div>
+
     <div class="vendor-wo-container">
+    
+   
         <div class="vendor-col">
-            <div class="details-heading">Vendor Details</div>
+            <div class="details-heading" style="color: #21407d; font-weight: bold; font-size: 1.2rem;">Vendor Details</div>
             <div class="vendor-details">
                 <div>Name:</div>
                 <div>Company Name:</div>
@@ -480,87 +565,91 @@ const WorkOrderlist = () => {
                 </tr>
             </table>
         </div>
+                 
+        
     </div>
+<table class="main-wo-table">
+  <thead>
+    <tr>
+      <th colspan="6" style="border: 3px solid black;     font-weight: bold;
+      font-size: 1rem;          color: #21407d; ">Work Order against (M/s. ) (Job No.)</th>
+    </tr>
+    <tr style="border: 3px solid black;">
+      <th class="col-sno">S.NO.</th>
+      <th class="col-desc">Description</th>
+      <th class="col-qty">Quantity</th>
+      <th class="col-mou">Mou</th>
+      <th class="col-rate">Rate</th>
+      <th class="col-amount">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="text-center">1</td>
+      <td>PUF Panel Installation with Finishing.</td>
+      <td class="text-center">-</td>
+      <td class="text-center"></td>
+      <td class="text-right">-</td>
+      <td class="text-right">-</td>
+    </tr>
+    <tr>
+      <td class="text-center"></td>
+      <td>Material Handling on site included.</td>
+      <td class="text-center">-</td>
+      <td class="text-center"></td>
+      <td class="text-right">-</td>
+      <td class="text-right">-</td>
+    </tr>
+    <tr>
+      <td class="text-center"></td>
+      <td>Scaffolding & Unloading are included.</td>
+      <td class="text-center">-</td>
+      <td class="text-center"></td>
+      <td class="text-right">-</td>
+      <td class="text-right">-</td>
+    </tr>
+    <tr>
+      <td class="text-center"></td>
+      <td>Making & Installation of Hatch Door Included.</td>
+      <td class="text-center"></td>
+      <td class="text-center"></td>
+      <td class="text-right"></td>
+      <td class="text-right"></td>
+    </tr>
 
-    <table class="main-wo-table">
-        <thead>
-            <tr>
-                <th colspan="7">Work Order against (M/s. ) (Job No.)</th>
-            </tr>
-            <tr>
-                <th class="col-sno">S.NO.</th>
-                <th class="col-desc">Description</th>
-                <th class="col-qty">Quantity</th>
-                <th class="col-mou">Mou</th>
-                <th class="col-rate">Rate</th>
-                <th class="col-amount">Amount</th>
-                <th class="col-amount">₹0.00</th> </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="col-sno text-center"></td>
-                <td class="col-desc">PUF Panel Installation with Finishing.</td>
-                <td class="col-qty text-center"></td>
-                <td class="col-mou text-center"></td>
-                <td class="col-rate text-center"></td>
-                <td class="col-amount text-center"></td>
-                <td class="col-amount text-center"></td>
-            </tr>
-            <tr>
-                <td class="col-sno text-center"></td>
-                <td class="col-desc">Material Handeling on site included</td>
-                <td class="col-qty text-center"></td>
-                <td class="col-mou text-center"></td>
-                <td class="col-rate text-center"></td>
-                <td class="col-amount text-center"></td>
-                <td class="col-amount text-center"></td>
-            </tr>
-            <tr>
-                <td class="col-sno text-center"></td>
-                <td class="col-desc">Scaffolding & Unloading are included</td>
-                <td class="col-qty text-center"></td>
-                <td class="col-mou text-center"></td>
-                <td class="col-rate text-center"></td>
-                <td class="col-amount text-center"></td>
-                <td class="col-amount text-center"></td>
-            </tr>
-            <tr>
-                <td class="col-sno text-center"></td>
-                <td class="col-desc">Making & Installation of Hatch Door Included</td>
-                <td class="col-qty text-center"></td>
-                <td class="col-mou text-center"></td>
-                <td class="col-rate text-center"></td>
-                <td class="col-amount text-center"></td>
-                <td class="col-amount text-center"></td>
-            </tr>
+    <tr> <td class="text-center"></td>
+      <td class="text-center"></td>
+      <td class="text-right"></td>
+            <td class="text-right"></td>
+      <td class="text-right">Extra</td><td class="text-right"></td></tr>
 
-            <tr><td colspan="7"></td></tr>
-            <tr><td colspan="7"></td></tr>
-            <tr><td colspan="7"></td></tr>
+          <tr style="border : 3px solid black"> <td class="text-center"></td>
+      <td class="text-right" colspan="4" style="border: 3px solid black;">Total Amount</td>
+      <td class="text-right"></td>
+           
+ </tr>
 
-            <tr class="total-row">
-                <td colspan="5" style="border-right: none;"></td> <td class="label-cell">Extra</td>
-                <td class="total-cell"></td>
-            </tr>
-            <tr class="total-row">
-                <td colspan="5" style="border-right: none;"></td> <td class="label-cell">Total Amount</td>
-                <td class="total-cell"></td>
-            </tr>
-        </tbody>
-    </table>
+         <tr> <td class="text-center" style="border: none; display: none;"></td>
+      <td class="text-right" colspan="6"></td>
+ 
+           
+ </tr>
 
+
+  </tbody>
+</table>
     <div class="terms-conditions">
-        <div class="terms-heading-bar">Terms & Condition</div>
+        <div class="terms-heading-bar" >Terms & Condition</div>
         <div class="terms-list-container">
             <ul class="terms-list">
-                <li>Advance Payment **20%**</li>
+                <li>Advance Payment *20%*</li>
                 <li>Payment will be done after 15 Days WCC Report.</li>
                 <li>Payment will be done as per work order.</li>
                 <li>Payment will be done as per measurment of Installation of Panel in Sq. Mtr.</li>
                 <li>Ensure minimum wastage of Materials.</li>
                 <li>The all labor equipment of the work shall be qualified.</li>
                 <li>All the work will be carried out with safety equipment.</li>
-                <li>Wearing **PPT Kit** is compalsory while working on site.</li>
+                <li>Wearing *PPT Kit* is compalsory while working on site.</li>
                 <li>Chewing Gutkha, Smoking and Drinking Alcohol is not allowed while working on Site.</li>
                 <li>Child labour is not allowed.</li>
                 <li>All the work will be done as per given drawing.</li>
@@ -584,13 +673,13 @@ const WorkOrderlist = () => {
     <div class="footer">
         <div class="footer-address-bar">
             <div class="footer-address">
-                **Office Address:**
+                *Office Address:*
                 <br>
                 101, 2nd Floor, Shri Sai Apartment, Near Kachore Lawn,
                 Manish Nagar, Nagpur - 440015 (MH).
             </div>
             <div class="footer-address">
-                **Registered Address:**
+                *Registered Address:*
                 <br>
                 3863, Prabhag No. 5, Ganesh Square,
                 Teacher Colony Road, Deori, Gondia - 441901.
@@ -607,7 +696,8 @@ const WorkOrderlist = () => {
 </div>
 
 </body>
-</html> 
+</html>
+
  
       `);
       printWindow.document.close();
@@ -930,7 +1020,7 @@ const WorkOrderlist = () => {
       >
         <MenuItem onClick={handleEdit}>Edit</MenuItem>
         <MenuItem onClick={() => handleDownloadPdf(selectedOrder)}><PictureAsPdfIcon fontSize="small" sx={{ mr: 1 }} /> Download PDF</MenuItem>
-        <MenuItem onClick={() => handlePrintWorkOrder(selectedOrder)}><PrintIcon fontSize="small" sx={{ mr: 1 }} /> Print Work Order</MenuItem>
+        <MenuItem onClick={() => handleDownloadPdf(selectedOrder)}><PrintIcon fontSize="small" sx={{ mr: 1 }} /> Print Work Order</MenuItem>
         <MenuItem onClick={() => handleShareLink(selectedOrder)}>Share Link</MenuItem>
       </Menu>
     </Box>
