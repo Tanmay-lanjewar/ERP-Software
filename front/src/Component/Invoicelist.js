@@ -1003,30 +1003,26 @@ export default function Invoicelist() {
                     </tr>
                 </thead>
                 <tbody>
+                    ${items.map((item, index) => `
                     <tr>
-                        <td class="col-sno text-center">1</td>
-                        <td class="col-desc item-description" style="text-align: left;">
-                            Supply of Kingspan Jindal <br />Contineous Line, 50 mm THK PUR <br />Wall Panel Both Side
-                            0.5 mm<br />
-                            PPGL-300Mpa SMP-AZ 150<br /> GSM (RAL9002) Plain Lamination<br /> - Density: 40 (+-2)
-                            Kg/cum. -Panel<br />
-                            Cover Width:1000MM
-                        </td>
-                        <td class="col-hsn text-center">39259010</td>
-                        <td class="col-qty text-right">680.250</td>
+                        <td class="col-sno text-center">${index + 1}</td>
+                        <td class="col-desc item-description" style="text-align: left;">${item.item_detail}</td>
+                        <td class="col-hsn text-center">${item.hsn_sac || '39259010'}</td>
+                        <td class="col-qty text-right">${item.quantity}</td>
                         <td class="col-unit text-center">Sq.M</td>
-                        <td class="col-rate text-right">1430.00</td>
-                        <td class="col-total-value text-right">9,72,757,88888.50</td>
-                        <td class="col-disc text-center">-</td>
-                        <td class="col-taxable-value text-right">9,72,757.500.</td>
+                        <td class="col-rate text-right">${parseFloat(item.rate).toFixed(2)}</td>
+                        <td class="col-total-value text-right">${(item.quantity * item.rate).toFixed(2)}</td>
+                        <td class="col-disc text-center">${item.discount || '-'}</td>
+                        <td class="col-taxable-value text-right">${item.amount.toFixed(2)}</td>
                         <td class="col-tax-rate text-right">9%</td>
-                        <td class="col-tax-rs text-right">87,548.18</td>
+                        <td class="col-tax-rs text-right">${(item.amount * 0.09).toFixed(2)}</td>
                         <td class="col-tax-rate text-right">9%</td>
-                        <td class="col-tax-rs text-right">87,548.18</td>
+                        <td class="col-tax-rs text-right">${(item.amount * 0.09).toFixed(2)}</td>
                         <td class="col-tax-rate text-right">0%</td>
-                        <td class="col-igst-rs text-right">0</td>
-                        <td class="col-total-rs text-right">11,47,853.85</td>
+                        <td class="col-igst-rs text-right">0.00</td>
+                        <td class="col-total-rs text-right">${(item.amount + item.amount * 0.18).toFixed(2)}</td>
                     </tr>
+                    `).join('')}
                     <!-- <tr class="empty-space-row">
                         <td>&nbsp;</td>
                         <td>&nbsp;</td>
@@ -1047,38 +1043,38 @@ export default function Invoicelist() {
                     </tr> -->
                     <tr class="total-row bold-row">
                         <td colspan="8" class="col-label"></td>
-                        <td class="col-taxable-value text-right">9,72,757.50</td>
+                        <td class="col-taxable-value text-right">${sub_total.toFixed(2)}</td>
                         <td class="col-tax-rate"></td>
-                        <td class="col-tax-rs text-right">87,548.18</td>
+                        <td class="col-tax-rs text-right">${cgst.toFixed(2)}</td>
                         <td class="col-tax-rate"></td>
-                        <td class="col-tax-rs text-right">87,548.18</td>
+                        <td class="col-tax-rs text-right">${sgst.toFixed(2)}</td>
                         <td class="col-tax-rate"></td>
                         <td class="col-igst-rs text-right">0.00</td>
-                        <td class="col-total-rs text-right">11,47,853.85</td>
+                        <td class="col-total-rs text-right">${grand_total.toFixed(2)}</td>
                     </tr>
 
                     <tr class="total-row bold-row">
                         <td colspan="8" class="col-label" style="border-right: 1px solid #6b6b6b;">Add: Freight</td>
                         <td class="col-taxable-value text-right">0.00</td>
                         <td class="col-tax-rate"></td>
-                        <td class="col-tax-rs text-right"></td>
+                        <td class="col-tax-rs text-right">0.00</td>
                         <td class="col-tax-rate"></td>
-                        <td class="col-tax-rs text-right"></td>
+                        <td class="col-tax-rs text-right">0.00</td>
                         <td class="col-tax-rate"></td>
-                        <td class="col-igst-rs text-right"></td>
+                        <td class="col-igst-rs text-right">0.00</td>
                         <td class="col-total-rs text-right">0.00</td>
                     </tr>
 
                     <tr class="total-row bold-row">
                         <td colspan="8" class="col-label" style="border-right: 1px solid #777777;">Sub Total</td>
-                        <td class="col-taxable-value text-right">9,72,757,79.50</td>
+                        <td class="col-taxable-value text-right">${sub_total.toFixed(2)}</td>
                         <td class="col-tax-rate"></td>
-                        <td class="col-tax-rs text-right">87,548.18</td>
+                        <td class="col-tax-rs text-right">${cgst.toFixed(2)}</td>
                         <td class="col-tax-rate"></td>
-                        <td class="col-tax-rs text-right">87,548,84359.18</td>
+                        <td class="col-tax-rs text-right">${sgst.toFixed(2)}</td>
                         <td class="col-tax-rate"></td>
                         <td class="col-igst-rs text-right">0.00</td>
-                        <td class="col-total-rs text-right">11,47,853,99.85</td>
+                        <td class="col-total-rs text-right">${grand_total.toFixed(2)}</td>
                     </tr>
 
                   <tr class="total-row">
@@ -1094,19 +1090,19 @@ export default function Invoicelist() {
 
   <!-- Column 3: Final Total -->
   <td class="col-total-rs text-center">
-    <b>₹11,47,854</b>
+    <b>₹${grand_total.toFixed(2)}</b>
   </td>
 </tr>
 
  <tr class="total-row">
   <!-- Column 1: up to Discount -->
   <td colspan="8" class="col-label text-right">
-    <b>Invoice Value (In words):</</b>
+    <b>Invoice Value (In words):</b>
   </td>
 
   <!-- Column 2: IGST -->
   <td colspan="8" class="col-igst text-center">
-    <b>Eleven Lac Fourty Seven Thausand Eight Hundred and Fifty Four Rupees only</b>
+    <b>${numberToWords(grand_total)}</b>
   </td>
 </tr>
  <tr class="total-row">
