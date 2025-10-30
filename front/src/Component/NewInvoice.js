@@ -23,6 +23,8 @@ import {
   Avatar,
   InputBase,
   Breadcrumbs,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -59,64 +61,73 @@ const NewInvoicePage = () => {
     { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" },
   ]);
   const [customerBillingStateCode, setCustomerBillingStateCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Fetch customers
-    axios
-      .get("http://localhost:5000/api/customers")
-      .then((res) => {
-        console.log('Customers response:', res.data);
-        setCustomers(res.data);
-      })
-      .catch((err) => {
-        console.error('Error fetching customers:', err);
-        setCustomers([]);
-      });
-
-    // Fetch invoice number
-    axios
-      .get("http://localhost:5000/api/invoice/next-number")
-      .then((res) => {
-        console.log('Invoice number response:', res.data);
-        setInvoiceNumber(res.data.nextInvoiceNumber || 'Error: No invoice number');
-      })
-      .catch((err) => {
-        console.error('Error fetching invoice number:', err);
-        setInvoiceNumber('');
-      });
-
-    // Fetch products
-    fetch("http://localhost:5000/api/products")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log('Products response:', data);
-        setProducts(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching products:", error);
-      });
+    const fetchInitialData = async () => {
+      setLoading(true);
+      setError(null);
       
-    // Fetch units
-    axios
-      .get("http://localhost:5000/api/product_units")
-      .then((res) => {
-        console.log('Units response:', res.data);
-        setUnits(res.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching units:", error);
+      try {
+        // Fetch all data in parallel
+        const [customersRes, invoiceNumberRes, productsRes, unitsRes] = await Promise.all([
+          axios.get("http://168.231.102.6:5000/api/customers", { timeout: 10000 }),
+          axios.get("http://168.231.102.6:5000/api/invoice/next-number", { timeout: 10000 }),
+          axios.get("http://168.231.102.6:5000/api/products", { timeout: 10000 }),
+          axios.get("http://168.231.102.6:5000/api/units", { timeout: 10000 })
+        ]);
+        
+        console.log('Customers response:', customersRes.data);
+        console.log('Invoice number response:', invoiceNumberRes.data);
+        console.log('Products response:', productsRes.data);
+        console.log('Units response:', unitsRes.data);
+        
+        setCustomers(customersRes.data || []);
+        setInvoiceNumber(invoiceNumberRes.data.nextInvoiceNumber || 'INV-001');
+        setProducts(productsRes.data || []);
+        setUnits(unitsRes.data || []);
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+        setLoading(false);
+        
+        let errorMessage = "Failed to load required data. ";
+        
+        if (error.code === 'ECONNABORTED') {
+          errorMessage += "Request timeout. Please check your internet connection.";
+        } else if (error.response) {
+          const status = error.response.status;
+          if (status === 404) {
+            errorMessage += "Backend endpoints not found. Please contact support.";
+          } else if (status === 500) {
+            errorMessage += "Server error. Please try again later.";
+          } else {
+            errorMessage += `Server error (${status}). Please try again.`;
+          }
+        } else if (error.request) {
+          errorMessage += "Cannot connect to server. Please check if the backend server is running and accessible.";
+        } else {
+          errorMessage += error.message || "Unknown error occurred.";
+        }
+        
+        setError(errorMessage);
+        
+        // Set default values to allow user to continue
+        setCustomers([]);
+        setInvoiceNumber('INV-001');
+        setProducts([]);
         setUnits([]);
-      });
+      }
+    };
+    
+    fetchInitialData();
   }, []);
 
   const fetchCustomerBillingStateCode = async (customerId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/customers/${customerId}`);
+      const response = await axios.get(`http://168.231.102.6:5000/api/customers/${customerId}`);
       const customer = response.data;
       setCustomerBillingStateCode(customer.billing_state_code || "");
     } catch (error) {
@@ -175,11 +186,35 @@ const NewInvoicePage = () => {
   }
 
   const handleSubmit = async (saveAsDraft = false) => {
+    // Validation checks
     const customerObj = customers.find((c) => c.id === selectedCustomer);
     if (!customerObj) {
       alert("Please select a customer");
       return;
     }
+
+    if (!invoiceDate) {
+      alert("Please select an invoice date");
+      return;
+    }
+
+    if (rows.length === 0) {
+      alert("Please add at least one item to the invoice");
+      return;
+    }
+
+    // Validate that all rows have required fields
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row.item || !row.qty || !row.rate) {
+        alert(`Please fill in all required fields for item ${i + 1}`);
+        return;
+      }
+    }
+
+    setLoading(true);
+    setError(null);
+
     const invoiceData = {
       customer_id: selectedCustomer,
       customer_name: customerObj.customer_name,
@@ -206,21 +241,60 @@ const NewInvoicePage = () => {
       })),
     };
 
+    console.log("Submitting invoice data:", invoiceData);
+
     try {
-      await axios.post(
-        "http://localhost:5000/api/invoice",
+      const response = await axios.post(
+        "http://168.231.102.6:5000/api/invoice",
         {
           invoice: invoiceData,
           items: invoiceData.items,
         },
         {
           headers: { "Content-Type": "application/json" },
+          timeout: 30000, // 30 second timeout
         }
       );
+      
+      console.log("Invoice saved successfully:", response.data);
+      setLoading(false);
       navigate("/invoice-list");
     } catch (err) {
+      setLoading(false);
       console.error("Error saving invoice:", err);
-      alert("Failed to save invoice");
+      
+      let errorMessage = "Failed to save invoice. ";
+      
+      if (err.code === 'ECONNABORTED') {
+        errorMessage += "Request timeout. Please check your internet connection.";
+      } else if (err.response) {
+        // Server responded with error status
+        const status = err.response.status;
+        const data = err.response.data;
+        
+        if (status === 400) {
+          errorMessage += `Invalid data: ${data.message || 'Please check your input fields.'}`;
+        } else if (status === 401) {
+          errorMessage += "Authentication failed. Please login again.";
+        } else if (status === 403) {
+          errorMessage += "Access denied. You don't have permission to create invoices.";
+        } else if (status === 404) {
+          errorMessage += "Invoice endpoint not found. Please contact support.";
+        } else if (status === 500) {
+          errorMessage += "Server error. Please try again later or contact support.";
+        } else {
+          errorMessage += `Server error (${status}): ${data.message || 'Unknown error'}`;
+        }
+      } else if (err.request) {
+        // Network error
+        errorMessage += "Cannot connect to server. Please check if the backend server is running and accessible.";
+      } else {
+        // Other error
+        errorMessage += err.message || "Unknown error occurred.";
+      }
+      
+      setError(errorMessage);
+      alert(errorMessage);
     }
   };
 
@@ -281,6 +355,49 @@ const NewInvoicePage = () => {
             </Box>
           </Box>
         </Box>
+        
+        {/* Loading Overlay */}
+        {loading && (
+          <Box
+            sx={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 9999,
+            }}
+          >
+            <Paper
+              sx={{
+                p: 4,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
+              <CircularProgress />
+              <Typography>Saving invoice...</Typography>
+            </Paper>
+          </Box>
+        )}
+        
+        {/* Error Alert */}
+        {error && (
+          <Alert
+            severity="error"
+            onClose={() => setError(null)}
+            sx={{ mb: 2 }}
+          >
+            {error}
+          </Alert>
+        )}
+        
         <Paper sx={{ p: 1, borderRadius: 2 }}>
           <Typography
             variant="h6"
@@ -466,7 +583,7 @@ const NewInvoicePage = () => {
                           onChange={(e) => {
                             const selectedProductId = e.target.value;
                             updateRow(index, "item", selectedProductId);
-                            fetch(`http://localhost:5000/api/products/${selectedProductId}`)
+                            fetch(`http://168.231.102.6:5000/api/products/${selectedProductId}`)
                               .then((res) => res.json())
                               .then((product) => {
                                 updateRow(index, "rate", product.sale_price || 0);
