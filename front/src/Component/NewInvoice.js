@@ -63,7 +63,7 @@ const NewInvoicePage = () => {
   useEffect(() => {
     // Fetch customers
     axios
-      .get("http://168.231.102.6:5000/api/customers")
+      .get("http://localhost:5000/api/customers")
       .then((res) => {
         console.log('Customers response:', res.data);
         setCustomers(res.data);
@@ -75,7 +75,7 @@ const NewInvoicePage = () => {
 
     // Fetch invoice number
     axios
-      .get("http://168.231.102.6:5000/api/invoice/next-number")
+      .get("http://localhost:5000/api/invoice/next-number")
       .then((res) => {
         console.log('Invoice number response:', res.data);
         setInvoiceNumber(res.data.nextInvoiceNumber || 'Error: No invoice number');
@@ -86,7 +86,7 @@ const NewInvoicePage = () => {
       });
 
     // Fetch products
-    fetch("http://168.231.102.6:5000/api/products")
+    fetch("http://localhost:5000/api/products")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -103,7 +103,7 @@ const NewInvoicePage = () => {
       
     // Fetch units
     axios
-      .get("http://168.231.102.6:5000/api/product_units")
+      .get("http://localhost:5000/api/product_units")
       .then((res) => {
         console.log('Units response:', res.data);
         setUnits(res.data);
@@ -116,7 +116,7 @@ const NewInvoicePage = () => {
 
   const fetchCustomerBillingStateCode = async (customerId) => {
     try {
-      const response = await axios.get(`http://168.231.102.6:5000/api/customers/${customerId}`);
+      const response = await axios.get(`http://localhost:5000/api/customers/${customerId}`);
       const customer = response.data;
       setCustomerBillingStateCode(customer.billing_state_code || "");
     } catch (error) {
@@ -208,7 +208,7 @@ const NewInvoicePage = () => {
 
     try {
       await axios.post(
-        "http://168.231.102.6:5000/api/invoice",
+        "http://localhost:5000/api/invoice",
         {
           invoice: invoiceData,
           items: invoiceData.items,
@@ -466,7 +466,7 @@ const NewInvoicePage = () => {
                           onChange={(e) => {
                             const selectedProductId = e.target.value;
                             updateRow(index, "item", selectedProductId);
-                            fetch(`http://168.231.102.6:5000/api/products/${selectedProductId}`)
+                            fetch(`http://localhost:5000/api/products/${selectedProductId}`)
                               .then((res) => res.json())
                               .then((product) => {
                                 updateRow(index, "rate", product.sale_price || 0);
