@@ -42,7 +42,7 @@ const AddPaymentsEntry = () => {
 
   const fetchInvoices = async () => {
     try {
-      const response = await fetch('http://168.231.102.6:5000/api/invoice');
+      const response = await fetch('http://localhost:5000/api/invoice');
       if (!response.ok) throw new Error('Failed to fetch invoices');
       const data = await response.json();
       setInvoices(data);
@@ -55,7 +55,7 @@ const AddPaymentsEntry = () => {
     setSelectedInvoice(invoiceId);
     if (invoiceId) {
       try {
-        const response = await fetch(`http://168.231.102.6:5000/api/invoice/${invoiceId}`);
+        const response = await fetch(`http://localhost:5000/api/invoice/${invoiceId}`);
         if (!response.ok) throw new Error('Failed to fetch invoice details');
         const data = await response.json();
         setInvoiceDetails(data);
@@ -88,7 +88,7 @@ const AddPaymentsEntry = () => {
         amount: parseFloat(amount)
       };
 
-      const response = await fetch('http://168.231.102.6:5000/api/payment-entries', {
+      const response = await fetch('http://localhost:5000/api/payment-entries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

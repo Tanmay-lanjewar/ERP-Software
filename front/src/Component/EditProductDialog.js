@@ -23,7 +23,7 @@ export default function EditProductDialog({ open, onClose, product, onSave }) {
 
   useEffect(() => {
     axios
-      .get("http://168.231.102.6:5000/api/vendors")
+      .get("http://localhost:5000/api/vendors")
       .then((res) => setVendors(res.data))
       .catch(() => setVendors([]));
   }, []);
@@ -32,7 +32,7 @@ export default function EditProductDialog({ open, onClose, product, onSave }) {
     if (open) {
       setFormData(product || {});
       axios
-        .get("http://168.231.102.6:5000/api/taxes")
+        .get("http://localhost:5000/api/taxes")
         .then((res) => {
           const activeTaxes = res.data.filter((tax) => tax.status === "Active");
           setTaxList(activeTaxes);

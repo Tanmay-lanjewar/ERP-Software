@@ -32,7 +32,7 @@ export const loginWithCredentials = createAsyncThunk(
   'auth/loginWithCredentials',
   async ({ username, password }, { rejectWithValue }) => {
     try {
-      const response = await axios.post('http://168.231.102.6:5000/api/login', {
+      const response = await axios.post('http://localhost:5000/api/auth/login', {
         username,
         password,
       });

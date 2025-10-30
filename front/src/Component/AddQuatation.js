@@ -94,7 +94,7 @@ export default function NewQuotation() {
 
   useEffect(() => {
     axios
-      .get("http://168.231.102.6:5000/api/product_units")
+      .get("http://localhost:5000/api/product_units")
       .then((res) => setUnits(res.data))
       .catch((error) => {
         console.error("Error fetching units:", error);
@@ -104,13 +104,13 @@ export default function NewQuotation() {
 
   useEffect(() => {
     axios
-      .get("http://168.231.102.6:5000/api/customers")
+      .get("http://localhost:5000/api/customers")
       .then((res) => setCustomers(res.data))
       .catch(() => setCustomers([]));
   }, []);
 
   useEffect(() => {
-    fetch("http://168.231.102.6:5000/api/products")
+    fetch("http://localhost:5000/api/products")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -127,7 +127,7 @@ export default function NewQuotation() {
 
   useEffect(() => {
     axios
-      .get("http://168.231.102.6:5000/api/quotation/next-number")
+      .get("http://localhost:5000/api/quotation/next-number")
       .then((res) => setQuoteNumber(res.data.nextQuoteNumber))
       .catch(() => setQuoteNumber(""));
   }, []);
@@ -140,7 +140,7 @@ export default function NewQuotation() {
     }
     
     try {
-      const response = await axios.get(`http://168.231.102.6:5000/api/customers`);
+      const response = await axios.get(`http://localhost:5000/api/customers`);
       const customer = response.data.find(c => c.customer_name === customerName);
       if (customer) {
         console.log("Found customer:", customer);
@@ -278,7 +278,7 @@ export default function NewQuotation() {
 
     try {
       const response = await axios.post(
-        "http://168.231.102.6:5000/api/quotation",
+        "http://localhost:5000/api/quotation",
         {
           quotation: quotationData,
           // Send items in the shape the backend expects (item_detail, quantity, rate, discount, amount)
@@ -550,7 +550,7 @@ export default function NewQuotation() {
                               const selectedProductId = e.target.value;
                               updateRow(index, "itemId", selectedProductId);
                               fetch(
-                                `http://168.231.102.6:5000/api/products/${selectedProductId}`
+                                `http://localhost:5000/api/products/${selectedProductId}`
                               )
                                 .then((res) => res.json())
                                 .then((product) => {

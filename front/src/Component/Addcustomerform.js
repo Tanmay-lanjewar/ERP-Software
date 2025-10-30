@@ -53,7 +53,7 @@ const AddCustomerForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://168.231.102.6:5000/api/customers', formData);
+      await axios.post('http://localhost:5000/api/customers', formData);
       alert('Customer added successfully!');
       navigate('/customer');
     } catch (error) {

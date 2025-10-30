@@ -38,7 +38,7 @@ export default function EditQuotationPage() {
       setLoading(true);
       setError('');
       try {
-        const res = await axios.get(`http://168.231.102.6:5000/api/quotation/${id}`);
+        const res = await axios.get(`http://localhost:5000/api/quotation/${id}`);
         const q = res.data.quotation;
         setFormData({
           quotation_id: q.quotation_id,
@@ -63,7 +63,7 @@ export default function EditQuotationPage() {
   }, [id]);
 
   useEffect(() => {
-    axios.get('http://168.231.102.6:5000/api/customers')
+    axios.get('http://localhost:5000/api/customers')
       .then(res => setCustomers(res.data))
       .catch(() => setCustomers([]));
   }, []);
@@ -77,7 +77,7 @@ export default function EditQuotationPage() {
     setLoading(true);
     setError('');
     try {
-      await axios.put(`http://168.231.102.6:5000/api/quotation/${id}`, {
+      await axios.put(`http://localhost:5000/api/quotation/${id}`, {
         quotation: {
           customer_name: formData.customer_name,
           quotation_date: formData.quotation_date,

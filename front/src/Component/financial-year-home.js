@@ -12,7 +12,7 @@ const FinancialYearMain = () => {
   const fetchYears = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://168.231.102.6:5000/api/financialYear/all');
+      const res = await axios.get('http://localhost:5000/api/financialYear/all');
       setFinancialYears(res.data.financialYears || []);
     } catch (err) {
       console.error('Error fetching financial years:', err.message);
@@ -27,7 +27,7 @@ const FinancialYearMain = () => {
 
   const handleActivate = async (id) => {
     try {
-      await axios.post(`http://168.231.102.6:5000/api/financialYear/activate/${id}`);
+      await axios.post(`http://localhost:5000/api/financialYear/activate/${id}`);
       setLoading(true);
       window.location.reload();
     } catch (err) {
@@ -37,7 +37,7 @@ const FinancialYearMain = () => {
 
   const handleDeactivate = async (id) => {
     try {
-      await axios.post(`http://168.231.102.6:5000/api/financialYear/deactivate/${id}`);
+      await axios.post(`http://localhost:5000/api/financialYear/deactivate/${id}`);
       setLoading(true);
       window.location.reload();
     } catch (err) {

@@ -45,7 +45,7 @@ const SalesAnalytics = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`http://168.231.102.6:5000/api/invoice/analytics/sales?period=${period}`);
+      const response = await axios.get(`http://localhost:5000/api/invoice/analytics/sales?period=${period}`);
       setAnalyticsData(response.data[0] || null);
     } catch (err) {
       setError('Failed to fetch analytics data');

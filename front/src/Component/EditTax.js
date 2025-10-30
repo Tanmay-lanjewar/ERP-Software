@@ -24,7 +24,7 @@ const EditTax = () => {
   });
 
   useEffect(() => {
-    axios.get(`http://168.231.102.6:5000/api/taxes/${id}`)
+    axios.get(`http://localhost:5000/api/taxes/${id}`)
       .then((res) => {
         const tax = res.data;
         setForm({
@@ -48,7 +48,7 @@ const EditTax = () => {
 
   const handleUpdate = async () => {
     try {
-      await axios.put(`http://168.231.102.6:5000/api/taxes/${id}`, {
+      await axios.put(`http://localhost:5000/api/taxes/${id}`, {
         ...form,
         effective_date: form.effective_date.toISOString().split("T")[0]
       });

@@ -40,7 +40,7 @@ const WorkOrderlist = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axios.get('http://168.231.102.6:5000/api/work-orders');
+      const res = await axios.get('http://localhost:5000/api/work-orders');
       const data = res.data;
       console.log("📦 Work Orders from backend:", data);
       setWorkOrders(Array.isArray(data) ? data : data.data || []);
@@ -110,7 +110,7 @@ const WorkOrderlist = () => {
   const handleDownloadPdf = async (workOrder) => {
     try {
       // Fetch work order details from API
-      const response = await axios.get(`http://168.231.102.6:5000/api/work-orders/${workOrder.work_order_id}`);
+      const response = await axios.get(`http://localhost:5000/api/work-orders/${workOrder.work_order_id}`);
       const responseData = response.data;
       
       if (!responseData || !responseData.workOrderItems) {
@@ -629,7 +629,7 @@ const WorkOrderlist = () => {
 
   const handlePrintWorkOrder = async (order) => {
     try {
-      const response = await axios.get(`http://168.231.102.6:5000/api/work-orders/${order.work_order_id}`);
+      const response = await axios.get(`http://localhost:5000/api/work-orders/${order.work_order_id}`);
       const { workOrder, workOrderItems, customer } = response.data;
 
       const formatDate = (dateString) => {

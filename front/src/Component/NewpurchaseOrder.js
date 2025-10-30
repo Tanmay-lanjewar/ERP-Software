@@ -60,12 +60,12 @@ const PurchaseOrderForm = () => {
   useEffect(() => {
     // Fetch vendors
     axios
-      .get("http://168.231.102.6:5000/api/vendors")
+      .get("http://localhost:5000/api/vendors")
       .then((res) => setVendors(res.data))
       .catch(() => setVendors([]));
 
     // Fetch products
-    fetch("http://168.231.102.6:5000/api/products")
+    fetch("http://localhost:5000/api/products")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -81,7 +81,7 @@ const PurchaseOrderForm = () => {
       
     // Fetch units
     axios
-      .get("http://168.231.102.6:5000/api/product_units")
+      .get("http://localhost:5000/api/product_units")
       .then((res) => setUnits(res.data))
       .catch((error) => {
         console.error("Error fetching units:", error);
@@ -90,7 +90,7 @@ const PurchaseOrderForm = () => {
 
     // Fetch purchase order number (assuming a similar endpoint exists)
     axios
-      .get("http://168.231.102.6:5000/api/purchase/next-number")
+      .get("http://localhost:5000/api/purchase/next-number")
       .then((res) => setPurchaseOrderNo(res.data.nextPurchaseOrderNo || ""))
       .catch(() => setPurchaseOrderNo(""));
   }, []);
@@ -196,7 +196,7 @@ const PurchaseOrderForm = () => {
     };
 
     try {
-      await axios.post("http://168.231.102.6:5000/api/purchase", payload);
+      await axios.post("http://localhost:5000/api/purchase", payload);
       navigate("/purchase-order-list");
     } catch (error) {
       console.error('Purchase order creation error:', error);
@@ -485,7 +485,7 @@ const PurchaseOrderForm = () => {
                               const selectedProductId = e.target.value;
                               updateRow(index, "item", selectedProductId);
                               fetch(
-                                `http://168.231.102.6:5000/api/products/${selectedProductId}`
+                                `http://localhost:5000/api/products/${selectedProductId}`
                               )
                                 .then((res) => res.json())
                                 .then((product) => {

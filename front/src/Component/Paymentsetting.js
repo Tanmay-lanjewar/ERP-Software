@@ -44,7 +44,7 @@ const PaymentsSettings = () => {
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://168.231.102.6:5000/api/payment-entries');
+      const response = await axios.get('http://localhost:5000/api/payment-entries');
       setPayments(response.data);
       setError('');
     } catch (err) {
@@ -88,7 +88,7 @@ const PaymentsSettings = () => {
         newRemainingBalance = selectedPayment.invoice_total - selectedPayment.amount;
       }
       
-      await axios.put(`http://168.231.102.6:5000/api/payment-entries/${selectedPayment.payment_id}`, {
+      await axios.put(`http://localhost:5000/api/payment-entries/${selectedPayment.payment_id}`, {
         payment_date: selectedPayment.payment_date,
         payment_mode: selectedPayment.payment_mode,
         currency: selectedPayment.currency,
