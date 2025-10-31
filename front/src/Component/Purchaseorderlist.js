@@ -259,7 +259,7 @@ const PurchaseOrderActions = () => {
             <div style="width: 30%; text-align: center; margin-left: 10px;">
                 <div style="font-weight: bold;">For MERAKI EXPERT</div>
                 <div style="height: 50px; display: flex; align-items: center; justify-content: center;">
-                    <img src="https://example.com/signature.png" alt="Signature" style="height: 50px;">
+                    
                 </div>
                 <div>(Authorized Signatory)</div>
             </div>
@@ -506,7 +506,9 @@ const PurchaseOrderActions = () => {
                           open={Boolean(anchorEl) && menuIndex === i}
                           onClose={handleMenuClose}
                         >
-                          <MenuItem onClick={() => handleEditPurchase(row.id)}>
+                          <MenuItem onClick={() => {
+                            handleEditPurchase(row.id);
+                          }}>
                             Edit
                           </MenuItem>
                           <MenuItem onClick={() => handleDownloadPdf(row)}>
