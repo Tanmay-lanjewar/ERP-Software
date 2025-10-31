@@ -71,6 +71,7 @@ exports.getPurchaseOrderById = (req, res) => {
       delivery_date: results[0].delivery_date,
       payment_terms: results[0].payment_terms,
       sub_total: results[0].sub_total,
+      freight: results[0].freight,
       cgst: results[0].cgst,
       sgst: results[0].sgst,
       total: results[0].total,

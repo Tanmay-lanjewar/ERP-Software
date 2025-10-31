@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, TextField, Button, Paper, Typography, MenuItem, FormControl, InputLabel, Select, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, IconButton } from '@mui/material';
+import { Box, TextField, Button, Paper, Typography, MenuItem, FormControl, InputLabel, Select, Alert, CircularProgress } from '@mui/material';
 import Sidebar from './Sidebar';
+import UserMenu from './UserMenu';
 import axios from 'axios';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function EditPurchaseOrderPage() {
   const { id } = useParams();
@@ -15,12 +15,23 @@ export default function EditPurchaseOrderPage() {
     delivery_date: '',
     status: '',
     bill_amount: '',
+    delivery_to: '',
+    delivery_address: '',
+    payment_terms: '',
+    due_date: '',
+    customer_notes: '',
+    terms_and_conditions: '',
+    sub_total: 0,
+    freight: 0,
+    cgst: 0,
+    sgst: 0,
+    attachment: '',
+    vendor_id: null
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [vendors, setVendors] = useState([]);
-  const [items, setItems] = useState([]); // State for purchase order items
-  const [products, setProducts] = useState([]); // State for products list
+
 
   // Fetch PO
   useEffect(() => {
@@ -35,18 +46,20 @@ export default function EditPurchaseOrderPage() {
           delivery_date: po.delivery_date ? po.delivery_date.slice(0, 10) : '',
           status: po.status || 'Draft',
           bill_amount: po.total || 0,
+          delivery_to: po.delivery_to || '',
+          delivery_address: po.delivery_address || '',
+          payment_terms: po.payment_terms || '',
+          due_date: po.due_date ? po.due_date.slice(0, 10) : '',
+          customer_notes: po.customer_notes || '',
+          terms_and_conditions: po.terms_and_conditions || '',
+          sub_total: po.sub_total || 0,
+          freight: po.freight || 0,
+          cgst: po.cgst || 0,
+          sgst: po.sgst || 0,
+          attachment: po.attachment || '',
+          vendor_id: po.vendor_id || null
         });
-        setItems(Array.isArray(po.items) && po.items.length > 0 ? po.items.map(item => ({
-          id: item.id || Date.now(), // Ensure each item has a unique ID for React keys
-          item: item.item_id || '',
-          item_name: item.description || '',
-          qty: item.quantity || 0,
-          rate: item.rate || 0,
-          discount: item.discount || 0,
-          amount: item.amount || 0,
-          uom_amount: item.uom_amount || 0,
-          uom_description: item.uom_description || "",
-        })) : [{ id: Date.now(), item: "", item_name: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" }]);
+
       } catch (err) {
         setError('Failed to fetch purchase order');
       } finally {
@@ -56,70 +69,14 @@ export default function EditPurchaseOrderPage() {
     fetchPurchaseOrder();
   }, [id]);
 
-  // Fetch vendor list and products
+  // Fetch vendor list
   useEffect(() => {
     axios.get('http://localhost:5000/api/vendors')
       .then(res => setVendors(res.data))
       .catch(() => setVendors([]));
-
-    fetch("http://localhost:5000/api/products")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setProducts(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching products:", error);
-        setProducts([]);
-      });
   }, []);
 
-  const updateRow = (index, field, value) => {
-    const updated = [...items];
-    updated[index][field] = ["qty", "rate", "discount"].includes(field)
-      ? parseFloat(value) || 0
-      : value;
-    updated[index].amount = calculateAmount(updated[index]);
-    setItems(updated);
-  };
 
-  const calculateAmount = (row) => {
-    const total = (row.qty || 0) * (row.rate || 0);
-    return total - (row.discount || 0);
-  };
-
-  const addNewRow = () => {
-    setItems([
-      ...items,
-      { id: Date.now(), item: "", item_name: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" },
-    ]);
-  };
-
-  const deleteRow = (index) => {
-    const updated = [...items];
-    updated.splice(index, 1);
-    if (updated.length === 0) {
-      updated.push({
-        id: Date.now(),
-        item: "",
-        qty: 0,
-        rate: 0,
-        discount: 0,
-        amount: 0,
-        uom_amount: 0,
-        uom_description: "",
-      });
-    }
-    setItems(updated);
-  };
-
-  const subtotal = items.reduce((sum, item) => sum + calculateAmount(item), 0);
-  const gst = subtotal * 0.09;
-  const total = subtotal + gst * 2;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -131,19 +88,24 @@ export default function EditPurchaseOrderPage() {
     setError('');
     try {
       await axios.put(`http://localhost:5000/api/purchase/${id}`, {
+        purchase_order_no: formData.purchase_order_number,
         vendor_name: formData.vendor_name,
-        created_date: formData.created_date,
+        purchase_order_date: formData.created_date,
         delivery_date: formData.delivery_date,
         status: formData.status,
-        items: items.map(item => ({
-          item_name: item.item_name,
-          qty: item.qty,
-          rate: item.rate,
-          discount: item.discount,
-          amount: item.amount,
-          uom_amount: item.uom_amount || 0,
-          uom_description: item.uom_description || "",
-        })),
+        delivery_to: formData.delivery_to || '',
+        delivery_address: formData.delivery_address || '',
+        payment_terms: formData.payment_terms || 'Due end of the month',
+        due_date: formData.due_date || '',
+        customer_notes: formData.customer_notes || '',
+        terms_and_conditions: formData.terms_and_conditions || '',
+        sub_total: formData.sub_total || 0,
+        freight: formData.freight || 0,
+        cgst: formData.cgst || 0,
+        sgst: formData.sgst || 0,
+        total: formData.bill_amount || 0,
+        attachment: formData.attachment || '',
+        vendor_id: formData.vendor_id || null
       });
       alert('Purchase order updated successfully!');
       navigate('/purchase-order-list');
@@ -157,11 +119,21 @@ export default function EditPurchaseOrderPage() {
   return (
     <Box sx={{ display: "flex" }}>
       <Sidebar />
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 5, width: '100%' }}>
-        <Paper sx={{ width: 600, p: 4, borderRadius: 3 }}>
-          <Typography variant="h5" fontWeight={600} mb={3} textAlign="center">
+      <Box sx={{ flexGrow: 1 }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderBottom: '1px solid #e0e0e0' }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
             Edit Purchase Order
           </Typography>
+          <UserMenu />
+        </Box>
+        
+        {/* Main Content */}
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 5, width: '100%' }}>
+          <Paper sx={{ width: 600, p: 4, borderRadius: 3 }}>
+            <Typography variant="h5" fontWeight={600} mb={3} textAlign="center">
+              Purchase Order Details
+            </Typography>
           {error && <Typography color="error" mb={2}>{error}</Typography>}
           <form onSubmit={handleSubmit}>
             <TextField
@@ -229,152 +201,37 @@ export default function EditPurchaseOrderPage() {
               name="bill_amount"
               label="Bill Amount"
               value={formData.bill_amount}
+              onChange={handleChange}
               margin="normal"
-              disabled
+              type="number"
             />
-            {/* Item Table */}
-            <Box mt={3}>
-              <Typography
-                variant="subtitle1"
-                fontWeight="bold"
-                mb={1}
-                sx={{ fontWeight: 600, fontSize: 18 }}
-              >
-                Item Table
-              </Typography>
-              <Box display="flex" justifyContent="flex-end">
-                <Button
-                  variant="text"
-                  sx={{ fontWeight: 500, color: "#1976d2" }}
-                  onClick={addNewRow}
-                >
-                  + ADD NEW ROW
-                </Button>
-              </Box>
-              <TableContainer
-                component={Paper}
-                sx={{ mt: 3, boxShadow: "none" }}
-              >
-                <Table size="small">
-                  <TableHead sx={{ backgroundColor: "#f9fafb" }}>
-                    <TableRow>
-                      <TableCell>Item Details</TableCell>
-                      <TableCell>Quantity</TableCell>
-                      <TableCell>UOM</TableCell>
-                      <TableCell>Rate</TableCell>
-                      <TableCell>Discount</TableCell>
-                      <TableCell>Amount</TableCell>
-                      <TableCell></TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {items.map((row, index) => (
-                      <TableRow key={row.id}>
-                        <TableCell>
-                          <Select
-                            fullWidth
-                            value={row.item}
-                            onChange={(e) => {
-                              const selectedProductId = e.target.value;
-                              const product = products.find(p => p.id === selectedProductId);
-                              updateRow(index, "item", selectedProductId);
-                              updateRow(index, "item_name", product ? product.product_name : '');
-                              updateRow(index, "rate", product ? product.sale_price || 0 : 0);
-                              updateRow(index, "uom_description", product ? product.unit || '' : '');
-                            }}
-                            size="small"
-                            displayEmpty
-                            sx={{ width: "100%" }}
-                          >
-                            <MenuItem value="">
-                              <em>Select Item</em>
-                            </MenuItem>
-                            {products.map((product) => (
-                              <MenuItem key={product.id} value={product.id}>
-                                {product.product_name}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <TextField
-                            fullWidth
-                            type="number"
-                            value={row.qty}
-                            onChange={(e) =>
-                              updateRow(index, "qty", e.target.value)
-                            }
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <TextField
-                            fullWidth
-                            value={row.uom_description || ""}
-                            onChange={(e) =>
-                              updateRow(index, "uom_description", e.target.value)
-                            }
-                            size="small"
-                            placeholder="Unit"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <TextField
-                            fullWidth
-                            type="number"
-                            value={row.rate}
-                            onChange={(e) =>
-                              updateRow(index, "rate", e.target.value)
-                            }
-                            size="small"
-                          />
-                        </TableCell>
-
-                        <TableCell>
-                          <FormControl fullWidth>
-                            <Select
-                              value={row.discount}
-                              onChange={(e) =>
-                                updateRow(index, "discount", e.target.value)
-                              }
-                            >
-                              <MenuItem value={0}>0%</MenuItem>
-                              <MenuItem value={5}>5%</MenuItem>
-                              <MenuItem value={10}>10%</MenuItem>
-                            </Select>
-                          </FormControl>
-                        </TableCell>
-                        <TableCell>
-                          <TextField
-                            fullWidth
-                            type="number"
-                            value={calculateAmount(row).toFixed(2)}
-                            InputProps={{ readOnly: true }}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <IconButton
-                            onClick={() => deleteRow(index)}
-                            color="error"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              <Box mt={2} mb={2} sx={{ textAlign: "right", fontSize: 13 }}>
-                <Typography>Subtotal: ₹{subtotal.toFixed(2)}</Typography>
-                <Typography>CGST (9%): ₹{gst.toFixed(2)}</Typography>
-                <Typography>SGST (9%): ₹{gst.toFixed(2)}</Typography>
-                <Typography fontWeight="bold" mt={1}>
-                  Total: ₹{total.toFixed(2)}
-                </Typography>
-              </Box>
-            </Box>
+            <TextField
+              fullWidth
+              name="payment_terms"
+              label="Payment Terms"
+              value={formData.payment_terms}
+              onChange={handleChange}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              name="customer_notes"
+              label="Customer Notes"
+              value={formData.customer_notes}
+              onChange={handleChange}
+              margin="normal"
+              multiline
+              rows={3}
+            />
+            <TextField
+              fullWidth
+              name="freight"
+              label="Freight"
+              value={formData.freight}
+              onChange={handleChange}
+              margin="normal"
+              type="number"
+            />
             <Box display="flex" justifyContent="space-between" mt={3}>
               <Button variant="outlined" color="secondary" onClick={() => navigate(-1)}>
                 Cancel
@@ -385,6 +242,7 @@ export default function EditPurchaseOrderPage() {
             </Box>
           </form>
         </Paper>
+      </Box>
       </Box>
     </Box>
   );
