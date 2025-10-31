@@ -18,7 +18,7 @@ export default function Tax() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/taxes')
+    axios.get('http://168.231.102.6:5000/api/taxes')
       .then(res => {
         setTaxes(res.data);
         console.log('Fetched taxes:', res.data);

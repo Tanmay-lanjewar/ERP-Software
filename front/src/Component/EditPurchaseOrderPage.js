@@ -37,7 +37,7 @@ export default function EditPurchaseOrderPage() {
   useEffect(() => {
     const fetchPurchaseOrder = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/purchase/${id}`);
+        const res = await axios.get(`http://168.231.102.6:5000/api/purchase/${id}`);
         const po = res.data.purchase_order;
         setFormData({
           purchase_order_number: po.purchase_order_no || '',
@@ -71,7 +71,7 @@ export default function EditPurchaseOrderPage() {
 
   // Fetch vendor list
   useEffect(() => {
-    axios.get('http://localhost:5000/api/vendors')
+    axios.get('http://168.231.102.6:5000/api/vendors')
       .then(res => setVendors(res.data))
       .catch(() => setVendors([]));
   }, []);
@@ -87,7 +87,7 @@ export default function EditPurchaseOrderPage() {
     setLoading(true);
     setError('');
     try {
-      await axios.put(`http://localhost:5000/api/purchase/${id}`, {
+      await axios.put(`http://168.231.102.6:5000/api/purchase/${id}`, {
         purchase_order_no: formData.purchase_order_number,
         vendor_name: formData.vendor_name,
         purchase_order_date: formData.created_date,

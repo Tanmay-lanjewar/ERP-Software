@@ -72,10 +72,10 @@ const NewInvoicePage = () => {
       try {
         // Fetch all data in parallel
         const [customersRes, invoiceNumberRes, productsRes, unitsRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/customers", { timeout: 10000 }),
-          axios.get("http://localhost:5000/api/invoice/next-number", { timeout: 10000 }),
-          axios.get("http://localhost:5000/api/products", { timeout: 10000 }),
-          axios.get("http://localhost:5000/api/units", { timeout: 10000 })
+          axios.get("http://168.231.102.6:5000/api/customers", { timeout: 10000 }),
+          axios.get("http://168.231.102.6:5000/api/invoice/next-number", { timeout: 10000 }),
+          axios.get("http://168.231.102.6:5000/api/products", { timeout: 10000 }),
+          axios.get("http://168.231.102.6:5000/api/units", { timeout: 10000 })
         ]);
         
         console.log('Customers response:', customersRes.data);
@@ -127,7 +127,7 @@ const NewInvoicePage = () => {
 
   const fetchCustomerBillingStateCode = async (customerId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/customers/${customerId}`);
+      const response = await axios.get(`http://168.231.102.6:5000/api/customers/${customerId}`);
       const customer = response.data;
       setCustomerBillingStateCode(customer.billing_state_code || "");
     } catch (error) {
@@ -245,7 +245,7 @@ const NewInvoicePage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/invoice",
+        "http://168.231.102.6:5000/api/invoice",
         {
           invoice: invoiceData,
           items: invoiceData.items,
@@ -585,7 +585,7 @@ const NewInvoicePage = () => {
                             const selectedProduct = products.find(p => p.id === selectedProductId);
                             updateRow(index, "item", selectedProductId);
                             updateRow(index, "item_name", selectedProduct ? selectedProduct.product_name : "");
-                            fetch(`http://localhost:5000/api/products/${selectedProductId}`)
+                            fetch(`http://168.231.102.6:5000/api/products/${selectedProductId}`)
                               .then((res) => res.json())
                               .then((product) => {
                                 updateRow(index, "rate", product.sale_price || 0);
