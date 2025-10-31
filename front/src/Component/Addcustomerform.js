@@ -62,6 +62,11 @@ const AddCustomerForm = () => {
     }
   };
 
+  const numericFields = [
+    'mobile', 'office_no', 'billing_pincode', 'shipping_pincode', 
+    'billing_fax', 'shipping_fax', 'billing_phone', 'shipping_phone'
+  ];
+
   const renderTextFields = (fields) =>
     fields.map((field) => (
       <Grid item xs={12} sm={6} key={field}>
@@ -73,6 +78,12 @@ const AddCustomerForm = () => {
           name={field}
           value={formData[field] || ''}
           onChange={handleChange}
+          type={numericFields.includes(field) ? "number" : "text"}
+          step={numericFields.includes(field) ? "1" : undefined}
+          inputProps={numericFields.includes(field) ? {
+            inputMode: 'numeric',
+            pattern: '[0-9]*'
+          } : undefined}
         />
       </Grid>
     ));

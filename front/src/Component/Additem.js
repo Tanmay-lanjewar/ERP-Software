@@ -367,22 +367,36 @@ export default function AddItems() {
               {/* Sales Info */}
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle1">Sales Information</Typography>
+                {/* FIXED: Added type="number" to restrict to numbers only */}
                 <TextField
                   fullWidth
                   size="small"
+                  type="number"  // Restricts to numbers
+                  step="0.01"    // Allows decimals (e.g., 10.99)
                   label="Sale Price"
                   name="sale_price"
                   value={formData.sale_price}
                   onChange={handleChange}
+                  inputProps={{
+                    inputMode: 'numeric',  // Numeric keyboard on mobile
+                    pattern: '[0-9]*',     // Helps with validation
+                  }}
                 />
+                {/* FIXED: Same for discount */}
                 <TextField
                   fullWidth
                   size="small"
+                  type="number"
+                  step="0.01"
                   label="Sale Discount"
                   name="sale_discount"
                   value={formData.sale_discount}
                   onChange={handleChange}
                   sx={{ mt: 2 }}
+                  inputProps={{
+                    inputMode: 'numeric',
+                    pattern: '[0-9]*',
+                  }}
                 />
                 <TextField
                   select
@@ -415,22 +429,36 @@ export default function AddItems() {
                 <Typography variant="subtitle1">
                   Purchase Information
                 </Typography>
+                {/* FIXED: Added type="number" to restrict to numbers only */}
                 <TextField
                   fullWidth
                   size="small"
+                  type="number"
+                  step="0.01"
                   label="Purchase Price"
                   name="purchase_price"
                   value={formData.purchase_price}
                   onChange={handleChange}
+                  inputProps={{
+                    inputMode: 'numeric',
+                    pattern: '[0-9]*',
+                  }}
                 />
+                {/* FIXED: Same for discount */}
                 <TextField
                   fullWidth
                   size="small"
+                  type="number"
+                  step="0.01"
                   label="Purchase Discount"
                   name="purchase_discount"
                   value={formData.purchase_discount}
                   onChange={handleChange}
                   sx={{ mt: 2 }}
+                  inputProps={{
+                    inputMode: 'numeric',
+                    pattern: '[0-9]*',
+                  }}
                 />
                 <TextField
                   select
