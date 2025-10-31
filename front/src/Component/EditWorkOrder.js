@@ -29,7 +29,7 @@ export default function EditWorkOrderPage() {
         if (!res.data) {
           throw new Error('No data returned from server');
         }
-        const wo = res.data.workorder || res.data;
+        const wo = res.data.workOrder || res.data;
         setFormData({
           work_order_id: wo.work_order_id || '',
           work_order_number: wo.work_order_number || '',
