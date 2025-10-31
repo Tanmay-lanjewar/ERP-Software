@@ -64,7 +64,7 @@ const AddCustomerForm = () => {
 
   const numericFields = [
     'mobile', 'office_no', 'billing_pincode', 'shipping_pincode', 
-    'billing_fax', 'shipping_fax', 'billing_phone', 'shipping_phone'
+    'billing_fax', 'shipping_fax', 'billing_phone', 'shipping_phone','shipping_state_code','billing_state_code'
   ];
 
   const renderTextFields = (fields) =>

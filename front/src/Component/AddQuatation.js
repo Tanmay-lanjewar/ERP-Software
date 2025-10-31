@@ -51,7 +51,8 @@ export default function NewQuotation() {
     "Thanks for your business."
   );
   const [termsAndConditions, setTermsAndConditions] = useState(
-    "Delivery Period    : 3 to 4 weeks from the date of technically and commercially clear order.\n" +
+    "Delivery Period    : 3 to 4 weeks from the date of technically and\n" +
+    "                     commercially clear order.\n" +
     "Installation Period: 2 to 3 weeks\n" +
     "Transportation     : Extra at Actual\n" +
     "Payment Terms      : Supply/Installation Terms\n" +
@@ -61,8 +62,8 @@ export default function NewQuotation() {
     "Warranty           : Offer a standard warranty of 15 months from date of dispatch or 12 months from date of\n" +
     "                     satisfactory installation whichever is earlier\n" +
     "Validity           : Our Offer shall remain valid for 15 days\n" +
-    "Exclusions         : Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting arrangem\n" +
-    "                     -ent for installation activities, Scrap folding, Scissor lift."
+    "Exclusions         : Civil work, MS work, Loading / Unloading at site, Power supply, Adequate lighting\n" +
+    "                     arrangement for installation activities, Scrap folding, Scissor lift."
   );
 
   const [attachment, setAttachment] = useState(null);
@@ -295,9 +296,8 @@ export default function NewQuotation() {
             ? ` (Quote#: ${response.data.quoteNumber})`
             : "")
       );
-      if (!saveAsDraft) {
-        navigate("/quotation-list");
-      }
+      // Navigate to quotation list for both Save as Draft and Save as Send
+      navigate("/quotation-list");
     } catch (err) {
       setError(
         err.response?.data?.error?.sqlMessage ||

@@ -210,6 +210,16 @@ const quotation = {
   },
 
   update: (id, data, items = [], callback) => {
+    // Handle status-only updates
+    if (data.status && Object.keys(data).length === 1) {
+      const statusSql = 'UPDATE quotation SET status = ? WHERE quotation_id = ?';
+      db.query(statusSql, [data.status, id], (err, result) => {
+        if (err) return callback(err);
+        callback(null, { quotationId: id, status: data.status });
+      });
+      return;
+    }
+
     // First, try to get customer billing state code by customer name
     db.query('SELECT billing_state_code FROM customers WHERE customer_name = ? LIMIT 1', [data.customer_name], (custErr, custResult) => {
       if (custErr) return callback(custErr);

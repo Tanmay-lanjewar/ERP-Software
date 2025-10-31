@@ -169,6 +169,22 @@ exports.addItems = (req, res) => {
 // Update a quotation by ID
 exports.update = (req, res) => {
   const id = req.params.id;
+  
+  // Handle status-only updates (for toggle functionality)
+  if (req.body.status && !req.body.quotation) {
+    const statusData = { status: req.body.status };
+    quotation.update(id, statusData, [], (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({
+        message: 'Status updated successfully',
+        quotationId: result.quotationId,
+        status: req.body.status
+      });
+    });
+    return;
+  }
+
+  // Handle full quotation updates
   const { quotation: quotationData, items = [] } = req.body;
 
   if (!quotationData || typeof quotationData !== 'object') {

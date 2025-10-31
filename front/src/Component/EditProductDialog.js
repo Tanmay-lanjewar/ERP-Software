@@ -24,12 +24,19 @@ export default function EditProductDialog({ open, onClose, product, onSave }) {
   useEffect(() => {
     axios
       .get("http://localhost:5000/api/vendors")
-      .then((res) => setVendors(res.data))
-      .catch(() => setVendors([]));
+      .then((res) => {
+        console.log("Vendors loaded:", res.data);
+        setVendors(res.data || []);
+      })
+      .catch((err) => {
+        console.error("Error fetching vendors:", err);
+        setVendors([]);
+      });
   }, []);
 
   useEffect(() => {
     if (open) {
+      console.log("Product data:", product);
       setFormData(product || {});
       axios
         .get("http://localhost:5000/api/taxes")
@@ -258,7 +265,7 @@ export default function EditProductDialog({ open, onClose, product, onSave }) {
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
               select
@@ -266,13 +273,18 @@ export default function EditProductDialog({ open, onClose, product, onSave }) {
               name="preferred_vendor"
               value={formData.preferred_vendor || ""}
               onChange={handleChange}
+              helperText={vendors.length === 0 ? "Loading vendors..." : ""}
             >
               <MenuItem value="">None</MenuItem>
-              {vendors.map((vendor) => (
-                <MenuItem key={vendor.id} value={vendor.vendor_name}>
-                  {vendor.vendor_name}
-                </MenuItem>
-              ))}
+              {vendors.length > 0 ? (
+                vendors.map((vendor) => (
+                  <MenuItem key={vendor.id || vendor.vendor_name} value={vendor.vendor_name}>
+                    {vendor.vendor_name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>No vendors available</MenuItem>
+              )}
             </TextField>
           </Grid>
         </Grid>
