@@ -47,8 +47,26 @@ export default function NewVendorForm() {
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [ifscCode, setIfscCode] = useState('');
-
   const [remark, setRemark] = useState('');
+
+  // Add this state (baki sab same)
+const [copyBilling, setCopyBilling] = useState(false);
+
+// Add this function (kisi bhi jagah, handleSave ke upar)
+const handleCopyBilling = (checked) => {
+  setCopyBilling(checked);
+  if (checked) {
+    setShippingRecipient(billingRecipient);
+    setShippingCountry(billingCountry);
+    setShippingAddress1(billingAddress1);
+    setShippingAddress2(billingAddress2);
+    setShippingCity(billingCity);
+    setShippingState(billingState);
+    setShippingPinCode(billingPinCode);
+    setShippingFax(billingFax);
+    setShippingOtherPhone(billingOtherPhone);
+  }
+};
 
   const API_URL = "http://localhost:5000/api/vendors";
 
@@ -90,13 +108,22 @@ export default function NewVendorForm() {
       const response = await axios.post(API_URL, vendorData);
       if (response.status === 201) {
         alert("Vendor added successfully!");
-        navigate('/vendor-list'); // Redirect to vendor list page
+        navigate('/vendor-list');
       }
     } catch (error) {
       console.error("Error:", error);
       alert("Failed to add vendor: " + (error.response?.data?.message || error.message));
     }
   };
+
+  // Validation Helpers
+  const onlyText = (value) => /^[A-Za-z\s]*$/.test(value);
+  const onlyNumbers = (value) => /^\d*$/.test(value);
+  const panFormat = (value) => /^[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}$/.test(value.toUpperCase()) && value.length <= 10;
+  const gstFormat = (value) => /^[0-9A-Z]{0,15}$/.test(value.toUpperCase());
+  const emailChars = (value) => /^[\w.@+-]*$/.test(value);
+  const ifscFormat = (value) => /^[A-Z]{0,4}0?[A-Z0-9]{0,6}$/.test(value.toUpperCase()) && value.length <= 11;
+  const pinCodeFormat = (value) => /^\d{0,6}$/.test(value);
 
   return (
     <Box sx={{ display: 'flex', backgroundColor: '#f9f9f9', minHeight: '100vh' }}>
@@ -150,13 +177,14 @@ export default function NewVendorForm() {
               }}
             >
               <NotificationsNoneIcon sx={{ fontSize: 20, color: '#666' }} />
-            </IconButton>  
+            </IconButton>
             <Box display="flex" alignItems="center" gap={1}>
               <NotificationsNoneIcon />
               <UserMenu />
             </Box>
           </Box>
         </Box>
+
         <Box sx={{ px: 2, py: 2 }}>
           <Paper sx={{ p: 1, borderRadius: 2 }}>
             <Typography
@@ -171,7 +199,9 @@ export default function NewVendorForm() {
             >
               Vendors
             </Typography>
+
             <Grid container spacing={2}>
+              {/* Primary Contact Full Name - Text Only */}
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
                   sx={{
@@ -191,9 +221,14 @@ export default function NewVendorForm() {
                   }}
                   fullWidth
                   label="Primary Contact Full Name"
-                  onChange={(e) => setVendorName(e.target.value)}
+                  value={vendorName}
+                  onChange={(e) => {
+                    if (onlyText(e.target.value)) setVendorName(e.target.value);
+                  }}
                 />
               </Grid>
+
+              {/* Company Name - Text + Number Allowed (No Change) */}
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
                   sx={{
@@ -213,9 +248,12 @@ export default function NewVendorForm() {
                   }}
                   fullWidth
                   label="Company Name"
+                  value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                 />
               </Grid>
+
+              {/* Designation - Text Only */}
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
                   sx={{
@@ -235,9 +273,14 @@ export default function NewVendorForm() {
                   }}
                   fullWidth
                   label="Designation"
-                  onChange={(e) => setDisplayName(e.target.value)}
+                  value={displayName}
+                  onChange={(e) => {
+                    if (onlyText(e.target.value)) setDisplayName(e.target.value);
+                  }}
                 />
               </Grid>
+
+              {/* Email - Valid Chars Only */}
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
                   sx={{
@@ -257,9 +300,14 @@ export default function NewVendorForm() {
                   }}
                   fullWidth
                   label="Email Address"
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={email}
+                  onChange={(e) => {
+                    if (emailChars(e.target.value)) setEmail(e.target.value);
+                  }}
                 />
               </Grid>
+
+              {/* Company Phone - Numbers Only */}
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
                   sx={{
@@ -279,9 +327,14 @@ export default function NewVendorForm() {
                   }}
                   fullWidth
                   label="Company Phone Number"
-                  onChange={(e) => setCompanyPhone(e.target.value)}
+                  value={companyPhone}
+                  onChange={(e) => {
+                    if (onlyNumbers(e.target.value)) setCompanyPhone(e.target.value);
+                  }}
                 />
               </Grid>
+
+              {/* PAN - Format: ABCDE1234F */}
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
                   sx={{
@@ -301,9 +354,15 @@ export default function NewVendorForm() {
                   }}
                   fullWidth
                   label="PAN Number"
-                  onChange={(e) => setPanNumber(e.target.value)}
+                  value={panNumber}
+                  onChange={(e) => {
+                    const val = e.target.value.toUpperCase();
+                    if (panFormat(val)) setPanNumber(val);
+                  }}
                 />
               </Grid>
+
+              {/* GST - 15 Alphanumeric */}
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
                   sx={{
@@ -323,10 +382,15 @@ export default function NewVendorForm() {
                   }}
                   fullWidth
                   label="GST Number"
-                  onChange={(e) => setGstNumber(e.target.value)}
+                  value={gstNumber}
+                  onChange={(e) => {
+                    const val = e.target.value.toUpperCase();
+                    if (gstFormat(val)) setGstNumber(val);
+                  }}
                 />
               </Grid>
             </Grid>
+
             <Box mt={5}>
               <Typography variant="h6" fontWeight="bold" mb={2}>
                 Address Details
@@ -337,6 +401,7 @@ export default function NewVendorForm() {
                     Billing Address
                   </Typography>
                   <Grid container spacing={2}>
+                    {/* Recipient Name - Text Only */}
                     <Grid item xs={12}>
                       <TextField
                         sx={{
@@ -356,9 +421,13 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="Recipient Name"
-                        onChange={(e) => setBillingRecipient(e.target.value)}
+                        value={billingRecipient}
+                        onChange={(e) => {
+                          if (onlyText(e.target.value)) setBillingRecipient(e.target.value);
+                        }}
                       />
                     </Grid>
+
                     <Grid item xs={12}>
                       <FormControl
                         fullWidth
@@ -381,6 +450,7 @@ export default function NewVendorForm() {
                         <InputLabel>Country/Region</InputLabel>
                         <Select
                           label="Country/Region"
+                          value={billingCountry}
                           onChange={(e) => setBillingCountry(e.target.value)}
                         >
                           <MenuItem value="India">India</MenuItem>
@@ -388,6 +458,8 @@ export default function NewVendorForm() {
                         </Select>
                       </FormControl>
                     </Grid>
+
+                    {/* Address 1 & 2 - Text + Number Allowed */}
                     <Grid item xs={12}>
                       <TextField
                         sx={{
@@ -407,6 +479,7 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="Address 1"
+                        value={billingAddress1}
                         onChange={(e) => setBillingAddress1(e.target.value)}
                       />
                     </Grid>
@@ -429,9 +502,12 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="Address 2"
+                        value={billingAddress2}
                         onChange={(e) => setBillingAddress2(e.target.value)}
                       />
                     </Grid>
+
+                    {/* City - Text Only */}
                     <Grid item xs={6}>
                       <TextField
                         sx={{
@@ -451,9 +527,14 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="City"
-                        onChange={(e) => setBillingCity(e.target.value)}
+                        value={billingCity}
+                        onChange={(e) => {
+                          if (onlyText(e.target.value)) setBillingCity(e.target.value);
+                        }}
                       />
                     </Grid>
+
+                    {/* State - Text Only */}
                     <Grid item xs={6}>
                       <TextField
                         sx={{
@@ -473,9 +554,14 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="State"
-                        onChange={(e) => setBillingState(e.target.value)}
+                        value={billingState}
+                        onChange={(e) => {
+                          if (onlyText(e.target.value)) setBillingState(e.target.value);
+                        }}
                       />
                     </Grid>
+
+                    {/* Pin Code - 6 Digits */}
                     <Grid item xs={6}>
                       <TextField
                         sx={{
@@ -495,9 +581,14 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="Pin Code"
-                        onChange={(e) => setBillingPinCode(e.target.value)}
+                        value={billingPinCode}
+                        onChange={(e) => {
+                          if (pinCodeFormat(e.target.value)) setBillingPinCode(e.target.value);
+                        }}
                       />
                     </Grid>
+
+                    {/* Fax - Numbers Only */}
                     <Grid item xs={6}>
                       <TextField
                         sx={{
@@ -517,9 +608,14 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="Fax Number"
-                        onChange={(e) => setBillingFax(e.target.value)}
+                        value={billingFax}
+                        onChange={(e) => {
+                          if (onlyNumbers(e.target.value)) setBillingFax(e.target.value);
+                        }}
                       />
                     </Grid>
+
+                    {/* Other Phone - Numbers Only */}
                     <Grid item xs={12}>
                       <TextField
                         sx={{
@@ -539,20 +635,30 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="Other Phone Number"
-                        onChange={(e) => setBillingOtherPhone(e.target.value)}
+                        value={billingOtherPhone}
+                        onChange={(e) => {
+                          if (onlyNumbers(e.target.value)) setBillingOtherPhone(e.target.value);
+                        }}
                       />
                     </Grid>
                   </Grid>
                 </Grid>
+
+                {/* SHIPPING ADDRESS - Same Validation */}
                 <Grid item xs={12} md={6}>
                   <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Typography fontWeight="medium" mb={1}>
                       Shipping Address
                     </Typography>
                     <FormControlLabel
-                      control={<Checkbox />}
-                      label="Copy Billing Address"
-                    />
+                       control={
+                               <Checkbox
+                                 checked={copyBilling}
+                                  onChange={(e) => handleCopyBilling(e.target.checked)}
+                                  />
+                                  }
+                                  label="Copy Billing Address"
+                     />
                   </Box>
                   <Grid container spacing={2}>
                     <Grid item xs={12}>
@@ -574,7 +680,10 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="Recipient Name"
-                        onChange={(e) => setShippingRecipient(e.target.value)}
+                        value={shippingRecipient}
+                        onChange={(e) => {
+                          if (onlyText(e.target.value)) setShippingRecipient(e.target.value);
+                        }}
                       />
                     </Grid>
                     <Grid item xs={12}>
@@ -599,6 +708,7 @@ export default function NewVendorForm() {
                         <InputLabel>Country/Region</InputLabel>
                         <Select
                           label="Country/Region"
+                          value={shippingCountry}
                           onChange={(e) => setShippingCountry(e.target.value)}
                         >
                           <MenuItem value="India">India</MenuItem>
@@ -625,6 +735,7 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="Address 1"
+                        value={shippingAddress1}
                         onChange={(e) => setShippingAddress1(e.target.value)}
                       />
                     </Grid>
@@ -647,6 +758,7 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="Address 2"
+                        value={shippingAddress2}
                         onChange={(e) => setShippingAddress2(e.target.value)}
                       />
                     </Grid>
@@ -669,7 +781,10 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="City"
-                        onChange={(e) => setShippingCity(e.target.value)}
+                        value={shippingCity}
+                        onChange={(e) => {
+                          if (onlyText(e.target.value)) setShippingCity(e.target.value);
+                        }}
                       />
                     </Grid>
                     <Grid item xs={6}>
@@ -691,7 +806,10 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="State"
-                        onChange={(e) => setShippingState(e.target.value)}
+                        value={shippingState}
+                        onChange={(e) => {
+                          if (onlyText(e.target.value)) setShippingState(e.target.value);
+                        }}
                       />
                     </Grid>
                     <Grid item xs={6}>
@@ -713,7 +831,10 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="Pin Code"
-                        onChange={(e) => setShippingPinCode(e.target.value)}
+                        value={shippingPinCode}
+                        onChange={(e) => {
+                          if (pinCodeFormat(e.target.value)) setShippingPinCode(e.target.value);
+                        }}
                       />
                     </Grid>
                     <Grid item xs={6}>
@@ -735,7 +856,10 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="Fax Number"
-                        onChange={(e) => setShippingFax(e.target.value)}
+                        value={shippingFax}
+                        onChange={(e) => {
+                          if (onlyNumbers(e.target.value)) setShippingFax(e.target.value);
+                        }}
                       />
                     </Grid>
                     <Grid item xs={12}>
@@ -757,18 +881,23 @@ export default function NewVendorForm() {
                         }}
                         fullWidth
                         label="Other Phone Number"
-                        onChange={(e) => setShippingOtherPhone(e.target.value)}
+                        value={shippingOtherPhone}
+                        onChange={(e) => {
+                          if (onlyNumbers(e.target.value)) setShippingOtherPhone(e.target.value);
+                        }}
                       />
                     </Grid>
                   </Grid>
                 </Grid>
               </Grid>
             </Box>
+
             <Box mt={5}>
               <Typography variant="h6" fontWeight="bold" mb={2}>
                 Bank Details
               </Typography>
               <Grid container spacing={2}>
+                {/* Account Holder Name - Text Only */}
                 <Grid item xs={12} sm={6} md={3}>
                   <TextField
                     sx={{
@@ -788,9 +917,14 @@ export default function NewVendorForm() {
                     }}
                     fullWidth
                     label="Account Holder Name"
-                    onChange={(e) => setAccountHolderName(e.target.value)}
+                    value={accountHolderName}
+                    onChange={(e) => {
+                      if (onlyText(e.target.value)) setAccountHolderName(e.target.value);
+                    }}
                   />
                 </Grid>
+
+                {/* Bank Name - Text + Number Allowed */}
                 <Grid item xs={12} sm={6} md={3}>
                   <TextField
                     sx={{
@@ -810,9 +944,12 @@ export default function NewVendorForm() {
                     }}
                     fullWidth
                     label="Bank Name"
+                    value={bankName}
                     onChange={(e) => setBankName(e.target.value)}
                   />
                 </Grid>
+
+                {/* Account Number - Numbers Only */}
                 <Grid item xs={12} sm={6} md={3}>
                   <TextField
                     sx={{
@@ -832,9 +969,14 @@ export default function NewVendorForm() {
                     }}
                     fullWidth
                     label="Account Number"
-                    onChange={(e) => setAccountNumber(e.target.value)}
+                    value={accountNumber}
+                    onChange={(e) => {
+                      if (onlyNumbers(e.target.value)) setAccountNumber(e.target.value);
+                    }}
                   />
                 </Grid>
+
+                {/* Re-enter Account Number - Not stored, just UI */}
                 <Grid item xs={12} sm={6} md={3}>
                   <TextField
                     sx={{
@@ -856,6 +998,8 @@ export default function NewVendorForm() {
                     label="Re-enter Account Number"
                   />
                 </Grid>
+
+                {/* IFSC - Format: ABCD0E12345 */}
                 <Grid item xs={12} sm={6} md={3}>
                   <TextField
                     sx={{
@@ -875,9 +1019,15 @@ export default function NewVendorForm() {
                     }}
                     fullWidth
                     label="IFSC"
-                    onChange={(e) => setIfscCode(e.target.value)}
+                    value={ifscCode}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      if (ifscFormat(val)) setIfscCode(val);
+                    }}
                   />
                 </Grid>
+
+                {/* Remark - Text + Number Allowed */}
                 <Grid item xs={12} md={9}>
                   <TextField
                     sx={{
@@ -897,11 +1047,13 @@ export default function NewVendorForm() {
                     }}
                     fullWidth
                     label="Remark"
+                    value={remark}
                     onChange={(e) => setRemark(e.target.value)}
                   />
                 </Grid>
               </Grid>
             </Box>
+
             <Box mt={4} display="flex" justifyContent="flex-end" gap={2}>
               <Button variant="outlined">Cancel</Button>
               <Button variant="contained" color="primary" onClick={handleSave}>
