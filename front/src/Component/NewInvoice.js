@@ -231,7 +231,7 @@ const NewInvoicePage = () => {
       igst: igst,
       grand_total: total,
       items: rows.map((row) => ({
-        item_detail: row.item,
+        item_detail: row.item_name || row.item,
         quantity: row.qty,
         rate: row.rate,
         discount: row.discount,
@@ -582,7 +582,9 @@ const NewInvoicePage = () => {
                           value={row.item}
                           onChange={(e) => {
                             const selectedProductId = e.target.value;
+                            const selectedProduct = products.find(p => p.id === selectedProductId);
                             updateRow(index, "item", selectedProductId);
+                            updateRow(index, "item_name", selectedProduct ? selectedProduct.product_name : "");
                             fetch(`http://localhost:5000/api/products/${selectedProductId}`)
                               .then((res) => res.json())
                               .then((product) => {
