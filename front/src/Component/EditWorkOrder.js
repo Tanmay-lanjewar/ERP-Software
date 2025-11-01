@@ -30,15 +30,18 @@ export default function EditWorkOrderPage() {
           throw new Error('No data returned from server');
         }
         const wo = res.data.workOrder || res.data;
-        setFormData({
+        
+        const formattedData = {
           work_order_id: wo.work_order_id || '',
           work_order_number: wo.work_order_number || '',
           customer_name: wo.customer_name || '',
           work_order_date: wo.work_order_date ? new Date(wo.work_order_date).toISOString().split('T')[0] : '',
-          expiry_date: wo.expiry_date ? new Date(wo.expiry_date).toISOString().split('T')[0] : '',
+          expiry_date: (wo.expiry_date || wo.due_date) ? new Date(wo.expiry_date || wo.due_date).toISOString().split('T')[0] : '',
           status: wo.status || '',
           grand_total: wo.grand_total || '',
-        });
+        };
+        
+        setFormData(formattedData);
       } catch (err) {
         setError(`Failed to fetch work order: ${err.message}`);
         console.error('Error fetching work order:', err);
@@ -52,7 +55,7 @@ export default function EditWorkOrderPage() {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const res = await axios.get('http://168.231.102.6:5000/api/customers');
+        const res = await axios.get('http://localhost:5000/api/customers');
         console.log("📦 Customers from backend:", res.data);
         setCustomers(Array.isArray(res.data) ? res.data : res.data.data || []);
       } catch (err) {
@@ -73,7 +76,7 @@ export default function EditWorkOrderPage() {
     setLoading(true);
     setError('');
     try {
-      await axios.put(`http://168.231.102.6:5000/api/work-orders/${id}`, {
+      await axios.put(`http://localhost:5000/api/work-orders/${id}`, {
         customer_name: formData.customer_name,
         work_order_number: formData.work_order_number,
         work_order_date: formData.work_order_date,
@@ -84,8 +87,10 @@ export default function EditWorkOrderPage() {
       alert('Work order updated successfully!');
       navigate('/Work-Order-List');
     } catch (err) {
-      setError(`Failed to update work order: ${err.message}`);
-      console.error('Error updating work order:', err);
+      console.error('Frontend - Full Error:', err);
+      console.error('Frontend - Error Response:', err.response);
+      console.error('Frontend - Error Data:', err.response?.data);
+      setError(`Failed to update work order: ${err.response?.data?.details || err.message}`);
     } finally {
       setLoading(false);
     }
