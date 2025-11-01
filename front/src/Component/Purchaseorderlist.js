@@ -81,7 +81,7 @@ const PurchaseOrderActions = () => {
       console.log('API test successful:', testResponse.status);
       
       // Fetch purchase order data from backend API using purchase order number instead of ID
-      const response = await axios.get(`http://168.231.102.6:5000/api/purchase/${order.purchase_order_no}`);
+      const response = await axios.get(`http://localhost:5000/api/purchase/${order.purchase_order_no}`);
       console.log('Purchase order data fetched:', response.data);
       
       const { purchase_order: poData, vendor } = response.data;

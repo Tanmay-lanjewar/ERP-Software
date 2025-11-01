@@ -15,8 +15,6 @@ export default function EditPurchaseOrderPage() {
     delivery_date: '',
     status: '',
     bill_amount: '',
-    delivery_to: '',
-    delivery_address: '',
     payment_terms: '',
     due_date: '',
     customer_notes: '',
@@ -46,8 +44,6 @@ export default function EditPurchaseOrderPage() {
           delivery_date: po.delivery_date ? po.delivery_date.slice(0, 10) : '',
           status: po.status || 'Draft',
           bill_amount: po.total || 0,
-          delivery_to: po.delivery_to || '',
-          delivery_address: po.delivery_address || '',
           payment_terms: po.payment_terms || '',
           due_date: po.due_date ? po.due_date.slice(0, 10) : '',
           customer_notes: po.customer_notes || '',
@@ -87,14 +83,12 @@ export default function EditPurchaseOrderPage() {
     setLoading(true);
     setError('');
     try {
-      await axios.put(`http://168.231.102.6:5000/api/purchase/${id}`, {
+      await axios.put(`http://localhost:5000/api/purchase/${id}`, {
         purchase_order_no: formData.purchase_order_number,
         vendor_name: formData.vendor_name,
         purchase_order_date: formData.created_date,
         delivery_date: formData.delivery_date,
         status: formData.status,
-        delivery_to: formData.delivery_to || '',
-        delivery_address: formData.delivery_address || '',
         payment_terms: formData.payment_terms || 'Due end of the month',
         due_date: formData.due_date || '',
         customer_notes: formData.customer_notes || '',
@@ -107,10 +101,15 @@ export default function EditPurchaseOrderPage() {
         attachment: formData.attachment || '',
         vendor_id: formData.vendor_id || null
       });
+      
+      console.log('Update response:', response.data);
       alert('Purchase order updated successfully!');
       navigate('/purchase-order-list');
     } catch (err) {
-      setError('Failed to update purchase order');
+      console.error('Update error:', err);
+      console.error('Error response:', err.response?.data);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to update purchase order';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -150,7 +149,14 @@ export default function EditPurchaseOrderPage() {
                 name="vendor_name"
                 value={formData.vendor_name || ''}
                 label="Vendor"
-                onChange={handleChange}
+                onChange={(e) => {
+                  const selectedVendor = vendors.find(v => v.vendor_name === e.target.value);
+                  setFormData({
+                    ...formData,
+                    vendor_name: e.target.value,
+                    vendor_id: selectedVendor ? selectedVendor.vendor_id : null
+                  });
+                }}
               >
                 {vendors.map(vendor => (
                   <MenuItem key={vendor.vendor_id} value={vendor.vendor_name}>

@@ -59,7 +59,7 @@ exports.getById = (id, callback) => {
     LEFT JOIN purchase_order_items poi ON po.id = poi.purchase_order_id
     LEFT JOIN vendors v ON LOWER(po.vendor_name) = LOWER(v.vendor_name)
     WHERE po.id = ? OR po.purchase_order_no = ?
-    GROUP BY poi.id
+    ORDER BY poi.id
   `;
   db.query(query, [id, id], callback);
 };
@@ -75,7 +75,7 @@ exports.create = (data, callback) => {
     purchase_order_date: data.purchase_order_date,
     delivery_date: data.delivery_date,
     payment_terms: data.payment_terms,
-    due_date: data.due_date,
+    due_date: data.due_date && data.due_date.trim() !== '' ? data.due_date : null,
     customer_notes: data.customer_notes,
     terms_and_conditions: data.terms_and_conditions,
     sub_total: data.sub_total,
@@ -114,15 +114,16 @@ exports.create = (data, callback) => {
 exports.update = (id, data, callback) => {
   const updateQuery = `
     UPDATE purchase_orders SET 
-      purchase_order_no = ?, delivery_to = ?, delivery_address = ?, vendor_name = ?, vendor_id = ?,
+      purchase_order_no = ?, vendor_name = ?, vendor_id = ?,
       purchase_order_date = ?, delivery_date = ?, payment_terms = ?, due_date = ?,
       customer_notes = ?, terms_and_conditions = ?, sub_total = ?, freight = ?, cgst = ?, sgst = ?, total = ?, attachment = ?
     WHERE id = ?
   `;
 
   const values = [
-    data.purchase_order_no, data.delivery_to, data.delivery_address, data.vendor_name, data.vendor_id,
-    data.purchase_order_date, data.delivery_date, data.payment_terms, data.due_date,
+    data.purchase_order_no, data.vendor_name, data.vendor_id,
+    data.purchase_order_date, data.delivery_date, data.payment_terms, 
+    data.due_date && data.due_date.trim() !== '' ? data.due_date : null,
     data.customer_notes, data.terms_and_conditions, data.sub_total, data.freight,
     data.cgst, data.sgst, data.total, data.attachment, id
   ];

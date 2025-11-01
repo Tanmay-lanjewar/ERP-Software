@@ -94,29 +94,118 @@ const WorkOrder = {
   },
 
   update: (id, data, callback) => {
-    const {
-      work_order_number, vendor_name, customer_name, work_order_date, due_date, payment_terms,
-      subject, vendor_notes, customer_notes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status, purchase_order_number, purchase_order_date
-    } = data;
+    console.log('Work Order Model Update - ID:', id);
+    console.log('Work Order Model Update - Data:', JSON.stringify(data, null, 2));
+    
+    try {
+      // Build dynamic update query based on provided fields
+      const updateFields = [];
+      const queryParams = [];
+      
+      // Add fields that can be updated
+      if (data.customer_name !== undefined) {
+        updateFields.push('customer_name = ?');
+        queryParams.push(data.customer_name);
+      }
+      if (data.work_order_number !== undefined) {
+        updateFields.push('work_order_number = ?');
+        queryParams.push(data.work_order_number);
+      }
+      if (data.work_order_date !== undefined) {
+        updateFields.push('work_order_date = ?');
+        // work_order_date is required (NOT NULL), so don't convert empty string to NULL
+        queryParams.push(data.work_order_date);
+      }
+      if (data.expiry_date !== undefined || data.due_date !== undefined) {
+        updateFields.push('due_date = ?');
+        // Convert empty string to NULL for MySQL date field
+        const dateValue = data.expiry_date !== undefined ? data.expiry_date : data.due_date;
+        queryParams.push(dateValue === '' ? null : dateValue);
+      }
+      if (data.status !== undefined) {
+        updateFields.push('status = ?');
+        queryParams.push(data.status);
+      }
+      if (data.grand_total !== undefined) {
+        updateFields.push('grand_total = ?');
+        queryParams.push(data.grand_total);
+      }
+      if (data.payment_terms !== undefined) {
+        updateFields.push('payment_terms = ?');
+        queryParams.push(data.payment_terms);
+      }
+      if (data.subject !== undefined) {
+        updateFields.push('subject = ?');
+        queryParams.push(data.subject);
+      }
+      if (data.customer_notes !== undefined) {
+        updateFields.push('customer_notes = ?');
+        queryParams.push(data.customer_notes);
+      }
+      if (data.terms_and_conditions !== undefined) {
+        updateFields.push('terms_and_conditions = ?');
+        queryParams.push(data.terms_and_conditions);
+      }
+      if (data.attachment_url !== undefined) {
+        updateFields.push('attachment_url = ?');
+        queryParams.push(data.attachment_url);
+      }
+      if (data.sub_total !== undefined) {
+        updateFields.push('sub_total = ?');
+        queryParams.push(data.sub_total);
+      }
+      if (data.cgst !== undefined) {
+        updateFields.push('cgst = ?');
+        queryParams.push(data.cgst);
+      }
+      if (data.sgst !== undefined) {
+        updateFields.push('sgst = ?');
+        queryParams.push(data.sgst);
+      }
+      if (data.purchase_order_number !== undefined) {
+        updateFields.push('purchase_order_number = ?');
+        queryParams.push(data.purchase_order_number);
+      }
+      if (data.purchase_order_date !== undefined) {
+        updateFields.push('purchase_order_date = ?');
+        // Convert empty string to NULL for MySQL date field
+        queryParams.push(data.purchase_order_date === '' ? null : data.purchase_order_date);
+      }
+      
+      // If no fields to update, return error
+      if (updateFields.length === 0) {
+        return callback(new Error('No valid fields provided for update'));
+      }
+      
+      // Add work_order_id to the end of params
+      queryParams.push(id);
+      
+      const sql = `UPDATE work_orders SET ${updateFields.join(', ')} WHERE work_order_id = ?`;
+      
+      console.log('SQL Query:', sql);
+      console.log('Query Parameters:', queryParams);
 
-    // Use vendor_name if provided, otherwise fall back to customer_name for backward compatibility
-    const finalVendorName = vendor_name || customer_name;
-    const finalVendorNotes = vendor_notes || customer_notes;
-
-    const sql = `
-      UPDATE work_orders SET
-        work_order_number = ?, customer_name = ?, work_order_date = ?, due_date = ?, payment_terms = ?,
-        subject = ?, customer_notes = ?, terms_and_conditions = ?, attachment_url = ?,
-        sub_total = ?, cgst = ?, sgst = ?, grand_total = ?, status = ?, purchase_order_number = ?, purchase_order_date = ?
-      WHERE work_order_id = ?
-    `;
-
-    db.query(sql, [
-      work_order_number, finalVendorName, work_order_date, due_date, payment_terms,
-      subject, finalVendorNotes, terms_and_conditions, attachment_url,
-      sub_total, cgst, sgst, grand_total, status, purchase_order_number, purchase_order_date, id
-    ], callback);
+      db.query(sql, queryParams, (err, result) => {
+        if (err) {
+          console.error('Database Query Error:', err);
+          console.error('Error details:', {
+            code: err.code,
+            errno: err.errno,
+            sqlMessage: err.sqlMessage,
+            sqlState: err.sqlState,
+            index: err.index,
+            sql: err.sql
+          });
+          return callback(err);
+        }
+        console.log('Database Query Success:', result);
+        console.log('Affected rows:', result.affectedRows);
+        callback(null, result);
+      });
+    } catch (error) {
+      console.error('Update function error:', error);
+      callback(error);
+    }
   },
 
   remove: (id, callback) => {
