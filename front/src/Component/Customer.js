@@ -19,7 +19,7 @@ export default function CustomerPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/customers')
+    axios.get('http://168.231.102.6:5000/api/customers')
       .then((res) => {
         setCustomers(res.data || []);
         console.log('Fetched customers:', res.data);

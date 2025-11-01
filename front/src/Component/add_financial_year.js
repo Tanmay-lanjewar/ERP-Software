@@ -38,7 +38,7 @@ const AddFinancialYear = () => {
     }
 
     try {
-      const res = await axios.post('http://localhost:5000/api/financialYear/add', {
+      const res = await axios.post('http://168.231.102.6:5000/api/financialYear/add', {
         start_date: startDate,
         end_date: endDate
       });

@@ -18,7 +18,7 @@ export default function ItemsPage() {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/products');
+        const res = await axios.get('http://168.231.102.6:5000/api/products');
         console.log('Full response:', res.data);
         setItems(res.data); // Adjust based on your API response structure
       } catch (error) {

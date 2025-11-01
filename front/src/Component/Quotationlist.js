@@ -56,7 +56,7 @@ export default function QuotationListPage() {
       setLoading(true);
       setError("");
       try {
-        const res = await axios.get("http://localhost:5000/api/quotation");
+        const res = await axios.get("http://168.231.102.6:5000/api/quotation");
         setQuotations(res.data);
       } catch (err) {
         setError("Failed to fetch quotations");
@@ -73,13 +73,13 @@ export default function QuotationListPage() {
    const handlePrintQuotation = async () => {
   if (!selectedQuote) return;
   try {
-    const res = await axios.get(`http://localhost:5000/api/quotation/${selectedQuote.quotation_id}`);
+    const res = await axios.get(`http://168.231.102.6:5000/api/quotation/${selectedQuote.quotation_id}`);
     const { quotation, items, sub_total, cgst, sgst, grand_total } = res.data;
 
     // Fetch customers and find the one used in this quotation by name
     let customerData = null;
     try {
-      const customersRes = await axios.get('http://localhost:5000/api/customers');
+      const customersRes = await axios.get('http://168.231.102.6:5000/api/customers');
       customerData = (customersRes.data || []).find((c) => c.customer_name === quotation.customer_name) || null;
     } catch (e) {
       // ignore, fallback to quotation fields
@@ -606,7 +606,7 @@ export default function QuotationListPage() {
       return;
     try {
       await axios.delete(
-        `http://localhost:5000/api/quotation/${selectedQuote.quotation_id}`
+        `http://168.231.102.6:5000/api/quotation/${selectedQuote.quotation_id}`
       );
       setQuotations((prev) =>
         prev.filter((q) => q.quotation_id !== selectedQuote.quotation_id)
@@ -880,7 +880,7 @@ export default function QuotationListPage() {
                     const newStatus = selectedQuote.status === "Sent" ? "Draft" : "Sent";
                     try {
                       await axios.put(
-                        `http://localhost:5000/api/quotation/${selectedQuote.quotation_id}`,
+                        `http://168.231.102.6:5000/api/quotation/${selectedQuote.quotation_id}`,
                         { status: newStatus }
                       );
                       setQuotations((prev) =>
