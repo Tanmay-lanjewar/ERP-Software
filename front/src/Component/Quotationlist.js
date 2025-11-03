@@ -426,7 +426,7 @@ export default function QuotationListPage() {
                 </tr>
                  <tr>
                     <th style="width:2%; border: 2px solid #000; padding: 3px;  font-weight: bold;">Sr.No</th>
-                    <td  style="width: 35%; border: 2px solid #000; padding: 3px;font-weight: bold; ">Description</td> 
+                    <td  style="width: 35%; border: 2px solid #000; padding: 3px;font-weight: bold;  background-color: #F4AF83; ">Description</td> 
                     <td style="width: 10%; border: 2px solid #000; padding: 3px;font-weight: bold; ">Quantity</td>
                     <td style="width: 15%; border: 2px solid #000; padding: 3px;font-weight: bold; ">UOM</td>
                     <td style="width: 18%; border: 2px solid #000; padding: 3px;font-weight: bold; ">Rate</td>

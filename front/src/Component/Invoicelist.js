@@ -78,7 +78,7 @@ export default function Invoicelist() {
     try {
       // Fetch invoice details, items, and customer
       const response = await axios.get(`http://localhost:5000/api/invoice/${invoice.invoice_id}`);
-      const { invoice: invoiceData, items, customer, sub_total, cgst, sgst, grand_total } = response.data;
+      const { invoice: invoiceData, items, customer, sub_total, cgst, sgst, grand_total, freight } = response.data;
 
       if (!customer) {
         throw new Error("Customer not found");
@@ -123,18 +123,18 @@ export default function Invoicelist() {
           (item, index) => `
           <tr>
             <td>${index + 1}</td>
-            <td>${item.item_detail}</td>
-            <td>${item.hsn_sac || "39259010"}</td>
-            <td>${item.quantity}</td>
+            <td>${item.item_detail || 'N/A'}</td>
+            <td>${item.hsn_sac || item.hsn_code || "39259010"}</td>
+            <td>${item.quantity || 0}</td>
             <td>Sq.M</td>
-            <td>${parseFloat(item.rate).toFixed(2)}</td>
-            <td>${(item.quantity * item.rate).toFixed(2)}</td>
+            <td>${parseFloat(item.rate || 0).toFixed(2)}</td>
+            <td>${(parseFloat(item.quantity || 0) * parseFloat(item.rate || 0)).toFixed(2)}</td>
             <td>${item.discount || "-"}</td>
-            <td>${item.amount.toFixed(2)}</td>
-            <td>9%<br>${(item.amount * 0.09).toFixed(2)}</td>
-            <td>9%<br>${(item.amount * 0.09).toFixed(2)}</td>
+            <td>${parseFloat(item.amount || 0).toFixed(2)}</td>
+            <td>9%<br>${(parseFloat(item.amount || 0) * 0.09).toFixed(2)}</td>
+            <td>9%<br>${(parseFloat(item.amount || 0) * 0.09).toFixed(2)}</td>
             <td>0%</td>
-            <td>${(item.amount + item.amount * 0.18).toFixed(2)}</td>
+            <td>${(parseFloat(item.amount || 0) + parseFloat(item.amount || 0) * 0.18).toFixed(2)}</td>
           </tr>`
         )
         .join("");
@@ -1006,21 +1006,21 @@ export default function Invoicelist() {
                     ${items.map((item, index) => `
                     <tr>
                         <td class="col-sno text-center">${index + 1}</td>
-                        <td class="col-desc item-description" style="text-align: left;">${item.item_detail}</td>
-                        <td class="col-hsn text-center">${item.hsn_sac || '39259010'}</td>
-                        <td class="col-qty text-right">${item.quantity}</td>
+                        <td class="col-desc item-description" style="text-align: left;">${item.item_detail || 'N/A'}</td>
+                        <td class="col-hsn text-center">${item.hsn_sac || item.hsn_code || '39259010'}</td>
+                        <td class="col-qty text-right">${item.quantity || 0}</td>
                         <td class="col-unit text-center">Sq.M</td>
-                        <td class="col-rate text-right">${parseFloat(item.rate).toFixed(2)}</td>
-                        <td class="col-total-value text-right">${(item.quantity * item.rate).toFixed(2)}</td>
+                        <td class="col-rate text-right">${parseFloat(item.rate || 0).toFixed(2)}</td>
+                        <td class="col-total-value text-right">${(parseFloat(item.quantity || 0) * parseFloat(item.rate || 0)).toFixed(2)}</td>
                         <td class="col-disc text-center">${item.discount || '-'}</td>
-                        <td class="col-taxable-value text-right">${item.amount.toFixed(2)}</td>
+                        <td class="col-taxable-value text-right">${parseFloat(item.amount || 0).toFixed(2)}</td>
                         <td class="col-tax-rate text-right">9%</td>
-                        <td class="col-tax-rs text-right">${(item.amount * 0.09).toFixed(2)}</td>
+                        <td class="col-tax-rs text-right">${(parseFloat(item.amount || 0) * 0.09).toFixed(2)}</td>
                         <td class="col-tax-rate text-right">9%</td>
-                        <td class="col-tax-rs text-right">${(item.amount * 0.09).toFixed(2)}</td>
+                        <td class="col-tax-rs text-right">${(parseFloat(item.amount || 0) * 0.09).toFixed(2)}</td>
                         <td class="col-tax-rate text-right">0%</td>
                         <td class="col-igst-rs text-right">0.00</td>
-                        <td class="col-total-rs text-right">${(item.amount + item.amount * 0.18).toFixed(2)}</td>
+                        <td class="col-total-rs text-right">${(parseFloat(item.amount || 0) + parseFloat(item.amount || 0) * 0.18).toFixed(2)}</td>
                     </tr>
                     `).join('')}
                     <!-- <tr class="empty-space-row">
@@ -1055,14 +1055,14 @@ export default function Invoicelist() {
 
                     <tr class="total-row bold-row">
                         <td colspan="8" class="col-label" style="border-right: 1px solid #6b6b6b;">Add: Freight</td>
-                        <td class="col-taxable-value text-right">0.00</td>
+                        <td class="col-taxable-value text-right">${(freight || 0).toFixed(2)}</td>
                         <td class="col-tax-rate"></td>
                         <td class="col-tax-rs text-right">0.00</td>
                         <td class="col-tax-rate"></td>
                         <td class="col-tax-rs text-right">0.00</td>
                         <td class="col-tax-rate"></td>
                         <td class="col-igst-rs text-right">0.00</td>
-                        <td class="col-total-rs text-right">0.00</td>
+                        <td class="col-total-rs text-right">${(freight || 0).toFixed(2)}</td>
                     </tr>
 
                     <tr class="total-row bold-row">

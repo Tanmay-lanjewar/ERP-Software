@@ -31,6 +31,7 @@ export default function EditPurchaseOrderPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [vendors, setVendors] = useState([]);
+  const [items, setItems] = useState([]);
 
 
   // Fetch PO
@@ -39,6 +40,8 @@ export default function EditPurchaseOrderPage() {
       try {
         const res = await axios.get(`http://localhost:5000/api/purchase/${id}`);
         const po = res.data.purchase_order;
+        const poItems = res.data.items || [];
+        
         setFormData({
           purchase_order_number: po.purchase_order_no || '',
           vendor_name: po.vendor_name || '',
@@ -59,6 +62,8 @@ export default function EditPurchaseOrderPage() {
           attachment: po.attachment || '',
           vendor_id: po.vendor_id || null
         });
+        
+        setItems(poItems);
 
       } catch (err) {
         setError('Failed to fetch purchase order');
@@ -87,25 +92,25 @@ export default function EditPurchaseOrderPage() {
     setLoading(true);
     setError('');
     try {
-      await axios.put(`http://localhost:5000/api/purchase/${id}`, {
+      const response = await axios.put(`http://localhost:5000/api/purchase/${id}`, {
         purchase_order_no: formData.purchase_order_number,
         vendor_name: formData.vendor_name,
+        vendor_id: formData.vendor_id,
         purchase_order_date: formData.created_date,
         delivery_date: formData.delivery_date,
-        status: formData.status,
         delivery_to: formData.delivery_to || '',
         delivery_address: formData.delivery_address || '',
         payment_terms: formData.payment_terms || 'Due end of the month',
         due_date: formData.due_date || '',
         customer_notes: formData.customer_notes || '',
         terms_and_conditions: formData.terms_and_conditions || '',
-        sub_total: formData.sub_total || 0,
-        freight: formData.freight || 0,
-        cgst: formData.cgst || 0,
-        sgst: formData.sgst || 0,
-        total: formData.bill_amount || 0,
+        sub_total: parseFloat(formData.sub_total) || 0,
+        freight: parseFloat(formData.freight) || 0,
+        cgst: parseFloat(formData.cgst) || 0,
+        sgst: parseFloat(formData.sgst) || 0,
+        total: parseFloat(formData.bill_amount) || 0,
         attachment: formData.attachment || '',
-        vendor_id: formData.vendor_id || null
+        items: items
       });
       alert('Purchase order updated successfully!');
       navigate('/purchase-order-list');

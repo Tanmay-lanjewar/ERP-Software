@@ -10,10 +10,15 @@ export default function EditInvoicePage() {
   const [formData, setFormData] = useState({
     invoice_number: '',
     customer_name: '',
+    customer_id: '',
     invoice_date: '',
     expiry_date: '',
     status: '',
     grand_total: '',
+    subject: '',
+    customer_notes: '',
+    terms_and_conditions: '',
+    freight: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -29,10 +34,15 @@ export default function EditInvoicePage() {
         setFormData({
           invoice_number: inv.invoice_number,
           customer_name: inv.customer_name,
+          customer_id: inv.customer_id,
           invoice_date: inv.invoice_date,
           expiry_date: inv.expiry_date,
           status: inv.status || '',
           grand_total: res.data.grand_total || '',
+          subject: inv.subject || '',
+          customer_notes: inv.customer_notes || '',
+          terms_and_conditions: inv.terms_and_conditions || '',
+          freight: res.data.freight || 0,
         });
       } catch (err) {
         setError('Failed to fetch invoice');
@@ -59,10 +69,18 @@ export default function EditInvoicePage() {
     setError('');
     try {
       await axios.put(`http://localhost:5000/api/invoice/${id}`, {
-        customer_name: formData.customer_name,
-        invoice_date: formData.invoice_date,
-        expiry_date: formData.expiry_date,
-        status: formData.status,
+        invoice: {
+          customer_id: formData.customer_id,
+          customer_name: formData.customer_name,
+          invoice_date: formData.invoice_date,
+          expiry_date: formData.expiry_date,
+          status: formData.status,
+          subject: formData.subject,
+          customer_notes: formData.customer_notes,
+          terms_and_conditions: formData.terms_and_conditions,
+          freight: formData.freight,
+        },
+        items: [], // Empty items array for basic edit
       });
       alert('Invoice updated successfully!');
       navigate('/invoice-list');
@@ -150,6 +168,43 @@ export default function EditInvoicePage() {
             value={formData.grand_total}
             margin="normal"
             disabled
+          />
+          <TextField
+            fullWidth
+            name="subject"
+            label="Subject"
+            value={formData.subject}
+            onChange={handleChange}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            name="freight"
+            label="Freight"
+            type="number"
+            value={formData.freight}
+            onChange={handleChange}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            name="customer_notes"
+            label="Customer Notes"
+            value={formData.customer_notes}
+            onChange={handleChange}
+            margin="normal"
+            multiline
+            rows={3}
+          />
+          <TextField
+            fullWidth
+            name="terms_and_conditions"
+            label="Terms and Conditions"
+            value={formData.terms_and_conditions}
+            onChange={handleChange}
+            margin="normal"
+            multiline
+            rows={3}
           />
           <Box display="flex" justifyContent="space-between" mt={3}>
             <Button
