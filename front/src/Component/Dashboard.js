@@ -172,7 +172,7 @@ const Dashboard = () => {
                 </Box>
                 <Box mt={2} textAlign="right">
                   <Link
-                    to="/invoices"
+                    to="/invoice-list"
                     style={{ textDecoration: "none", color: "#004085" }}
                   >
                     View All

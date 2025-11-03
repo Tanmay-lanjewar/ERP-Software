@@ -45,9 +45,9 @@ const FinancialYearMain = () => {
     }
   };
 
-  const handleEdit = (id) => {
-    navigate(`/edit-financial-year/${id}`);
-  };
+  // const handleEdit = (id) => {
+  //   navigate(`/edit-financial-year/${id}`);
+  // };
 
   return (
     <Box sx={{ display: 'flex', bgcolor: '#f4f5fa', minHeight: '100vh' }}>
