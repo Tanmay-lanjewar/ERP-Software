@@ -82,7 +82,7 @@ const NewWorkOrder = () => {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/vendors')
+    fetch('http://168.231.102.6:5000/api/vendors')
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -98,7 +98,7 @@ const NewWorkOrder = () => {
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/products')
+    fetch('http://168.231.102.6:5000/api/products')
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -114,7 +114,7 @@ const NewWorkOrder = () => {
   }, []);
   
   useEffect(() => {
-    fetch('http://localhost:5000/api/product_units')
+    fetch('http://168.231.102.6:5000/api/product_units')
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -200,7 +200,7 @@ const NewWorkOrder = () => {
       })),
     };
 
-    fetch('http://localhost:5000/api/work-orders', {
+ fetch('http://168.231.102.6:5000/api/work-orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(workOrderData),
@@ -514,7 +514,7 @@ const NewWorkOrder = () => {
                             updateRow(index, 'item', selectedProductId);
                             updateRow(index, 'itemName', selectedProduct ? selectedProduct.product_name : '');
                             // Fetch product details by id and update rate
-                            fetch(`http://localhost:5000/api/products/${selectedProductId}`)
+ fetch(`http://168.231.102.6:5000/api/products/${selectedProductId}`)
                               .then((res) => res.json())
                               .then((product) => {
                                 updateRow(index, 'rate', product.sale_price || 0);

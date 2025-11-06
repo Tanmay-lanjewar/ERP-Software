@@ -39,7 +39,7 @@ export default function EditQuotationPage() {
       setLoading(true);
       setError('');
       try {
-        const res = await axios.get(`http://localhost:5000/api/quotation/${id}`);
+ const res = await axios.get(`http://168.231.102.6:5000/api/quotation/${id}`);
         const q = res.data.quotation;
         
         // Format dates properly for input fields
@@ -89,7 +89,7 @@ export default function EditQuotationPage() {
   }, [id]);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/customers')
+ axios.get('http://168.231.102.6:5000/api/customers')
       .then(res => setCustomers(res.data))
       .catch(() => setCustomers([]));
   }, []);
@@ -117,7 +117,7 @@ export default function EditQuotationPage() {
     }
     
     try {
-      const response = await axios.put(`http://localhost:5000/api/quotation/${id}`, {
+ const response = await axios.put(`http://168.231.102.6:5000/api/quotation/${id}`, {
         quotation: {
           customer_name: formData.customer_name,
           quotation_date: formData.quotation_date,

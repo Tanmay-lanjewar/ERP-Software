@@ -17,9 +17,9 @@ export const fetchDashboardData = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
         
-      const summaryResponse = await axios.get('http://localhost:5000/api/invoice/summary');
-      const recentInvoicesResponse = await axios.get('http://localhost:5000/api/invoice/recent');
-      const invoicesOverTimeResponse = await axios.get('http://localhost:5000/api/invoice/over-time');
+ const summaryResponse = await axios.get('http://168.231.102.6:5000/api/invoice/summary');
+ const recentInvoicesResponse = await axios.get('http://168.231.102.6:5000/api/invoice/recent');
+ const invoicesOverTimeResponse = await axios.get('http://168.231.102.6:5000/api/invoice/over-time');
 
       return {
         summary: summaryResponse.data,

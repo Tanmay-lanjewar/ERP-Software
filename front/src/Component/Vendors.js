@@ -16,7 +16,7 @@ const Vendors = () => {
     const [loading, setLoading] = useState(true);
      const navigate=useNavigate()
      useEffect(() => {
-  axios.get('http://localhost:5000/api/vendors')
+ axios.get('http://168.231.102.6:5000/api/vendors')
     .then((res) => {
       setVendors(res.data || []);
       console.log('Fetched vendors:', res.data);

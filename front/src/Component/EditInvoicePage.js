@@ -29,7 +29,7 @@ export default function EditInvoicePage() {
       setLoading(true);
       setError('');
       try {
-        const res = await axios.get(`http://localhost:5000/api/invoice/${id}`);
+ const res = await axios.get(`http://168.231.102.6:5000/api/invoice/${id}`);
         const inv = res.data.invoice;
         setFormData({
           invoice_number: inv.invoice_number,
@@ -54,7 +54,7 @@ export default function EditInvoicePage() {
   }, [id]);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/customers')
+ axios.get('http://168.231.102.6:5000/api/customers')
       .then(res => setCustomers(res.data))
       .catch(() => setCustomers([]));
   }, []);
@@ -68,7 +68,7 @@ export default function EditInvoicePage() {
     setLoading(true);
     setError('');
     try {
-      await axios.put(`http://localhost:5000/api/invoice/${id}`, {
+ await axios.put(`http://168.231.102.6:5000/api/invoice/${id}`, {
         invoice: {
           customer_id: formData.customer_id,
           customer_name: formData.customer_name,

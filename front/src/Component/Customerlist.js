@@ -48,7 +48,7 @@ export default function CustomerList() {
 
     const fetchCustomers = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/customers');
+ const res = await fetch('http://168.231.102.6:5000/api/customers');
             const data = await res.json();
             setCustomers(data);
         } catch (err) {
@@ -95,7 +95,7 @@ export default function CustomerList() {
     const toggleCustomerStatus = async (customer) => {
         const newStatus = customer.status === 'Active' ? 'Inactive' : 'Active';
         try {
-            const response = await fetch(`http://localhost:5000/api/customers/${customer.id}/status`, {
+ const response = await fetch(`http://168.231.102.6:5000/api/customers/${customer.id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -183,7 +183,7 @@ export default function CustomerList() {
                         <form onSubmit={async (e) => {
                             e.preventDefault();
                             try {
-                                await fetch(`http://localhost:5000/api/customers/${editingCustomer.id}`, {
+ await fetch(`http://168.231.102.6:5000/api/customers/${editingCustomer.id}`, {
                                     method: 'PUT',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(editingCustomer),

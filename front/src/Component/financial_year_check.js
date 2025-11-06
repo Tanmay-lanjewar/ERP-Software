@@ -11,7 +11,7 @@ const FinancialYearGuard = ({ children }) => {
   useEffect(() => {
     const checkActiveYear = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/financialYear/active');
+ const res = await axios.get('http://168.231.102.6:5000/api/financialYear/active');
         if (res.data.active && res.data.active.length > 0) {
           console.log('Active financial year found:', res.data.active);
           setHasActiveYear(true);

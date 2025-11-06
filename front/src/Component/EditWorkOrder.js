@@ -25,7 +25,7 @@ export default function EditWorkOrderPage() {
       setLoading(true);
       setError('');
       try {
-        const res = await axios.get(`http://localhost:5000/api/work-orders/${id}`);
+ const res = await axios.get(`http://168.231.102.6:5000/api/work-orders/${id}`);
         if (!res.data) {
           throw new Error('No data returned from server');
         }
@@ -52,7 +52,7 @@ export default function EditWorkOrderPage() {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/customers');
+ const res = await axios.get('http://168.231.102.6:5000/api/customers');
         console.log("📦 Customers from backend:", res.data);
         setCustomers(Array.isArray(res.data) ? res.data : res.data.data || []);
       } catch (err) {
@@ -73,7 +73,7 @@ export default function EditWorkOrderPage() {
     setLoading(true);
     setError('');
     try {
-      await axios.put(`http://localhost:5000/api/work-orders/${id}`, {
+ await axios.put(`http://168.231.102.6:5000/api/work-orders/${id}`, {
         customer_name: formData.customer_name,
         work_order_number: formData.work_order_number,
         work_order_date: formData.work_order_date,

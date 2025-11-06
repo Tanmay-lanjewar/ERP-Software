@@ -68,7 +68,7 @@ const handleCopyBilling = (checked) => {
   }
 };
 
-  const API_URL = "http://localhost:5000/api/vendors";
+ const API_URL = "http://168.231.102.6:5000/api/vendors";
 
   const handleSave = async () => {
     const vendorData = {
