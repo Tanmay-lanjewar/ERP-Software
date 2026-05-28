@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 import UserMenu from './UserMenu';
 
 const Vendors = () => {
@@ -16,7 +16,7 @@ const Vendors = () => {
     const [loading, setLoading] = useState(true);
      const navigate=useNavigate()
      useEffect(() => {
-  axios.get('http://localhost:5000/api/vendors')
+  axios.get('http://72.62.227.63:5001/api/vendors')
     .then((res) => {
       setVendors(res.data || []);
       console.log('Fetched vendors:', res.data);

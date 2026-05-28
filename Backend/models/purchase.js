@@ -3,9 +3,28 @@ const db = require('../config/db');
 const { promisify } = require('util');
 const query = promisify(db.query).bind(db);
 
+// Ensure purchase_orders has a status column; create it if missing
+async function ensureStatusColumn() {
+  try {
+    const checkSql = `
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = DATABASE() AND table_name = 'purchase_orders' AND column_name = 'status'
+    `;
+    const rows = await query(checkSql);
+    if (rows.length === 0) {
+      // Add status column with a default value
+      await query("ALTER TABLE purchase_orders ADD COLUMN status VARCHAR(50) DEFAULT 'Draft'");
+    }
+  } catch (err) {
+    // Log but do not throw to avoid breaking existing flows
+    console.error('ensureStatusColumn error:', err);
+  }
+}
+
 // Get all purchase orders with items
 exports.getAll = async (callback) => {
   try {
+    await ensureStatusColumn();
     // Get active financial year with date range
     const activeFinancialYear = await query(
       'SELECT start_date, end_date, id as financial_year_id FROM financial_years WHERE is_active = TRUE'
@@ -20,7 +39,7 @@ exports.getAll = async (callback) => {
     // Query purchase orders where purchase_order_date falls within the active financial year
     const sql = `
       SELECT 
-        po.id, po.purchase_order_no, po.vendor_name, po.purchase_order_date, po.delivery_date,
+        po.id, po.purchase_order_no, po.vendor_name, po.purchase_order_date, po.delivery_date, po.status,
         po.sub_total, po.cgst, po.sgst, po.total, po.due_date,
         po.customer_notes, po.terms_and_conditions,
         po.freight, po.attachment, po.vendor_id,
@@ -59,7 +78,7 @@ exports.getById = (id, callback) => {
     LEFT JOIN purchase_order_items poi ON po.id = poi.purchase_order_id
     LEFT JOIN vendors v ON LOWER(po.vendor_name) = LOWER(v.vendor_name)
     WHERE po.id = ? OR po.purchase_order_no = ?
-    GROUP BY poi.id
+    ORDER BY poi.id
   `;
   db.query(query, [id, id], callback);
 };
@@ -75,7 +94,7 @@ exports.create = (data, callback) => {
     purchase_order_date: data.purchase_order_date,
     delivery_date: data.delivery_date,
     payment_terms: data.payment_terms,
-    due_date: data.due_date,
+    due_date: data.due_date && data.due_date.trim() !== '' ? data.due_date : null,
     customer_notes: data.customer_notes,
     terms_and_conditions: data.terms_and_conditions,
     sub_total: data.sub_total,
@@ -111,53 +130,60 @@ exports.create = (data, callback) => {
 };
 
 // Update purchase order
-exports.update = (id, data, callback) => {
-  const updateQuery = `
-    UPDATE purchase_orders SET 
-      purchase_order_no = ?, delivery_to = ?, delivery_address = ?, vendor_name = ?, vendor_id = ?,
-      purchase_order_date = ?, delivery_date = ?, payment_terms = ?, due_date = ?,
-      customer_notes = ?, terms_and_conditions = ?, sub_total = ?, freight = ?, cgst = ?, sgst = ?, total = ?, attachment = ?
-    WHERE id = ?
-  `;
+exports.update = async (id, data, callback) => {
+  try {
+    await ensureStatusColumn();
 
-  const values = [
-    data.purchase_order_no, data.delivery_to, data.delivery_address, data.vendor_name, data.vendor_id,
-    data.purchase_order_date, data.delivery_date, data.payment_terms, data.due_date,
-    data.customer_notes, data.terms_and_conditions, data.sub_total, data.freight,
-    data.cgst, data.sgst, data.total, data.attachment, id
-  ];
+    const updateQuery = `
+      UPDATE purchase_orders SET 
+        purchase_order_no = ?, vendor_name = ?, vendor_id = ?,
+        purchase_order_date = ?, delivery_date = ?, payment_terms = ?, due_date = ?,
+        customer_notes = ?, terms_and_conditions = ?, sub_total = ?, freight = ?, cgst = ?, sgst = ?, total = ?, attachment = ?, status = ?
+      WHERE id = ?
+    `;
 
-  db.query(updateQuery, values, (err, result) => {
-    if (err) return callback(err);
-    
-    // If items are provided, update them as well
-    if (data.items && data.items.length > 0) {
-      // First delete existing items
-      db.query('DELETE FROM purchase_order_items WHERE purchase_order_id = ?', [id], (deleteErr) => {
-        if (deleteErr) return callback(deleteErr);
-        
-        // Then insert new items
-        const items = data.items.map(item => [
-          id,
-          item.item_name,
-          item.qty,
-          item.rate,
-          item.discount,
-          item.amount,
-          item.uom_description || '',
-          item.uom_amount || 0
-        ]);
+    const values = [
+      data.purchase_order_no, data.vendor_name, data.vendor_id,
+      data.purchase_order_date, data.delivery_date, data.payment_terms, 
+      data.due_date && data.due_date.trim() !== '' ? data.due_date : null,
+      data.customer_notes, data.terms_and_conditions, data.sub_total, data.freight,
+      data.cgst, data.sgst, data.total, data.attachment, data.status || 'Draft', id
+    ];
 
-        db.query(`
-          INSERT INTO purchase_order_items 
-          (purchase_order_id, item_name, qty, rate, discount, amount, uom_description, uom_amount) 
-          VALUES ?
-        `, [items], callback);
-      });
-    } else {
-      callback(null, result);
-    }
-  });
+    db.query(updateQuery, values, (err, result) => {
+      if (err) return callback(err);
+      
+      // If items are provided, update them as well
+      if (data.items && data.items.length > 0) {
+        // First delete existing items
+        db.query('DELETE FROM purchase_order_items WHERE purchase_order_id = ?', [id], (deleteErr) => {
+          if (deleteErr) return callback(deleteErr);
+          
+          // Then insert new items
+          const items = data.items.map(item => [
+            id,
+            item.item_name,
+            item.qty,
+            item.rate,
+            item.discount,
+            item.amount,
+            item.uom_description || '',
+            item.uom_amount || 0
+          ]);
+
+          db.query(`
+            INSERT INTO purchase_order_items 
+            (purchase_order_id, item_name, qty, rate, discount, amount, uom_description, uom_amount) 
+            VALUES ?
+          `, [items], callback);
+        });
+      } else {
+        callback(null, result);
+      }
+    });
+  } catch (err) {
+    callback(err);
+  }
 };
 
 // Get next purchase order number

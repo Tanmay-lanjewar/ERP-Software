@@ -28,6 +28,7 @@ import {
   TableRow,
   TableCell,
   Checkbox,
+  Autocomplete,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -38,7 +39,7 @@ import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import SearchIcon from "@mui/icons-material/Search";
 import InputBase from "@mui/material/InputBase";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import axios from "axios";
+import axios from "../services/offlineAxios";
 import UserMenu from './UserMenu';
 
 export default function NewQuotation() {
@@ -95,7 +96,7 @@ export default function NewQuotation() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/product_units")
+      .get("http://72.62.227.63:5001/api/product_units")
       .then((res) => setUnits(res.data))
       .catch((error) => {
         console.error("Error fetching units:", error);
@@ -105,13 +106,13 @@ export default function NewQuotation() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/customers")
+      .get("http://72.62.227.63:5001/api/customers")
       .then((res) => setCustomers(res.data))
       .catch(() => setCustomers([]));
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/products")
+    fetch("http://72.62.227.63:5001/api/products")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -127,10 +128,9 @@ export default function NewQuotation() {
   }, []);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/quotation/next-number")
-      .then((res) => setQuoteNumber(res.data.nextQuoteNumber))
-      .catch(() => setQuoteNumber(""));
+    // Auto-generation disabled: keep manual entry for quote number.
+    // If you want a starting suggestion in future, setQuoteNumber(...) here
+    // but do NOT override user's manual input.
   }, []);
 
   // Fetch customer billing state code when customer is selected
@@ -141,7 +141,7 @@ export default function NewQuotation() {
     }
     
     try {
-      const response = await axios.get(`http://localhost:5000/api/customers`);
+    const response = await axios.get(`http://72.62.227.63:5001/api/customers`);
       const customer = response.data.find(c => c.customer_name === customerName);
       if (customer) {
         console.log("Found customer:", customer);
@@ -187,7 +187,10 @@ export default function NewQuotation() {
   };
 
   const calculateAmount = (row) => {
-    const amount = row.qty * row.rate - row.discount;
+    const total = (row.qty || 0) * (row.rate || 0);
+    const discountPerc = parseFloat(row.discount) || 0;
+    const discountAmt = total * (discountPerc / 100);
+    const amount = total - discountAmt;
     return isNaN(amount) ? 0 : amount;
   };
 
@@ -238,7 +241,7 @@ export default function NewQuotation() {
       setError("Expiry date is required");
       return;
     }
-    if (rows.length === 0 || rows.every((row) => !row.itemId)) {
+    if (rows.length === 0 || rows.every((row) => !(row.item_detail?.trim?.() || row.item?.trim?.()))) {
       setError("At least one item with details is required");
       return;
     }
@@ -248,6 +251,12 @@ export default function NewQuotation() {
     setSuccess("");
 
     const quotationData = {
+      // Send manual quotation number in common key variants to maximize backend compatibility
+      quoteNumber: quoteNumber,
+      quote_number: quoteNumber,
+      quotation_number: quoteNumber,
+      quotationNo: quoteNumber,
+      quote_no: quoteNumber,
       customer_name: customerName,
       quotation_date: quoteDate,
       expiry_date: expiryDate,
@@ -262,7 +271,7 @@ export default function NewQuotation() {
       total_amount: total,
       status: saveAsDraft ? "Draft" : "Sent",
       items: rows.map((row) => ({
-        item_detail: row.item,
+        item_detail: row.item_detail || row.item,
         quantity: row.qty,
         rate: row.rate,
         discount: row.discount,
@@ -277,9 +286,9 @@ export default function NewQuotation() {
       items: rows,
     });
 
-    try {
+  try {
       const response = await axios.post(
-        "http://localhost:5000/api/quotation",
+        "http://72.62.227.63:5001/api/quotation",
         {
           quotation: quotationData,
           // Send items in the shape the backend expects (item_detail, quantity, rate, discount, amount)
@@ -289,7 +298,8 @@ export default function NewQuotation() {
           headers: { "Content-Type": "application/json" },
         }
       );
-      setQuoteNumber(response.data.quoteNumber || "");
+      // Do not override user's manual quote number with server's auto-generated value
+      // setQuoteNumber(response.data.quoteNumber || "");
       setSuccess(
         "Quotation saved successfully" +
           (response.data.quoteNumber
@@ -390,8 +400,9 @@ export default function NewQuotation() {
                 <TextField
                   label="Quote"
                   fullWidth
-                  value={quoteNumber ? quoteNumber : "Number Was Generated"}
-                  InputProps={{ readOnly: true }}
+                  value={quoteNumber}
+                  onChange={(e) => setQuoteNumber(e.target.value)}
+                  placeholder="Enter quotation number"
                   sx={{
                     width: { xs: "100%", sm: "100%", md: 400 },
                     "& .MuiOutlinedInput-root": {
@@ -462,7 +473,10 @@ export default function NewQuotation() {
                   type="date"
                   fullWidth
                   value={expiryDate}
-                  onChange={(e) => setExpiryDate(e.target.value)}
+                 onChange={(e) => {
+                          const dateOnly = e.target.value; // YYYY-MM-DD
+                               setExpiryDate(dateOnly);
+                                    }}
                   InputLabelProps={{ shrink: true }}
                   sx={{
                     width: { xs: "100%", sm: "100%", md: 400 },
@@ -534,7 +548,7 @@ export default function NewQuotation() {
                       <TableCell>Quantity</TableCell>
                       <TableCell>UOM</TableCell>
                       <TableCell>Rate</TableCell>
-                      <TableCell>Discount</TableCell>
+            <TableCell>Discount (%)</TableCell>
                       <TableCell>Amount</TableCell>
                       <TableCell></TableCell>
                     </TableRow>
@@ -543,53 +557,46 @@ export default function NewQuotation() {
                     {rows.map((row, index) => (
                       <TableRow key={index}>
                         <TableCell>
-                          <Select
-                            fullWidth
-                            value={row.itemId}
-                            onChange={(e) => {
-                              const selectedProductId = e.target.value;
-                              updateRow(index, "itemId", selectedProductId);
-                              fetch(
-                                `http://localhost:5000/api/products/${selectedProductId}`
-                              )
-                                .then((res) => res.json())
-                                .then((product) => {
-                                  updateRow(
-                                    index,
-                                    "item",
-                                    product.product_name || ""
-                                  );
-                                  updateRow(
-                                    index,
-                                    "rate",
-                                    product.sale_price || 0
-                                  );
-                                  updateRow(
-                                    index,
-                                    "uom",
-                                    product.unit || ""
-                                  );
-                                })
-                                .catch((err) => {
-                                  console.error(
-                                    "Error fetching product details:",
-                                    err
-                                  );
-                                });
+                          <Autocomplete
+                            freeSolo
+                            options={products.map((p) => p.product_name)}
+                            value={row.item_detail || ""}
+                            onChange={(event, newValue) => {
+                              if (!newValue) {
+                                updateRow(index, "itemId", "");
+                                updateRow(index, "item_detail", "");
+                                return;
+                              }
+                              const selectedProduct = products.find((p) => p.product_name === newValue);
+                              if (selectedProduct) {
+                                updateRow(index, "itemId", selectedProduct.id);
+                                updateRow(index, "item_detail", selectedProduct.product_name);
+                                fetch(`http://72.62.227.63:5001/api/products/${selectedProduct.id}`)
+                                  .then((res) => res.json())
+                                  .then((product) => {
+                                    updateRow(index, "rate", product.sale_price || 0);
+                                    updateRow(index, "uom", product.unit || "");
+                                  })
+                                  .catch((err) => {
+                                    console.error("Error fetching product details:", err);
+                                  });
+                              } else {
+                                // Free text entry
+                                updateRow(index, "itemId", "");
+                                updateRow(index, "item_detail", newValue);
+                              }
                             }}
-                            size="small"
-                            displayEmpty
-                            sx={{ width: "100%" }}
-                          >
-                            <MenuItem value="">
-                              <em>Select Item</em>
-                            </MenuItem>
-                            {products.map((product, idx) => (
-                              <MenuItem key={idx} value={product.id}>
-                                {product.product_name}
-                              </MenuItem>
-                            ))}
-                          </Select>
+                            onInputChange={(event, newInputValue) => {
+                              updateRow(index, "item_detail", newInputValue || "");
+                              const matched = products.find((p) => p.product_name === newInputValue);
+                              if (!matched) {
+                                updateRow(index, "itemId", "");
+                              }
+                            }}
+                            renderInput={(params) => (
+                              <TextField {...params} size="small" placeholder="Type or select an item" sx={{ width: "10cm" }}/>
+                            )}
+                          />
                         </TableCell>
                         <TableCell>
                           <TextField
@@ -634,18 +641,22 @@ export default function NewQuotation() {
                           />
                         </TableCell>
                         <TableCell>
-                          <FormControl fullWidth>
-                            <Select
-                              value={row.discount}
-                              onChange={(e) =>
-                                updateRow(index, "discount", e.target.value)
-                              }
-                            >
-                              <MenuItem value={0}>0%</MenuItem>
-                              <MenuItem value={5}>5%</MenuItem>
-                              <MenuItem value={10}>10%</MenuItem>
-                            </Select>
-                          </FormControl>
+                          <Autocomplete
+                            freeSolo
+                            options={["0", "3", "10"]}
+                            value={String(row.discount ?? "")}
+                            onChange={(event, newValue) => {
+                              const val = parseFloat(newValue);
+                              updateRow(index, "discount", isNaN(val) ? 0 : val);
+                            }}
+                            onInputChange={(event, newInputValue) => {
+                              const val = parseFloat(newInputValue);
+                              updateRow(index, "discount", isNaN(val) ? 0 : val);
+                            }}
+                            renderInput={(params) => (
+                              <TextField {...params} size="small" placeholder="Discount %" />
+                            )}
+                          />
                         </TableCell>
                         <TableCell>
                           <TextField

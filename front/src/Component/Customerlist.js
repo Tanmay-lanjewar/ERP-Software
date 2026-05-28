@@ -47,10 +47,25 @@ export default function CustomerList() {
 
 
     const fetchCustomers = async () => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 30000);
         try {
-            const res = await fetch('http://localhost:5000/api/customers');
+    const res = await fetch('http://72.62.227.63:5001/api/customers', { signal: controller.signal });
+    clearTimeout(timer);
             const data = await res.json();
-            setCustomers(data);
+            // Sort newest first by date or fallback to ID
+            const sorted = Array.isArray(data)
+                ? [...data].sort((a, b) => {
+                    const ad = new Date(a.created_at || a.updated_at || a.createdAt || 0).getTime();
+                    const bd = new Date(b.created_at || b.updated_at || b.createdAt || 0).getTime();
+                    if (ad && bd && ad !== bd) return bd - ad;
+                    // Fallback to numeric ID if available
+                    const ai = Number(a.id || 0);
+                    const bi = Number(b.id || 0);
+                    return bi - ai;
+                })
+                : [];
+            setCustomers(sorted);
         } catch (err) {
             console.error('Error fetching customers:', err);
         } finally {
@@ -95,7 +110,7 @@ export default function CustomerList() {
     const toggleCustomerStatus = async (customer) => {
         const newStatus = customer.status === 'Active' ? 'Inactive' : 'Active';
         try {
-            const response = await fetch(`http://localhost:5000/api/customers/${customer.id}/status`, {
+      const response = await fetch(`http://72.62.227.63:5001/api/customers/${customer.id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -183,7 +198,7 @@ export default function CustomerList() {
                         <form onSubmit={async (e) => {
                             e.preventDefault();
                             try {
-                                await fetch(`http://localhost:5000/api/customers/${editingCustomer.id}`, {
+    await fetch(`http://72.62.227.63:5001/api/customers/${editingCustomer.id}`, {
                                     method: 'PUT',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(editingCustomer),

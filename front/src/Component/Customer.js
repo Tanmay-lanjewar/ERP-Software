@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 import {
   Box, Typography, Button, Paper, InputBase, IconButton, Avatar
 } from '@mui/material';
@@ -19,7 +19,7 @@ export default function CustomerPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/customers')
+  axios.get('http://72.62.227.63:5001/api/customers')
       .then((res) => {
         setCustomers(res.data || []);
         console.log('Fetched customers:', res.data);

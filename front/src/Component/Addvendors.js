@@ -9,7 +9,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 import { useState } from 'react';
 import UserMenu from './UserMenu';
 
@@ -68,7 +68,7 @@ const handleCopyBilling = (checked) => {
   }
 };
 
-  const API_URL = "http://localhost:5000/api/vendors";
+  const API_URL = "http://72.62.227.63:5001/api/vendors";
 
   const handleSave = async () => {
     const vendorData = {
@@ -106,8 +106,13 @@ const handleCopyBilling = (checked) => {
 
     try {
       const response = await axios.post(API_URL, vendorData);
-      if (response.status === 201) {
-        alert("Vendor added successfully!");
+      const queued = response?.data?.queued || response?.status === 202;
+      const created = response?.status === 201 || response?.status === 200;
+      if (queued || created) {
+        alert(queued ? "Vendor saved locally and will sync when online." : "Vendor added successfully!");
+        navigate('/vendor-list');
+      } else {
+        alert("Vendor submission processed.");
         navigate('/vendor-list');
       }
     } catch (error) {

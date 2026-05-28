@@ -117,21 +117,21 @@ const invoice = {
         db.query('SELECT seq FROM counters WHERE id = ?', [counterId], (err, counterResult) => {
           if (err) return callback(err);
 
-          let nextSeq;
+          // Do NOT mutate counter on peek; just return seq+1.
+          let currentSeq = 0;
           if (counterResult.length === 0) {
-            nextSeq = 1;
-            db.query('INSERT INTO counters (id, seq) VALUES (?, ?)', [counterId, nextSeq], (err) => {
+            // Initialize counter at 0 so first real insert advances it.
+            db.query('INSERT INTO counters (id, seq) VALUES (?, ?)', [counterId, 0], (err) => {
               if (err) return callback(err);
+              const nextSeq = 1;
               const invoiceNumber = `ME/${financialYear}/${nextSeq.toString().padStart(3, '0')}`;
               callback(null, { nextInvoiceNumber: invoiceNumber });
             });
           } else {
-            nextSeq = counterResult[0].seq + 1;
-            db.query('UPDATE counters SET seq = ? WHERE id = ?', [nextSeq, counterId], (err) => {
-              if (err) return callback(err);
-              const invoiceNumber = `ME/${financialYear}/${nextSeq.toString().padStart(3, '0')}`;
-              callback(null, { nextInvoiceNumber: invoiceNumber });
-            });
+            currentSeq = parseInt(counterResult[0].seq, 10) || 0;
+            const nextSeq = currentSeq + 1;
+            const invoiceNumber = `ME/${financialYear}/${nextSeq.toString().padStart(3, '0')}`;
+            callback(null, { nextInvoiceNumber: invoiceNumber });
           }
         });
       }
@@ -180,10 +180,7 @@ const invoice = {
       
       const grand_total = parseFloat((subtotalWithFreight + cgst + sgst + igst).toFixed(2));
 
-      invoice.getNextInvoiceNumber((err, result) => {
-        if (err) return callback(err);
-        const invoiceNumber = result.nextInvoiceNumber;
-
+      const proceedWithInsert = (invoiceNumber) => {
         const invoiceSql = `
           INSERT INTO invoice (
             invoice_number, customer_id, customer_name, invoice_date, expiry_date, subject,
@@ -215,11 +212,12 @@ const invoice = {
 
           const itemSql = `
             INSERT INTO invoice_items (
-              invoice_id, item_detail, quantity, rate, discount, amount, uom_amount, uom_description
+              item_id, invoice_id, item_detail, quantity, rate, discount, amount, uom_amount, uom_description
             ) VALUES ?
           `;
 
           const itemValues = items.map(item => [
+            0, // satisfy NOT NULL on hosted DB where item_id has no default
             invoiceId,
             item.item_detail,
             item.quantity,
@@ -245,7 +243,75 @@ const invoice = {
             });
           });
         });
-      });
+      };
+
+      // If client provided an invoice_number (reserved earlier), use that; otherwise generate next
+      if (data.invoice_number && typeof data.invoice_number === 'string' && data.invoice_number.trim().length > 0) {
+        const provided = data.invoice_number.trim();
+        // Ensure counters are updated to at least the provided sequence to prevent duplicates
+        db.query(
+          'SELECT start_date FROM financial_years WHERE is_active = TRUE',
+          (fyErr, financialYears) => {
+            if (fyErr) return callback(fyErr);
+            if (financialYears.length === 0) return callback(new Error('No active financial year found'));
+            const startYear = new Date(financialYears[0].start_date).getFullYear();
+            const endYear = (startYear + 1) % 100;
+            const financialYear = `${startYear}-${endYear.toString().padStart(2, '0')}`;
+            const counterId = `invoice_${financialYear}`;
+
+            // Extract sequence from provided number (format ME/<FY>/<seq>)
+            let seqFromProvided = 0;
+            const m = provided.match(/ME\/(\d{4}-\d{2})\/(\d+)/);
+            if (m) {
+              seqFromProvided = parseInt(m[2], 10) || 0;
+            }
+
+            db.query('SELECT seq FROM counters WHERE id = ?', [counterId], (cErr, cRows) => {
+              if (cErr) return callback(cErr);
+              if (cRows.length === 0) {
+                db.query('INSERT INTO counters (id, seq) VALUES (?, ?)', [counterId, seqFromProvided], (insErr) => {
+                  if (insErr) return callback(insErr);
+                  proceedWithInsert(provided);
+                });
+              } else {
+                const currentSeq = parseInt(cRows[0].seq, 10) || 0;
+                const newSeq = Math.max(currentSeq, seqFromProvided);
+                if (newSeq !== currentSeq) {
+                  db.query('UPDATE counters SET seq = ? WHERE id = ?', [newSeq, counterId], (upErr) => {
+                    if (upErr) return callback(upErr);
+                    proceedWithInsert(provided);
+                  });
+                } else {
+                  proceedWithInsert(provided);
+                }
+              }
+            });
+          }
+        );
+      } else {
+        invoice.getNextInvoiceNumber((err, result) => {
+          if (err) return callback(err);
+          const invoiceNumber = result.nextInvoiceNumber;
+          // Advance counter since we are consuming the next sequence on actual insert
+          db.query(
+            'SELECT start_date FROM financial_years WHERE is_active = TRUE',
+            (fyErr, financialYears) => {
+              if (fyErr) return callback(fyErr);
+              if (financialYears.length === 0) return callback(new Error('No active financial year found'));
+              const startYear = new Date(financialYears[0].start_date).getFullYear();
+              const endYear = (startYear + 1) % 100;
+              const financialYear = `${startYear}-${endYear.toString().padStart(2, '0')}`;
+              const counterId = `invoice_${financialYear}`;
+              const m = invoiceNumber.match(/ME\/(\d{4}-\d{2})\/(\d+)/);
+              const seq = m ? (parseInt(m[2], 10) || 0) : 0;
+              db.query('UPDATE counters SET seq = ? WHERE id = ?', [seq, counterId], (upErr) => {
+                if (upErr) return callback(upErr);
+                proceedWithInsert(invoiceNumber);
+              });
+            }
+          );
+        });
+      }
     });
   },
 
@@ -322,16 +388,19 @@ const invoice = {
           if (items.length > 0) {
             const itemSql = `
               INSERT INTO invoice_items (
-                invoice_id, item_detail, quantity, rate, discount, amount
+                item_id, invoice_id, item_detail, quantity, rate, discount, amount, uom_amount, uom_description
               ) VALUES ?
             `;
             const itemValues = items.map(item => [
+              0, // satisfy NOT NULL on hosted DB where item_id has no default
               id,
               item.item_detail,
               item.quantity,
               item.rate,
               item.discount,
               item.amount,
+              item.uom_amount || 0,
+              item.uom_description || "",
             ]);
             db.query(itemSql, [itemValues], (itemErr, itemResult) => {
               if (itemErr) return callback(itemErr);

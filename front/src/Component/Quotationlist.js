@@ -31,9 +31,10 @@ import SearchIcon from "@mui/icons-material/Search";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import axios from "axios";
+import axios from "../services/offlineAxios";
 import UserMenu from "./UserMenu";
 import ui from '../assets/mera.png';
+import { openHtmlExternally } from '../utils/printExternal';
 
 export default function QuotationListPage() {
   const navigator = useNavigate();
@@ -56,8 +57,14 @@ export default function QuotationListPage() {
       setLoading(true);
       setError("");
       try {
-        const res = await axios.get("http://localhost:5000/api/quotation");
-        setQuotations(res.data);
+  const res = await axios.get("http://72.62.227.63:5001/api/quotation");
+        const data = Array.isArray(res.data) ? res.data : [];
+        data.sort((a, b) => {
+          const ad = new Date(a.quotation_date || a.created_at || 0).getTime();
+          const bd = new Date(b.quotation_date || b.created_at || 0).getTime();
+          return bd - ad;
+        });
+        setQuotations(data);
       } catch (err) {
         setError("Failed to fetch quotations");
       } finally {
@@ -73,13 +80,13 @@ export default function QuotationListPage() {
    const handlePrintQuotation = async () => {
   if (!selectedQuote) return;
   try {
-    const res = await axios.get(`http://localhost:5000/api/quotation/${selectedQuote.quotation_id}`);
+    const res = await axios.get(`http://72.62.227.63:5001/api/quotation/${selectedQuote.quotation_id}`);
     const { quotation, items, sub_total, cgst, sgst, grand_total } = res.data;
 
     // Fetch customers and find the one used in this quotation by name
     let customerData = null;
     try {
-      const customersRes = await axios.get('http://localhost:5000/api/customers');
+      const customersRes = await axios.get('http://72.62.227.63:5001/api/customers');
       customerData = (customersRes.data || []).find((c) => c.customer_name === quotation.customer_name) || null;
     } catch (e) {
       // ignore, fallback to quotation fields
@@ -106,7 +113,7 @@ export default function QuotationListPage() {
     const merakiPhone = quotation.meraki_phone || '7722005969';
     const customerEmail = customerData?.email || quotation.email || '';
     const merakiEmail = quotation.meraki_email || 'piral.k@merakkiexpert.in';
-    const quotationSubject = 'Quotation - Supply & Installation of PUR Panel.';
+    const quotationSubject = quotation.subject||'Quotation - Supply & Installation of PUR Panel.';
     const gstin = quotation.gstin || '27AKUPY6544R1ZM';
     const udyam = quotation.udyam || 'UDYAM-MH-20-0114278';
     const iso = quotation.iso || 'ISO 9001-2015';
@@ -172,7 +179,7 @@ export default function QuotationListPage() {
     const itemsRows = (items || []).map((item, idx) => `
                 <tr>
                     <td style="border: 1px solid #000; padding: 3px; text-align: center;">${idx + 1}</td>
-                    <td style="border: 1px solid #000; padding: 3px;">${item.item_detail || ''}</td>
+                    <td style="border: 1px solid #000; padding: 3px; width:7cm; white-space:normal; word-break:break-word;">${item.item_detail || ''}</td>
                     <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.quantity ?? ''}</td>
                     <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.uom_description || ''}</td>
                     <td style="border: 1px solid #000; padding: 3px; text-align: right;">${item.rate ?? ''}</td>
@@ -182,8 +189,7 @@ export default function QuotationListPage() {
 
 
 
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(`
+    const htmlContent = `
     <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -195,7 +201,7 @@ export default function QuotationListPage() {
 
      @page {
   size: A4;
-  margin: 10mm; /* you can adjust this to 5mm or 15mm */
+  margin: 15mm; /* you can adjust this to 5mm or 15mm */
 }
 
     body {
@@ -208,7 +214,8 @@ export default function QuotationListPage() {
         }
       /* Specific Table Column Widths */
         .quotation-table td:nth-child(1), .quotation-table th:nth-child(1) { width: 5%; text-align: center; } /* Sr. No. */
-        .quotation-table td:nth-child(2), .quotation-table th:nth-child(2) { width: 45%; } /* Description */
+        .quotation-table td:nth-child(2), .quotation-table th:nth-child(2) { width: 7cm; } /* Description */
+        .quotation-table td:nth-child(2) { white-space: normal; word-break: break-word; }
         .quotation-table td:nth-child(3), .quotation-table th:nth-child(3) { width: 10%; text-align: center; } /* Qty. */
         .quotation-table td:nth-child(4), .quotation-table th:nth-child(4) { width: 10%; text-align: center; } /* UOM */
         .quotation-table td:nth-child(5), .quotation-table th:nth-child(5) { width: 15%; text-align: right; } /* Rate */
@@ -379,10 +386,9 @@ export default function QuotationListPage() {
             <div style="font-size: 10px;"></div>
         </div>
 
-        <div style="text-align: center; padding: 5px 0;">
+        <div style="text-align: center; padding: 0px 0;">
             <div style="margin-top: -60px; font-size:  10px; font-weight: bold; border-bottom: 2px solid #000;"><strong>GSTIN:</strong> ${gstin} | <strong>${udyam}</strong> | <strong>${iso}</strong></div>
             <div style="font-size: 10px; font-weight: bold;">101, 2nd Floor, Shree Sai Apartment, Near Kachore Lawn, Manish Nagar, Nagpur - 440015 (MH)</div>
-           
         </div>
 
         <table style="width: 100%; height: 100%; border-collapse: collapse; border: 3px solid black  ; box-shadow: #333;">
@@ -426,7 +432,7 @@ export default function QuotationListPage() {
                 </tr>
                  <tr>
                     <th style="width:2%; border: 2px solid #000; padding: 3px;  font-weight: bold;">Sr.No</th>
-                    <td  style="width: 35%; border: 2px solid #000; padding: 3px;font-weight: bold;  background-color: #F4AF83; ">Description</td> 
+                    <td  style="width: 35%; border: 2px solid #000; padding: 3px;font-weight: bold;  background-color: #F4AF83;  ">Description</td> 
                     <td style="width: 10%; border: 2px solid #000; padding: 3px;font-weight: bold; ">Quantity</td>
                     <td style="width: 15%; border: 2px solid #000; padding: 3px;font-weight: bold; ">UOM</td>
                     <td style="width: 18%; border: 2px solid #000; padding: 3px;font-weight: bold; ">Rate</td>
@@ -536,31 +542,34 @@ export default function QuotationListPage() {
                 <tr>
                     <td style="border: 1px solid white;" colspan="6"></td>
                 </tr>
- <tr>
-                    <td style="border: 1px solid white; padding-left: 450px;font: bolder; " colspan="6" >Best Regards,</td>
+                <tr>
+                    <td style="border: 1px solid white; padding-left: 670px;font: bolder; " colspan="6" >Best Regards,</td>
                     
                 </tr>
                  <tr>
-                     <td style="border: 1px solid white; padding-left: 450px;font: bolder; " colspan="6" >Niraj Khicher</td>
+                     <td style="border: 1px solid white; padding-left: 670px;font: bolder; " colspan="6" >Niraj Khicher</td>
                 </tr>
                  <tr>
-                     <td style="border: 1px solid white; padding-left:450px; font: bolder; " colspan="6">       Mob. No. 7722005969</td>
+                     <td style="border: 1px solid white; padding-left:670px; font: bolder; " colspan="6">       Mob. No. 7722005969</td>
                 </tr>
                
                 <tr>
                     <td style="border: 1px solid rgb(8, 8, 8);" colspan="6"></td>
                 </tr>
                 <tr>
-                     <td style=" font: bold; padding-left: 80px; border: 1px solid black; " colspan="6">Email: merakiexpert@gmail.com | Mobile: 8793484326 ; 9130801011 | www.merrakiexpert.in</td>
+                     <td style=" font: bold; padding-left: 180px; border: 1px solid black; " colspan="6">Email: info@merrakiexpert.in | Mobile: 7722001802 ; 9130801011 | www.merrakiexpert.in</td>
                 </tr>
+                
             </tbody>
         </table>
 </body>
 </html>
 
-    `);
-    printWindow.document.close();
-    printWindow.print();
+    `;
+    await openHtmlExternally(
+      htmlContent,
+      `quotation-${selectedQuote?.quotation_id || 'print'}.html`
+    );
   } catch (err) {
     alert('Failed to print quotation');
   }
@@ -606,7 +615,7 @@ export default function QuotationListPage() {
       return;
     try {
       await axios.delete(
-        `http://localhost:5000/api/quotation/${selectedQuote.quotation_id}`
+        `http://72.62.227.63:5001/api/quotation/${selectedQuote.quotation_id}`
       );
       setQuotations((prev) =>
         prev.filter((q) => q.quotation_id !== selectedQuote.quotation_id)
@@ -880,7 +889,7 @@ export default function QuotationListPage() {
                     const newStatus = selectedQuote.status === "Sent" ? "Draft" : "Sent";
                     try {
                       await axios.put(
-                        `http://localhost:5000/api/quotation/${selectedQuote.quotation_id}`,
+        `http://72.62.227.63:5001/api/quotation/${selectedQuote.quotation_id}`,
                         { status: newStatus }
                       );
                       setQuotations((prev) =>

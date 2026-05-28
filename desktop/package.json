@@ -1,0 +1,48 @@
+{
+  "name": "erp-desktop",
+  "version": "0.1.2",
+  "description": "ERP desktop wrapper with offline-first sync",
+  "main": "main.js",
+  "author": "",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "build:front": "cd ../front && npm run build",
+    "dist": "npm run build:front && electron-builder --win nsis"
+  },
+  "dependencies": {
+    "electron-updater": "^5.3.0"
+  },
+  "devDependencies": {
+    "electron": "^31.2.0",
+    "electron-builder": "^24.6.4"
+  },
+  "build": {
+    "appId": "com.erp.desktop",
+    "productName": "ERP Desktop",
+    "asar": true,
+    "win": {
+      "icon": "../front/public/logo192.png"
+    },
+    "directories": {
+      "output": "dist2"
+    },
+    "files": [
+      "**/*",
+      "!**/node_modules/.cache/**"
+    ],
+    "extraResources": [
+      {
+        "from": "../front/build",
+        "to": "app"
+      }
+    ],
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": false,
+      "artifactName": "ERP-Desktop-${version}.exe"
+    }
+  }
+}

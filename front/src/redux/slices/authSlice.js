@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import axios from '../../services/offlineAxios';
 
 // Async thunks
 export const loginWithGoogle = createAsyncThunk(
@@ -32,7 +32,7 @@ export const loginWithCredentials = createAsyncThunk(
   'auth/loginWithCredentials',
   async ({ username, password }, { rejectWithValue }) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
+    const response = await axios.post('http://72.62.227.63:5001/api/auth/login', {
         username,
         password,
       });

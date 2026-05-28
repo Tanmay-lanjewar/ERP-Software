@@ -18,6 +18,7 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import Sidebar from './Sidebar';
 import { useNavigate } from 'react-router-dom';
+import axios from '../services/offlineAxios';
 
 const currencies = ['INR', 'USD', 'EUR'];
 const paymentModes = ['Online', 'Cash', 'Cheque'];
@@ -41,12 +42,16 @@ const AddPaymentsEntry = () => {
   }, []);
 
   const fetchInvoices = async () => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
     try {
-      const response = await fetch('http://localhost:5000/api/invoice');
+      const response = await fetch('http://72.62.227.63:5001/api/invoice', { signal: controller.signal });
+      clearTimeout(timer);
       if (!response.ok) throw new Error('Failed to fetch invoices');
       const data = await response.json();
       setInvoices(data);
     } catch (err) {
+      clearTimeout(timer);
       setError('Failed to load invoices: ' + err.message);
     }
   };
@@ -54,12 +59,16 @@ const AddPaymentsEntry = () => {
   const handleInvoiceChange = async (invoiceId) => {
     setSelectedInvoice(invoiceId);
     if (invoiceId) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30000);
       try {
-        const response = await fetch(`http://localhost:5000/api/invoice/${invoiceId}`);
+        const response = await fetch(`http://72.62.227.63:5001/api/invoice/${invoiceId}`, { signal: controller.signal });
+        clearTimeout(timer);
         if (!response.ok) throw new Error('Failed to fetch invoice details');
         const data = await response.json();
         setInvoiceDetails(data);
       } catch (err) {
+        clearTimeout(timer);
         setError('Failed to load invoice details: ' + err.message);
       }
     } else {
@@ -88,21 +97,8 @@ const AddPaymentsEntry = () => {
         amount: parseFloat(amount)
       };
 
-      const response = await fetch('http://localhost:5000/api/payment-entries', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(paymentData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save payment entry');
-      }
-
-      const result = await response.json();
-      setSuccess(`Payment entry saved successfully! Remaining balance: ₹${result.remainingBalance}`);
+      const result = await axios.post('http://72.62.227.63:5001/api/payment-entries', paymentData);
+      setSuccess(`Payment entry saved successfully! Remaining balance: ₹${result.data?.remainingBalance ?? ''}`);
       
       // Reset form
       setSelectedInvoice('');
@@ -111,6 +107,8 @@ const AddPaymentsEntry = () => {
       setPaymentDate(new Date().toISOString().split('T')[0]);
       setPaymentMode('Cash');
       setCurrency('INR');
+      // Navigate back to payments list
+      navigate('/payment-settings');
       
     } catch (err) {
       setError('Error saving payment entry: ' + err.message);

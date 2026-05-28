@@ -16,6 +16,7 @@ exports.getAllPurchaseOrders = (req, res) => {
           vendor_name: row.vendor_name,
           purchase_order_date: row.purchase_order_date,
           delivery_date: row.delivery_date,
+          status: row.status,
           sub_total: row.sub_total,
           cgst: row.cgst,
           sgst: row.sgst,

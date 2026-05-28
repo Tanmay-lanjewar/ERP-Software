@@ -57,6 +57,24 @@ app.use('/api/invoice', invoiceRoutes);
 // const workOrderRoutes = require('./routes/workorders');
 // app.use('/api', workOrderRoutes);
 
+// Test routes for work orders (must be before main routes)
+app.get('/api/work-orders/test', (req, res) => {
+  console.log('Work Orders Test Route Hit');
+  res.json({ message: 'Work Orders API is accessible', timestamp: new Date() });
+});
+
+// Test route to check table structure
+app.get('/api/work-orders/table-info', (req, res) => {
+  const db = require('./config/db');
+  db.query('DESCRIBE work_orders', (err, result) => {
+    if (err) {
+      console.error('Table info error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ tableStructure: result });
+  });
+});
+
 const workOrderRoutes = require('./routes/workOrders');
 app.use('/api/work-orders', workOrderRoutes);
 

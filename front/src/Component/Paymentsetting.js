@@ -25,7 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 
 import Sidebar from './Sidebar';
 
@@ -44,7 +44,7 @@ const PaymentsSettings = () => {
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/payment-entries');
+      const response = await axios.get('http://72.62.227.63:5001/api/payment-entries');
       setPayments(response.data);
       setError('');
     } catch (err) {
@@ -85,11 +85,11 @@ const PaymentsSettings = () => {
         newRemainingBalance = 0;
       } else {
         // For pending, set remaining balance to invoice total minus current payment
-        newRemainingBalance = selectedPayment.invoice_total - selectedPayment.amount;
+        newRemainingBalance = Math.max(0, (parseFloat(selectedPayment.invoice_total || 0) - parseFloat(selectedPayment.amount || 0)));
       }
       
-      await axios.put(`http://localhost:5000/api/payment-entries/${selectedPayment.payment_id}`, {
-        payment_date: selectedPayment.payment_date,
+      await axios.put(`http://72.62.227.63:5001/api/payment-entries/${selectedPayment.payment_id}`, {
+        payment_date: new Date(selectedPayment.payment_date).toISOString().split('T')[0],
         payment_mode: selectedPayment.payment_mode,
         currency: selectedPayment.currency,
         amount: selectedPayment.amount,
@@ -164,7 +164,7 @@ const PaymentsSettings = () => {
             </Typography>
             <Button
               variant="contained"
-              onClick={() => navigate('/Add-Payment-settings')}
+              onClick={() => navigate('/add-payment-settings')}
               sx={{
                 bgcolor: '#003865',
                 '&:hover': { bgcolor: '#002548' },

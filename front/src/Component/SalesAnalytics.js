@@ -26,7 +26,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import Sidebar from './Sidebar';
 import UserMenu from './UserMenu';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 
 const SalesAnalytics = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
@@ -45,7 +45,7 @@ const SalesAnalytics = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`http://localhost:5000/api/invoice/analytics/sales?period=${period}`);
+  const response = await axios.get(`http://72.62.227.63:5001/api/invoice/analytics/sales?period=${period}`);
       setAnalyticsData(response.data[0] || null);
     } catch (err) {
       setError('Failed to fetch analytics data');

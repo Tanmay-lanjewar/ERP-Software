@@ -82,9 +82,21 @@ exports.getById = (req, res) => {
 };
 
 exports.update = (req, res) => {
-  WorkOrder.update(req.params.id, req.body, (err) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json({ message: 'Work order updated' });
+  console.log('Work Order Update Request:', {
+    id: req.params.id,
+    body: req.body
+  });
+  
+  WorkOrder.update(req.params.id, req.body, (err, result) => {
+    if (err) {
+      console.error('Work Order Update Error:', err);
+      return res.status(500).json({ 
+        error: 'Failed to update work order',
+        details: err.message || err
+      });
+    }
+    console.log('Work Order Update Success:', result);
+    res.json({ message: 'Work order updated successfully' });
   });
 };
 

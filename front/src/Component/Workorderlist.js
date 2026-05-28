@@ -12,8 +12,9 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import PrintIcon from "@mui/icons-material/Print";
 import Sidebar from './Sidebar';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 import ui from '../assets/mera.png';
+import { openHtmlPreview } from '../utils/printPreview';
 
 const statusColorMap = {
   Draft: { bg: '#E6F4EA', color: '#333' },
@@ -40,10 +41,16 @@ const WorkOrderlist = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axios.get('http://localhost:5000/api/work-orders');
+      const res = await axios.get('http://72.62.227.63:5001/api/work-orders');
       const data = res.data;
       console.log("📦 Work Orders from backend:", data);
-      setWorkOrders(Array.isArray(data) ? data : data.data || []);
+      const list = Array.isArray(data) ? data : (data.data || []);
+      list.sort((a, b) => {
+        const ad = new Date(a.work_order_date || a.created_at || 0).getTime();
+        const bd = new Date(b.work_order_date || b.created_at || 0).getTime();
+        return bd - ad;
+      });
+      setWorkOrders(list);
     } catch (err) {
       console.error('Failed to fetch work orders:', err);
       setError(`Failed to load work orders: ${err.message}. Please check the backend endpoint.`);
@@ -76,41 +83,52 @@ const WorkOrderlist = () => {
   };
 
   const numberToWords = (num) => {
+    if (num === 0) return "Zero Rupees Only";
+
     const units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
     const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
     const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
-    const thousands = ["", "Thousand", "Lakh", "Crore"];
 
-    const convertLessThanThousand = (num) => {
-      if (num === 0) return "";
-      if (num < 10) return units[num];
-      if (num < 20) return teens[num - 10];
-      if (num < 100) return `${tens[Math.floor(num / 10)]} ${units[num % 10]}`.trim();
-      return `${units[Math.floor(num / 100)]} Hundred ${convertLessThanThousand(num % 100)}`.trim();
-    };
-
-    const convert = (num) => {
-      if (num === 0) return "Zero";
-      let result = "";
-      let thousandIndex = 0;
-      while (num > 0) {
-        const chunk = num % 1000;
-        if (chunk > 0) {
-          result = `${convertLessThanThousand(chunk)} ${thousands[thousandIndex]} ${result}`.trim();
-        }
-        num = Math.floor(num / 1000);
-        thousandIndex++;
+    const convertLessThanThousand = (n) => {
+      if (n === 0) return "";
+      let str = "";
+      if (n >= 100) {
+        str += units[Math.floor(n / 100)] + " Hundred ";
+        n %= 100;
       }
-      return result;
+      if (n >= 20) {
+        str += tens[Math.floor(n / 10)] + " ";
+        n %= 10;
+      } else if (n >= 10) {
+        str += teens[n - 10] + " ";
+        return str.trim();
+      }
+      if (n > 0) {
+        str += units[n] + " ";
+      }
+      return str.trim();
     };
 
-    return `${convert(Math.floor(num))} Rupees Only`;
+    let result = "";
+    const divisors = [10000000, 100000, 1000, 1];
+    const scaleNames = ["Crore", "Lakh", "Thousand", ""];
+
+    for (let i = 0; i < divisors.length; i++) {
+      const divisor = divisors[i];
+      const chunk = Math.floor(num / divisor);
+      if (chunk > 0) {
+        result += convertLessThanThousand(chunk) + " " + scaleNames[i] + " ";
+      }
+      num %= divisor;
+    }
+
+    return result.trim() + " Rupees Only";
   };
 
   const handleDownloadPdf = async (workOrder) => {
     try {
       // Fetch work order details from API
-      const response = await axios.get(`http://localhost:5000/api/work-orders/${workOrder.work_order_id}`);
+    const response = await axios.get(`http://72.62.227.63:5001/api/work-orders/${workOrder.work_order_id}`);
       const responseData = response.data;
       
       if (!responseData || !responseData.workOrderItems) {
@@ -165,16 +183,14 @@ const WorkOrderlist = () => {
       const itemsHTML = workOrderItems.map((item, index) => `
         <tr>
           <td style="border: 1px solid #000; padding: 3px; text-align: center;">${index + 1}</td>
-          <td style="border: 1px solid #000; padding: 3px;">${item.item_detail || 'N/A'}</td>
-          <td style="border: 1px solid #000; padding: 3px; text-align: center;">32149090</td>
+          <td style="border: 1px solid #000; padding: 3px; width:7cm; white-space:normal; word-break:break-word;">${item.item_detail || 'N/A'}</td>
           <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.quantity || 0}</td>
-          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.uom_description || 'Box'}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.uom_description || item.mou || ''}</td>
           <td style="border: 1px solid #000; padding: 3px; text-align: right;">${item.rate || 0}</td>
-          <td style="border: 1px solid #000; padding: 3px; text-align: right;">${item.amount || (item.quantity * item.rate).toFixed(2)}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: right;">${item.amount || ((item.quantity || 0) * (item.rate || 0)).toFixed(2)}</td>
         </tr>
       `).join('');
-      const printWindow = window.open("", "_blank");
-      printWindow.document.write(`
+      const htmlContent = `
      <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -304,7 +320,7 @@ const WorkOrderlist = () => {
         /* Column widths to replicate spacing */
         .col-sno { width: 5%; }
         .col-qty, .col-mou, .col-rate, .col-amount { width: 10%; }
-        .col-desc { width: 55%; }
+        .col-desc { width: 7cm; }
         /* Merging for the total row */
         .total-row .label-cell {
             text-align: right;
@@ -552,7 +568,7 @@ const WorkOrderlist = () => {
       <th class="col-sno">S.NO.</th>
       <th class="col-desc">Description</th>
       <th class="col-qty">Quantity</th>
-      <th class="col-mou">Mou</th>
+      <th class="col-mou">Uom</th>
       <th class="col-rate">Rate</th>
       <th class="col-amount">Amount</th>
     </tr>
@@ -617,9 +633,8 @@ const WorkOrderlist = () => {
 </div>
 </body>
 </html>
-      `);
-      printWindow.document.close();
-      printWindow.print();
+      `;
+    openHtmlPreview(htmlContent, 'workorder-print.html');
       handleClose();
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -629,7 +644,7 @@ const WorkOrderlist = () => {
 
   const handlePrintWorkOrder = async (order) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/work-orders/${order.work_order_id}`);
+    const response = await axios.get(`http://72.62.227.63:5001/api/work-orders/${order.work_order_id}`);
       const { workOrder, workOrderItems, customer } = response.data;
 
       const formatDate = (dateString) => {
@@ -660,8 +675,7 @@ const WorkOrderlist = () => {
 
       const total = workOrderItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
 
-      const printWindow = window.open("", "_blank");
-      printWindow.document.write(`
+      const htmlContent2 = `
         <html>
         <head>
           <title>Work Order</title>
@@ -768,9 +782,8 @@ const WorkOrderlist = () => {
           </div>
         </body>
         </html>
-      `);
-      printWindow.document.close();
-      printWindow.print();
+      `;
+    openHtmlPreview(htmlContent2, 'workorder-print.html');
       handleClose();
     } catch (error) {
       console.error("Error printing work order:", error);

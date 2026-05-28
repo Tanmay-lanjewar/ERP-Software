@@ -30,7 +30,8 @@ import Sidebar from "./Sidebar";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import { useNavigate } from "react-router-dom";
-import axios from 'axios';
+import axios from '../services/offlineAxios';
+import { openHtmlPreview } from '../utils/printPreview';
 import ui from "../assets/mera.png"
 import ne from "../assets/new.png"
 const statusColor = {
@@ -52,8 +53,32 @@ export default function Invoicelist() {
   React.useEffect(() => {
     setLoading(true);
     setError('');
-    axios.get('http://localhost:5000/api/invoice')
-      .then(res => setInvoices(res.data))
+  axios.get('http://72.62.227.63:5001/api/invoice')
+      .then(res => {
+        const parseDate = (val) => {
+          if (!val) return NaN;
+          const d = new Date(val);
+          if (!isNaN(d.getTime())) return d.getTime();
+          const m = String(val).match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+          if (m) {
+            const [_, dd, mm, yyyy] = m;
+            return new Date(`${yyyy}-${mm}-${dd}T00:00:00`).getTime();
+          }
+          return NaN;
+        };
+        const data = Array.isArray(res.data) ? res.data : [];
+        data.sort((a, b) => {
+          const ad = parseDate(a.invoice_date) || parseDate(a.created_at) || 0;
+          const bd = parseDate(b.invoice_date) || parseDate(b.created_at) || 0;
+          if (bd === ad) {
+            const aid = parseInt(a.invoice_id || (String(a.invoice_number || '').replace(/\D+/g, '')), 10) || 0;
+            const bid = parseInt(b.invoice_id || (String(b.invoice_number || '').replace(/\D+/g, '')), 10) || 0;
+            return bid - aid;
+          }
+          return bd - ad;
+        });
+        setInvoices(data);
+      })
       .catch(() => setError('Failed to fetch invoices'))
       .finally(() => setLoading(false));
   }, []);
@@ -77,8 +102,8 @@ export default function Invoicelist() {
   const handleDownloadPdf = async (invoice) => {
     try {
       // Fetch invoice details, items, and customer
-      const response = await axios.get(`http://localhost:5000/api/invoice/${invoice.invoice_id}`);
-      const { invoice: invoiceData, items, customer, sub_total, cgst, sgst, grand_total, freight } = response.data;
+      const response = await axios.get(`http://72.62.227.63:5001/api/invoice/${invoice.invoice_id}`);
+      const { invoice: invoiceData, items, customer, sub_total, cgst, sgst, igst, grand_total, freight } = response.data;
 
       if (!customer) {
         throw new Error("Customer not found");
@@ -86,35 +111,46 @@ export default function Invoicelist() {
 
       // Helper function to convert number to words (Indian Rupees)
       const numberToWords = (num) => {
+        if (num === 0) return "Zero Rupees Only";
+
         const units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
         const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
         const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
-        const thousands = ["", "Thousand", "Lakh", "Crore"];
 
-        const convertLessThanThousand = (num) => {
-          if (num === 0) return "";
-          if (num < 10) return units[num];
-          if (num < 20) return teens[num - 10];
-          if (num < 100) return `${tens[Math.floor(num / 10)]} ${units[num % 10]}`.trim();
-          return `${units[Math.floor(num / 100)]} Hundred ${convertLessThanThousand(num % 100)}`.trim();
-        };
-
-        const convert = (num) => {
-          if (num === 0) return "Zero";
-          let result = "";
-          let thousandIndex = 0;
-          while (num > 0) {
-            const chunk = num % 1000;
-            if (chunk > 0) {
-              result = `${convertLessThanThousand(chunk)} ${thousands[thousandIndex]} ${result}`.trim();
-            }
-            num = Math.floor(num / 1000);
-            thousandIndex++;
+        const convertLessThanThousand = (n) => {
+          if (n === 0) return "";
+          let str = "";
+          if (n >= 100) {
+            str += units[Math.floor(n / 100)] + " Hundred ";
+            n %= 100;
           }
-          return result;
+          if (n >= 20) {
+            str += tens[Math.floor(n / 10)] + " ";
+            n %= 10;
+          } else if (n >= 10) {
+            str += teens[n - 10] + " ";
+            return str.trim();
+          }
+          if (n > 0) {
+            str += units[n] + " ";
+          }
+          return str.trim();
         };
 
-        return `${convert(Math.floor(num))} Rupees Only`;
+        let result = "";
+        const divisors = [10000000, 100000, 1000, 1];
+        const scaleNames = ["Crore", "Lakh", "Thousand", ""];
+
+        for (let i = 0; i < divisors.length; i++) {
+          const divisor = divisors[i];
+          const chunk = Math.floor(num / divisor);
+          if (chunk > 0) {
+            result += convertLessThanThousand(chunk) + " " + scaleNames[i] + " ";
+          }
+          num %= divisor;
+        }
+
+        return result.trim() + " Rupees Only";
       };
 
       // Generate items table rows
@@ -123,10 +159,10 @@ export default function Invoicelist() {
           (item, index) => `
           <tr>
             <td>${index + 1}</td>
-            <td>${item.item_detail || 'N/A'}</td>
+            <td style="width:7cm; white-space:normal; word-break:break-word;">${item.item_detail || 'N/A'}</td>
             <td>${item.hsn_sac || item.hsn_code || "39259010"}</td>
             <td>${item.quantity || 0}</td>
-            <td>Sq.M</td>
+            <td>${item.uom_description || item.mou || 'Sq.M'}</td>
             <td>${parseFloat(item.rate || 0).toFixed(2)}</td>
             <td>${(parseFloat(item.quantity || 0) * parseFloat(item.rate || 0)).toFixed(2)}</td>
             <td>${item.discount || "-"}</td>
@@ -158,9 +194,8 @@ export default function Invoicelist() {
         <b>GSTIN :</b> ${customer.gst || "N/A"}
       `;
 
-      // Open print window with dynamic data
-      const printWindow = window.open("", "_blank");
-      printWindow.document.write(`
+      // Build external HTML for printing
+      const htmlContent = `
      <!DOCTYPE html>
 <html lang="en">
 
@@ -499,7 +534,7 @@ export default function Invoicelist() {
         }
 
         .items-table .col-desc {
-            width: 18%;
+            width: 24%;
         }
 
         .items-table .col-hsn {
@@ -642,7 +677,7 @@ export default function Invoicelist() {
 .items-table th:nth-child(6),
 .items-table td:nth-child(6),
 .summary-table td:nth-child(6) {
-  width: 100%; /* 👈 Disc column */
+  width: 10%; /* 👈 Disc column */
 }
 
 .items-table th:nth-child(7),
@@ -952,7 +987,7 @@ export default function Invoicelist() {
                     <p><strong>Name:</strong> <b> ${customer.billing_recipient_name || customer.customer_name ||
                             "N/A"}</b></p>
                     <p><strong>Address :</strong> ${customer.billing_address1 || ""}${customer.billing_address2 }
-                        <br>${customer.billing_address2} : ""}<br>
+                        <br>${customer.billing_address2} :<br>
                         ${customer.billing_city || ""}, ${customer.billing_state || ""} - ${customer.billing_pincode ||
                         ""}<br>
                         Pin Code - ${customer.billing_pincode || ""}, ${customer.billing_country || "India"}<br>
@@ -966,7 +1001,7 @@ export default function Invoicelist() {
                     <p><strong>Name: </strong> <b> ${customer.shipping_recipient_name || customer.customer_name ||
                             "N/A"}</b></p>
                     <p><strong>Address:</strong> ${customer.shipping_address1 || ""}${customer.shipping_address2}
-                        ${customer.shipping_address2} : ""}
+                        ${customer.shipping_address2}
                         ${customer.shipping_city || ""}, ${customer.shipping_state || ""} - ${customer.shipping_pincode
                         || ""}${customer.shipping_pincode || ""}, ${customer.shipping_country || "India"}</p><br>
                     <p><strong>State Code: </strong> <b> ${customer.shipping_state ? "27" : "N/A"}</b></p>
@@ -1014,12 +1049,12 @@ export default function Invoicelist() {
                         <td class="col-total-value text-right">${(parseFloat(item.quantity || 0) * parseFloat(item.rate || 0)).toFixed(2)}</td>
                         <td class="col-disc text-center">${item.discount || '-'}</td>
                         <td class="col-taxable-value text-right">${parseFloat(item.amount || 0).toFixed(2)}</td>
-                        <td class="col-tax-rate text-right">9%</td>
-                        <td class="col-tax-rs text-right">${(parseFloat(item.amount || 0) * 0.09).toFixed(2)}</td>
-                        <td class="col-tax-rate text-right">9%</td>
-                        <td class="col-tax-rs text-right">${(parseFloat(item.amount || 0) * 0.09).toFixed(2)}</td>
-                        <td class="col-tax-rate text-right">0%</td>
-                        <td class="col-igst-rs text-right">0.00</td>
+                        <td class="col-tax-rate text-right">${igst > 0 ? '0%' : '9%'}</td>
+                        <td class="col-tax-rs text-right">${igst > 0 ? '0.00' : (parseFloat(item.amount || 0) * 0.09).toFixed(2)}</td>
+                        <td class="col-tax-rate text-right">${igst > 0 ? '0%' : '9%'}</td>
+                        <td class="col-tax-rs text-right">${igst > 0 ? '0.00' : (parseFloat(item.amount || 0) * 0.09).toFixed(2)}</td>
+                        <td class="col-tax-rate text-right">${igst > 0 ? '18%' : '0%'}</td>
+                        <td class="col-igst-rs text-right">${igst > 0 ? (parseFloat(item.amount || 0) * 0.18).toFixed(2) : '0.00'}</td>
                         <td class="col-total-rs text-right">${(parseFloat(item.amount || 0) + parseFloat(item.amount || 0) * 0.18).toFixed(2)}</td>
                     </tr>
                     `).join('')}
@@ -1044,12 +1079,12 @@ export default function Invoicelist() {
                     <tr class="total-row bold-row">
                         <td colspan="8" class="col-label"></td>
                         <td class="col-taxable-value text-right">${sub_total.toFixed(2)}</td>
-                        <td class="col-tax-rate"></td>
+                        <td class="col-tax-rate">${igst > 0 ? '' : '9%'}</td>
                         <td class="col-tax-rs text-right">${cgst.toFixed(2)}</td>
-                        <td class="col-tax-rate"></td>
+                        <td class="col-tax-rate">${igst > 0 ? '' : '9%'}</td>
                         <td class="col-tax-rs text-right">${sgst.toFixed(2)}</td>
-                        <td class="col-tax-rate"></td>
-                        <td class="col-igst-rs text-right">0.00</td>
+                        <td class="col-tax-rate">${igst > 0 ? '18%' : ''}</td>
+                        <td class="col-igst-rs text-right">${igst.toFixed(2)}</td>
                         <td class="col-total-rs text-right">${grand_total.toFixed(2)}</td>
                     </tr>
 
@@ -1068,12 +1103,12 @@ export default function Invoicelist() {
                     <tr class="total-row bold-row">
                         <td colspan="8" class="col-label" style="border-right: 1px solid #777777;">Sub Total</td>
                         <td class="col-taxable-value text-right">${sub_total.toFixed(2)}</td>
-                        <td class="col-tax-rate"></td>
+                        <td class="col-tax-rate">${igst > 0 ? '' : '9%'}</td>
                         <td class="col-tax-rs text-right">${cgst.toFixed(2)}</td>
-                        <td class="col-tax-rate"></td>
+                        <td class="col-tax-rate">${igst > 0 ? '' : '9%'}</td>
                         <td class="col-tax-rs text-right">${sgst.toFixed(2)}</td>
-                        <td class="col-tax-rate"></td>
-                        <td class="col-igst-rs text-right">0.00</td>
+                        <td class="col-tax-rate">${igst > 0 ? '18%' : ''}</td>
+                        <td class="col-igst-rs text-right">${igst.toFixed(2)}</td>
                         <td class="col-total-rs text-right">${grand_total.toFixed(2)}</td>
                     </tr>
 
@@ -1131,11 +1166,11 @@ export default function Invoicelist() {
                     <p style="margin: 0; font-size: 8.5pt; ">or indirectly from the Receiver [Buyer].</p>
                 </div>
                 <div class=" signature-box">
-                    <p class="font-8pt text-right" style="margin: 0; padding-right: 100px;margin-top: -15px;"> <b>For
+                    <p class="font-8pt text-right" style="margin: 0; padding-right: 85px;margin-top: -15px;"> <b>For
                             MERAKI
                             EXPERT</b></p>
 
-                    <img src="new.png" style="width: 90px; height: 70px;  margin-bottom: -60px;" alt="Logo" />
+                    
 
 
                     <span class="auth-sign">Authorized Signatory</span>
@@ -1146,7 +1181,7 @@ export default function Invoicelist() {
                     | P: 7722001802; 9130801011
                 </div>
             </div>
-
+             <div style="display: flex; text-align: center; justify-content: center;"> This is computer generated Invoice</div>
         </div>
     </div>
 </body>
@@ -1154,9 +1189,8 @@ export default function Invoicelist() {
 </html>
 
 
-      `);
-      printWindow.document.close();
-      printWindow.print();
+      `;
+      openHtmlPreview(htmlContent, 'invoice-print.html');
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("Failed to generate PDF. Please try again.");
@@ -1164,8 +1198,7 @@ export default function Invoicelist() {
   };
 
   const handlePrintInvoice = (invoice) => {
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(`<!DOCTYPE html>
+    const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1398,7 +1431,7 @@ export default function Invoicelist() {
         .items-table .col-hsn { width: 5%; }
         .items-table .col-qty { width: 4%; }
         .items-table .col-unit { width: 3%; }
-        .items-table .col-rate { width: 4.3%; }
+        .items-table .col-rate { width: 0.3%; }
         .items-table .col-total-value { width: 6%; }
         .items-table .col-disc { width: 4%; }
         .items-table .col-taxable-value { width: 6%; }
@@ -1673,9 +1706,8 @@ export default function Invoicelist() {
 </div>
 
 </body>
-</html>`);
-    printWindow.document.close();
-    printWindow.print();
+</html>`;
+    openHtmlPreview(htmlContent, `invoice-${invoice?.invoice_id || 'print'}.html`);
   };
 
   const handleSendEmail = (invoice) => {
@@ -1820,7 +1852,7 @@ export default function Invoicelist() {
                             <MenuItem onClick={() => handleShareLink(row)}><ShareIcon fontSize="small" sx={{ mr: 1 }} /> Share Link</MenuItem>
                             <MenuItem onClick={async () => {
                               try {
-                                await axios.patch(`http://localhost:5000/api/invoice/${row.invoice_id}/status`, { status: 'Paid' });
+      await axios.patch(`http://72.62.227.63:5001/api/invoice/${row.invoice_id}/status`, { status: 'Paid' });
                                 setInvoices(prev => prev.map(inv => inv.invoice_id === row.invoice_id ? { ...inv, status: 'Paid' } : inv));
                                 handleMenuClose();
                               } catch (error) {
@@ -1830,7 +1862,7 @@ export default function Invoicelist() {
                             }}>Mark as Paid</MenuItem>
                             <MenuItem onClick={async () => {
                               try {
-                                await axios.patch(`http://localhost:5000/api/invoice/${row.invoice_id}/status`, { status: 'Partial' });
+      await axios.patch(`http://72.62.227.63:5001/api/invoice/${row.invoice_id}/status`, { status: 'Partial' });
                                 setInvoices(prev => prev.map(inv => inv.invoice_id === row.invoice_id ? { ...inv, status: 'Partial' } : inv));
                                 handleMenuClose();
                               } catch (error) {
@@ -1840,7 +1872,7 @@ export default function Invoicelist() {
                             }}>Mark as Partial</MenuItem>
                             <MenuItem onClick={async () => {
                               try {
-                                await axios.patch(`http://localhost:5000/api/invoice/${row.invoice_id}/status`, { status: 'Draft' });
+      await axios.patch(`http://72.62.227.63:5001/api/invoice/${row.invoice_id}/status`, { status: 'Draft' });
                                 setInvoices(prev => prev.map(inv => inv.invoice_id === row.invoice_id ? { ...inv, status: 'Draft' } : inv));
                                 handleMenuClose();
                               } catch (error) {

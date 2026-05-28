@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
   Box, Typography, Grid, TextField, Button,
-  Select, MenuItem, FormControl, InputLabel, Paper, Divider
+  Select, MenuItem, FormControl, InputLabel, Paper, Divider, Checkbox, FormControlLabel
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 
 const AddCustomerForm = () => {
   const [formData, setFormData] = useState({
@@ -45,15 +45,23 @@ const AddCustomerForm = () => {
     status: 'Active'
   });
 
+  const [copyBilling, setCopyBilling] = useState(false);
+
+  const nonRequiredFields = [
+    'document_path', 'billing_address2', 'shipping_address2', 'remark',
+    'office_no', 'billing_fax', 'shipping_fax'
+  ];
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
   const navigate = useNavigate();
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/customers', formData);
+    await axios.post('http://72.62.227.63:5001/api/customers', formData);
       alert('Customer added successfully!');
       navigate('/customer');
     } catch (error) {
@@ -84,6 +92,7 @@ const AddCustomerForm = () => {
             inputMode: 'numeric',
             pattern: '[0-9]*'
           } : undefined}
+          
         />
       </Grid>
     ));
@@ -97,7 +106,19 @@ const AddCustomerForm = () => {
             Add Customer
           </Typography>
 
-          <form onSubmit={handleSubmit}>
+          <form noValidate onSubmit={handleSubmit} onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              const form = e.currentTarget;
+              const focusables = Array.from(form.querySelectorAll('input, select, textarea, button, [tabindex]:not([tabindex="-1"])'))
+                .filter(el => !el.disabled && el.tabIndex >= 0 && el.type !== 'hidden' && el.offsetParent !== null);
+              const idx = focusables.indexOf(e.target);
+              if (idx > -1) {
+                e.preventDefault();
+                const next = focusables[idx + 1];
+                if (next) next.focus();
+              }
+            }
+          }}>
             <Grid item xs={12}>
                 <Typography variant="h6">Customer Information</Typography>
                 <Divider sx={{ mb: 2 }} />
@@ -109,7 +130,8 @@ const AddCustomerForm = () => {
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Customer Type</InputLabel>
-                  <Select name="customer_type" value={formData.customer_type} onChange={handleChange}>
+                  <Select name="customer_type" value={formData.customer_type} onChange={handleChange} required>
+                    
                     <MenuItem value="Domestic">Domestic</MenuItem>
                     <MenuItem value="International">International</MenuItem>
                   </Select>
@@ -119,7 +141,8 @@ const AddCustomerForm = () => {
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Title</InputLabel>
-                  <Select name="title" value={formData.title} onChange={handleChange}>
+                  <Select name="title" value={formData.title} onChange={handleChange} required>
+                    
                     <MenuItem value="MR">MR</MenuItem>
                     <MenuItem value="MS">MS</MenuItem>
                     <MenuItem value="MRS">MRS</MenuItem>
@@ -151,6 +174,36 @@ const AddCustomerForm = () => {
               ])}
               </Grid>
 
+              <Grid item xs={12} mt={1}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={copyBilling}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setCopyBilling(checked);
+                        if (checked) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            shipping_recipient_name: prev.billing_recipient_name,
+                            shipping_country: prev.billing_country,
+                            shipping_address1: prev.billing_address1,
+                            shipping_address2: prev.billing_address2,
+                            shipping_city: prev.billing_city,
+                            shipping_state: prev.billing_state,
+                            shipping_state_code: prev.billing_state_code,
+                            shipping_pincode: prev.billing_pincode,
+                            shipping_fax: prev.billing_fax,
+                            shipping_phone: prev.billing_phone,
+                          }));
+                        }
+                      }}
+                    />
+                  }
+                  label="Shipping address same as billing"
+                />
+              </Grid>
+
               {/* Section: Shipping */}
               <Grid item xs={12} mt={3}>
                 <Typography variant="h6">Shipping Address</Typography>
@@ -178,7 +231,8 @@ const AddCustomerForm = () => {
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Currency</InputLabel>
-                  <Select name="currency" value={formData.currency} onChange={handleChange}>
+                  <Select name="currency" value={formData.currency} onChange={handleChange} required>
+                    
                     <MenuItem value="INR">INR</MenuItem>
                     <MenuItem value="USD">USD</MenuItem>
                     <MenuItem value="EUR">EUR</MenuItem>
@@ -189,7 +243,8 @@ const AddCustomerForm = () => {
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Status</InputLabel>
-                  <Select name="status" value={formData.status} onChange={handleChange}>
+                  <Select name="status" value={formData.status} onChange={handleChange} required>
+                    
                     <MenuItem value="Active">Active</MenuItem>
                     <MenuItem value="Inactive">Inactive</MenuItem>
                   </Select>

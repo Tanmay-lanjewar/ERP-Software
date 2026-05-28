@@ -31,6 +31,7 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { InputAdornment } from '@mui/material';
 import { Search } from '@mui/icons-material';
 import { Breadcrumbs } from '@mui/material';
+import { Autocomplete } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
@@ -38,6 +39,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import axios from '../services/offlineAxios';
 
 const NewWorkOrder = () => {
   const navigate = useNavigate();
@@ -82,44 +84,28 @@ const NewWorkOrder = () => {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/vendors')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setVendors(data);
-      })
-      .catch((error) => {
-        console.error('Error fetching vendors:', error);
-      });
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), 30000);
+    fetch('http://72.62.227.63:5001/api/vendors', { signal: c.signal })
+      .then((response) => { clearTimeout(t); if (!response.ok) throw new Error('Network response was not ok'); return response.json(); })
+      .then((data) => { setVendors(data); })
+      .catch((error) => { clearTimeout(t); console.error('Error fetching vendors:', error); });
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/products')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setProducts(data);
-      })
-      .catch((error) => {
-        console.error('Error fetching products:', error);
-      });
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), 30000);
+    fetch('http://72.62.227.63:5001/api/products', { signal: c.signal })
+      .then((response) => { clearTimeout(t); if (!response.ok) throw new Error('Network response was not ok'); return response.json(); })
+      .then((data) => { setProducts(data); })
+      .catch((error) => { clearTimeout(t); console.error('Error fetching products:', error); });
   }, []);
-  
+
   useEffect(() => {
-    fetch('http://localhost:5000/api/product_units')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), 30000);
+    fetch('http://72.62.227.63:5001/api/product_units', { signal: c.signal })
+      .then((response) => { clearTimeout(t); if (!response.ok) throw new Error('Network response was not ok'); return response.json();
       })
       .then((data) => {
         setUnits(data);
@@ -149,7 +135,9 @@ const NewWorkOrder = () => {
 
   const calculateAmount = (row) => {
     const total = (row.qty || 0) * (row.rate || 0);
-    return total - (row.discount || 0);
+    const discountPerc = parseFloat(row.discount) || 0;
+    const discountAmt = total * (discountPerc / 100);
+    return total - discountAmt;
   };
 
   const addNewRow = () => {
@@ -172,7 +160,12 @@ const NewWorkOrder = () => {
   }, [rows]);
 
   const handleSubmit = () => {
-    const workOrderData = {
+  // Basic validation to ensure at least one item (free text or selected)
+  if (rows.length === 0 || rows.every((row) => !((row.itemName && row.itemName.trim()) || row.item))) {
+    alert('Please add at least one item');
+    return;
+  }
+  const workOrderData = {
       work_order_number: workOrderNumber,
       vendor_name: selectedVendor,
       work_order_date: workOrderDate,
@@ -200,25 +193,31 @@ const NewWorkOrder = () => {
       })),
     };
 
-    fetch('http://localhost:5000/api/work-orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(workOrderData),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Failed to save work order');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log('Work order saved:', data);
+    (async () => {
+      try {
+        const res = await axios.post('http://72.62.227.63:5001/api/work-orders', workOrderData);
+        console.log('Work order saved:', res.data || res);
         navigate('/Work-Order-list');
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error saving work order:', error);
-        alert('Error saving work order');
-      });
+        let msg = 'Failed to save work order. ';
+        if (error.code === 'ECONNABORTED') {
+          msg += 'Request timed out.';
+        } else if (error.response) {
+          const status = error.response.status;
+          const data = error.response.data || {};
+          if (status === 400) msg += `Invalid data: ${data.error || data.message || 'Please check input.'}`;
+          else if (status === 404) msg += 'Endpoint not found.';
+          else if (status === 500) msg += `Server error: ${data.error || data.message || 'Try again later.'}`;
+          else msg += `Server error (${status}).`;
+        } else if (error.request) {
+          msg += 'Cannot reach server. Check connection/backend.';
+        } else {
+          msg += error.message || 'Unknown error.';
+        }
+        alert(msg);
+      }
+    })();
   };
 
   return (
@@ -495,7 +494,7 @@ const NewWorkOrder = () => {
                     <TableCell>Quantity</TableCell>
                     <TableCell>UOM</TableCell>
                     <TableCell>Rate</TableCell>
-                    <TableCell>Discount</TableCell>
+            <TableCell>Discount (%)</TableCell>
                     <TableCell>Amount</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
@@ -505,38 +504,43 @@ const NewWorkOrder = () => {
                   {rows.map((row, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        <Select
-                          fullWidth
-                          value={row.item}
-                          onChange={(e) => {
-                            const selectedProductId = e.target.value;
-                            const selectedProduct = products.find(p => p.id === selectedProductId);
-                            updateRow(index, 'item', selectedProductId);
-                            updateRow(index, 'itemName', selectedProduct ? selectedProduct.product_name : '');
-                            // Fetch product details by id and update rate
-                            fetch(`http://localhost:5000/api/products/${selectedProductId}`)
-                              .then((res) => res.json())
-                              .then((product) => {
-                                updateRow(index, 'rate', product.sale_price || 0);
-                                updateRow(index, 'uom_description', product.unit || '');
-                              })
-                              .catch((err) => {
-                                console.error('Error fetching product details:', err);
-                              });
+                        <Autocomplete
+                          freeSolo
+                          options={products.map((p) => p.product_name)}
+                          value={row.itemName || ''}
+                          onChange={(event, newValue) => {
+                            if (!newValue) {
+                              updateRow(index, 'item', '');
+                              updateRow(index, 'itemName', '');
+                              return;
+                            }
+                            const selectedProduct = products.find((p) => p.product_name === newValue);
+                            if (selectedProduct) {
+                              updateRow(index, 'item', selectedProduct.id);
+                              updateRow(index, 'itemName', selectedProduct.product_name);
+                              fetch(`http://72.62.227.63:5001/api/products/${selectedProduct.id}`)
+                                .then((res) => res.json())
+                                .then((product) => {
+                                  updateRow(index, 'rate', product.sale_price || 0);
+                                  updateRow(index, 'uom_description', product.unit || '');
+                                })
+                                .catch((err) => console.error('Error fetching product details:', err));
+                            } else {
+                              updateRow(index, 'item', '');
+                              updateRow(index, 'itemName', newValue);
+                            }
                           }}
-                          size="small"
-                          displayEmpty
-                          sx={{ width: '100%' }}
-                        >
-                          <MenuItem value="">
-                            <em>Select Item</em>
-                          </MenuItem>
-                          {products.map((product, idx) => (
-                            <MenuItem key={idx} value={product.id}>
-                              {product.product_name}
-                            </MenuItem>
-                          ))}
-                        </Select>
+                          onInputChange={(event, newInputValue) => {
+                            updateRow(index, 'itemName', newInputValue || '');
+                            const matched = products.find((p) => p.product_name === newInputValue);
+                            if (!matched) {
+                              updateRow(index, 'item', '');
+                            }
+                          }}
+                          renderInput={(params) => (
+                            <TextField {...params} size="small" placeholder="Type or select an item" sx={{ width: "10cm" }} />
+                          )}
+                        />
                       </TableCell>
                       <TableCell>
                         <TextField
@@ -576,16 +580,22 @@ const NewWorkOrder = () => {
                       </TableCell>
 
                       <TableCell>
-                        <FormControl fullWidth>
-                          <Select
-                            value={row.discount}
-                            onChange={(e) => updateRow(index, 'discount', e.target.value)}
-                          >
-                            <MenuItem value={0}>0%</MenuItem>
-                            <MenuItem value={5}>5%</MenuItem>
-                            <MenuItem value={10}>10%</MenuItem>
-                          </Select>
-                        </FormControl>
+                        <Autocomplete
+                          freeSolo
+                          options={["0", "3", "10"]}
+                          value={String(row.discount ?? "")}
+                          onChange={(event, newValue) => {
+                            const val = parseFloat(newValue);
+                            updateRow(index, 'discount', isNaN(val) ? 0 : val);
+                          }}
+                          onInputChange={(event, newInputValue) => {
+                            const val = parseFloat(newInputValue);
+                            updateRow(index, 'discount', isNaN(val) ? 0 : val);
+                          }}
+                          renderInput={(params) => (
+                            <TextField {...params} size="small" placeholder="Discount %" />
+                          )}
+                        />
                       </TableCell>
                       <TableCell>
                         <TextField
@@ -887,7 +897,7 @@ const NewWorkOrder = () => {
                       borderBottom: '1px solid #f0f0f0',
                     }}
                   >
-                    <Box width="40%">{row.item || '-'}</Box>
+                    <Box width="40%">{row.itemName || (products.find((p) => p.id === row.item)?.product_name) || '-'}</Box>
                     <Box width="15%">{row.qty}</Box>
                     <Box width="20%">₹{row.rate}</Box>
                     <Box width="25%" textAlign="right">

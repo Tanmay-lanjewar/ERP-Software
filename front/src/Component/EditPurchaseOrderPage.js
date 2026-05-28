@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Box, TextField, Button, Paper, Typography, MenuItem, FormControl, InputLabel, Select, Alert, CircularProgress } from '@mui/material';
 import Sidebar from './Sidebar';
 import UserMenu from './UserMenu';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 
 export default function EditPurchaseOrderPage() {
   const { id } = useParams();
@@ -15,8 +15,6 @@ export default function EditPurchaseOrderPage() {
     delivery_date: '',
     status: '',
     bill_amount: '',
-    delivery_to: '',
-    delivery_address: '',
     payment_terms: '',
     due_date: '',
     customer_notes: '',
@@ -38,7 +36,7 @@ export default function EditPurchaseOrderPage() {
   useEffect(() => {
     const fetchPurchaseOrder = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/purchase/${id}`);
+  const res = await axios.get(`http://72.62.227.63:5001/api/purchase/${id}`);
         const po = res.data.purchase_order;
         const poItems = res.data.items || [];
         
@@ -49,8 +47,6 @@ export default function EditPurchaseOrderPage() {
           delivery_date: po.delivery_date ? po.delivery_date.slice(0, 10) : '',
           status: po.status || 'Draft',
           bill_amount: po.total || 0,
-          delivery_to: po.delivery_to || '',
-          delivery_address: po.delivery_address || '',
           payment_terms: po.payment_terms || '',
           due_date: po.due_date ? po.due_date.slice(0, 10) : '',
           customer_notes: po.customer_notes || '',
@@ -76,7 +72,7 @@ export default function EditPurchaseOrderPage() {
 
   // Fetch vendor list
   useEffect(() => {
-    axios.get('http://localhost:5000/api/vendors')
+  axios.get('http://72.62.227.63:5001/api/vendors')
       .then(res => setVendors(res.data))
       .catch(() => setVendors([]));
   }, []);
@@ -92,7 +88,7 @@ export default function EditPurchaseOrderPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.put(`http://localhost:5000/api/purchase/${id}`, {
+  const response = await axios.put(`http://72.62.227.63:5001/api/purchase/${id}`, {
         purchase_order_no: formData.purchase_order_number,
         vendor_name: formData.vendor_name,
         vendor_id: formData.vendor_id,
@@ -110,12 +106,18 @@ export default function EditPurchaseOrderPage() {
         sgst: parseFloat(formData.sgst) || 0,
         total: parseFloat(formData.bill_amount) || 0,
         attachment: formData.attachment || '',
+        status: formData.status || 'Draft',
         items: items
       });
+      
+      console.log('Update response:', response.data);
       alert('Purchase order updated successfully!');
       navigate('/purchase-order-list');
     } catch (err) {
-      setError('Failed to update purchase order');
+      console.error('Update error:', err);
+      console.error('Error response:', err.response?.data);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to update purchase order';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -155,7 +157,14 @@ export default function EditPurchaseOrderPage() {
                 name="vendor_name"
                 value={formData.vendor_name || ''}
                 label="Vendor"
-                onChange={handleChange}
+                onChange={(e) => {
+                  const selectedVendor = vendors.find(v => v.vendor_name === e.target.value);
+                  setFormData({
+                    ...formData,
+                    vendor_name: e.target.value,
+                    vendor_id: selectedVendor ? selectedVendor.vendor_id : null
+                  });
+                }}
               >
                 {vendors.map(vendor => (
                   <MenuItem key={vendor.vendor_id} value={vendor.vendor_name}>
@@ -197,8 +206,6 @@ export default function EditPurchaseOrderPage() {
               >
                 <MenuItem value="Draft">Draft</MenuItem>
                 <MenuItem value="Sent">Sent</MenuItem>
-                <MenuItem value="Completed">Completed</MenuItem>
-                <MenuItem value="Cancelled">Cancelled</MenuItem>
               </Select>
             </FormControl>
             <TextField

@@ -12,7 +12,7 @@ import Sidebar from './Sidebar';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EditProductDialog from './EditProductDialog'; // Add this at the top
 
@@ -30,14 +30,14 @@ export default function ItemList() {
   const handleStatusChange = async (id, newStatus) => {
     try {
       // Step 1: Fetch the full product data
-      const res = await axios.get(`http://localhost:5000/api/products/${id}`);
+      const res = await axios.get(`http://72.62.227.63:5001/api/products/${id}`);
       const fullProduct = res.data;
 
       // Step 2: Update only the status
       fullProduct.status = newStatus;
 
       // Step 3: Send the complete data back via PUT
-      await axios.put(`http://localhost:5000/api/products/${id}`, fullProduct);
+      await axios.put(`http://72.62.227.63:5001/api/products/${id}`, fullProduct);
 
       // Step 4: Update frontend state or reload
       fetchItems();
@@ -55,12 +55,19 @@ export default function ItemList() {
   // Save changes
   const handleEditSave = async (updatedData) => {
     try {
-      await axios.put(`http://localhost:5000/api/products/${updatedData.id}`, updatedData);
+      await axios.put(`http://72.62.227.63:5001/api/products/${updatedData.id}`, updatedData);
       setEditDialogOpen(false);
       setProductToEdit(null);
       // Refresh data
-      const res = await axios.get('http://localhost:5000/api/products');
-      setItems(res.data);
+      const res = await axios.get('http://72.62.227.63:5001/api/products');
+      const data = Array.isArray(res.data) ? res.data : [];
+      const sorted = [...data].sort((a, b) => {
+        const ad = new Date(a.created_at || a.updated_at || 0).getTime();
+        const bd = new Date(b.created_at || b.updated_at || 0).getTime();
+        if (ad && bd && ad !== bd) return bd - ad;
+        return Number(b.id || 0) - Number(a.id || 0);
+      });
+      setItems(sorted);
     } catch (err) {
       console.error('Edit failed:', err);
     }
@@ -71,8 +78,15 @@ export default function ItemList() {
 
   const fetchItems = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/products');
-      setItems(res.data);
+      const res = await axios.get('http://72.62.227.63:5001/api/products');
+      const data = Array.isArray(res.data) ? res.data : [];
+      const sorted = [...data].sort((a, b) => {
+        const ad = new Date(a.created_at || a.updated_at || 0).getTime();
+        const bd = new Date(b.created_at || b.updated_at || 0).getTime();
+        if (ad && bd && ad !== bd) return bd - ad;
+        return Number(b.id || 0) - Number(a.id || 0);
+      });
+      setItems(sorted);
     } catch (err) {
       console.error('Error fetching items:', err);
     }

@@ -30,7 +30,9 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import ui from '../assets/mera.png';
 
-import axios from "axios";
+import { openHtmlPreview } from '../utils/printPreview';
+
+import axios from "../services/offlineAxios";
 
 const PurchaseOrderActions = () => {
   const navigate = useNavigate();
@@ -40,11 +42,34 @@ const PurchaseOrderActions = () => {
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
+    const parseDate = (val) => {
+      if (!val) return NaN;
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) return d.getTime();
+      const m = String(val).match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+      if (m) {
+        const [_, dd, mm, yyyy] = m;
+        return new Date(`${yyyy}-${mm}-${dd}T00:00:00`).getTime();
+      }
+      return NaN;
+    };
+
     axios
-      .get("http://localhost:5000/api/purchase")
+      .get("http://72.62.227.63:5001/api/purchase")
       .then((res) => {
         console.log("Purchase Orders API Response:", res.data);
-        setRows(res.data);
+        const data = Array.isArray(res.data) ? res.data : [];
+        data.sort((a, b) => {
+          const ad = parseDate(a.purchase_order_date) || parseDate(a.created_at) || 0;
+          const bd = parseDate(b.purchase_order_date) || parseDate(b.created_at) || 0;
+          if (bd === ad) {
+            const aid = parseInt(a.id || (String(a.purchase_order_no || '').replace(/\D+/g, '')), 10) || 0;
+            const bid = parseInt(b.id || (String(b.purchase_order_no || '').replace(/\D+/g, '')), 10) || 0;
+            return bid - aid;
+          }
+          return bd - ad;
+        });
+        setRows(data);
       })
       .catch((error) => {
         console.error("Failed to fetch purchase orders:", error);
@@ -73,15 +98,60 @@ const PurchaseOrderActions = () => {
     navigate(`/edit-purchase/${id}`);
   };
 
+  // Helper function to convert number to words (Indian Rupees)
+  const numberToWords = (num) => {
+    if (num === 0) return "Zero Rupees Only";
+
+    const units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+    const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+    const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+    const convertLessThanThousand = (n) => {
+      if (n === 0) return "";
+      let str = "";
+      if (n >= 100) {
+        str += units[Math.floor(n / 100)] + " Hundred ";
+        n %= 100;
+      }
+      if (n >= 20) {
+        str += tens[Math.floor(n / 10)] + " ";
+        n %= 10;
+      } else if (n >= 10) {
+        str += teens[n - 10] + " ";
+        return str.trim();
+      }
+      if (n > 0) {
+        str += units[n] + " ";
+      }
+      return str.trim();
+    };
+
+    let result = "";
+    const divisors = [10000000, 100000, 1000, 1];
+    const scaleNames = ["Crore", "Lakh", "Thousand", ""];
+
+    for (let i = 0; i < divisors.length; i++) {
+      const divisor = divisors[i];
+      const chunk = Math.floor(num / divisor);
+      if (chunk > 0) {
+        result += convertLessThanThousand(chunk) + " " + scaleNames[i] + " ";
+      }
+      num %= divisor;
+    }
+
+    return result.trim() + " Rupees Only";
+  };
+
   const handleDownloadPdf = async (order) => {
     try {
       // Test if backend is reachable
       console.log('Testing API endpoint...');
-      const testResponse = await axios.get('http://localhost:5000/api/purchase');
+      const testResponse = await axios.get('http://72.62.227.63:5001/api/purchase');
       console.log('API test successful:', testResponse.status);
       
       // Fetch purchase order data from backend API using purchase order number instead of ID
-      const response = await axios.get(`http://localhost:5000/api/purchase/${order.purchase_order_no}`);
+      const safePoNo = encodeURIComponent(order.purchase_order_no || '');
+      const response = await axios.get(`http://72.62.227.63:5001/api/purchase/${safePoNo}`);
       console.log('Purchase order data fetched:', response.data);
       
       const { purchase_order: poData, vendor } = response.data;
@@ -105,21 +175,34 @@ const PurchaseOrderActions = () => {
         }).format(amount);
       };
   
-      // Generate items HTML
-      const itemsHtml = poData.items.map((item, index) => `
+      // Generate items HTML: drop placeholder rows and use dynamic HSN
+      const itemsHtml = (poData.items || [])
+        .filter((it) => {
+          const name = (it.item_detail || it.item_name || it.description || '').trim().toLowerCase();
+          return name && name !== '-' && name !== 'mobiel' && name !== 'mobile';
+        })
+        .map((item, index) => {
+          const name = item.item_detail || item.item_name || item.description || '';
+          const qty = item.qty ?? item.quantity ?? 0;
+          const uom = item.uom_description || item.mou || item.uom || '';
+          const hsn = item.hsnCode || item.hsn_code || '';
+          const rate = parseFloat(item.rate || 0);
+          const amount = parseFloat(item.amount || (qty * rate));
+          return `
         <tr>
           <td style="border: 1px solid #000; padding: 3px; text-align: center;">${index + 1}</td>
-          <td style="border: 1px solid #000; padding: 3px;">${item.description}</td>
-          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.quantity}</td>
-          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${item.mou}</td>
-          <td style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(item.rate)}</td>
-          <td style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(item.amount)}</td>
-        </tr>
-      `).join('');
+          <td style="border: 1px solid #000; padding: 3px; width:7cm; white-space:normal; word-break:break-word;">${name}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${hsn}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${qty}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: center;">${uom}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(rate)}</td>
+          <td style="border: 1px solid #000; padding: 3px; text-align: right;">${formatCurrency(amount)}</td>
+        </tr>`;
+        })
+        .join('');
   
-      // Build HTML using dynamic data
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
+      // Build HTML using dynamic data and open externally
+      const htmlContent = `
         <!DOCTYPE html>
 <!DOCTYPE html>
 <html lang="en">
@@ -196,7 +279,7 @@ const PurchaseOrderActions = () => {
                     <th style="border: 1px solid #000; padding: 3px; width: 35%;">Item Description</th>
                     <th style="border: 1px solid #000; padding: 3px; width: 10%;">HSN Code</th>
                     <th style="border: 1px solid #000; padding: 3px; width: 5%;">Qty.</th>
-                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">MOU</th>
+                    <th style="border: 1px solid #000; padding: 3px; width: 5%;">UOM</th>
                     <th style="border: 1px solid #000; padding: 3px; width: 15%;">Rate</th>
                     <th style="border: 1px solid #000; padding: 3px; width: 25%;">Amount</th>
                 </tr>
@@ -239,7 +322,7 @@ const PurchaseOrderActions = () => {
                         </tr>
                         <tr>
                             <td colspan="4" style="border: 1px solid #000; padding: 3px; font-weight: bold; text-align: right;">Total in Words</td>
-                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: left;">${poData.total_in_words}</td>
+                            <td colspan="2" style="border: 1px solid #000; padding: 3px; text-align: left;">${numberToWords(poData.total)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -247,36 +330,34 @@ const PurchaseOrderActions = () => {
         </div>
 
         <div style="border: 1px solid #000; padding: 3px; margin-top: 5px;">
-            <strong>Amount (in words):</strong> ${poData.total_in_words}
+            <strong>Amount (in words):</strong> ${numberToWords(poData.total)}
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 5px;">
-            <div style="width: 70%;">
-                <div style="border: 1px solid #000; padding: 3px;">
-                    Email: merakkiexpert@gmail.com | Mobile: +91-8793484326 / +91-9130801011 | www.merakkiexpert.in
-                </div>
-            </div>
-            <div style="width: 30%; text-align: center; margin-left: 10px;">
+            
+            <div style="width: 100%; text-align: right; margin-right: 1px;">
                 <div style="font-weight: bold;">For MERAKI EXPERT</div>
-                <div style="height: 50px; display: flex; align-items: center; justify-content: center;">
+                <div style="height: 50px; display: flex; align-items: right; justify-content: right;">
                     
                 </div>
                 <div>(Authorized Signatory)</div>
             </div>
         </div>
+        <div >
+                <div style="border: 1px solid #000; padding: 3px; text-align: center;justify-content: center; ">
+                    Email: merakkiexpert@gmail.com | Mobile: +91-8793484326 / +91-9130801011 | www.merakkiexpert.in
+                </div>
+                <div style="display: flex; text-align: center; justify-content: center;"> This is computer generated purchase-order</div>
+            </div>
     </div>
-</body>
+    
+</body> 
 </html>
-      `);
-      
-      printWindow.document.close();
-      printWindow.focus();
-      
-      // Wait for content to load then print
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 500);
+      `;
+      await openHtmlPreview(
+        htmlContent,
+        `purchase-order-${poData?.id || 'print'}.html`
+      );
       
     } catch (error) {
       console.error('Error downloading PDF:', error);
@@ -390,7 +471,7 @@ const PurchaseOrderActions = () => {
               </Typography>
               <Button
                 variant="contained"
-                onClick={() => (window.location.href = "/add-purchase-order")}
+                onClick={() => navigate('/add-purchase-order')}
                 sx={{
                   textTransform: "none",
                   borderRadius: 2,

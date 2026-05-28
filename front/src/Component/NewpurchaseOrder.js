@@ -23,6 +23,7 @@ import {
   Paper,
   Checkbox,
   Modal,
+  Autocomplete,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
@@ -33,7 +34,7 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import Sidebar from "./Sidebar";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../services/offlineAxios";
 import UserMenu from './UserMenu';
 
 const PurchaseOrderForm = () => {
@@ -52,7 +53,7 @@ const PurchaseOrderForm = () => {
   const [products, setProducts] = useState([]);
   const [units, setUnits] = useState([]);
   const [rows, setRows] = useState([
-    { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" },
+    { id: Date.now(), item: "", item_detail: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" },
   ]);
   const [attachment, setAttachment] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -60,20 +61,16 @@ const PurchaseOrderForm = () => {
   useEffect(() => {
     // Fetch vendors
     axios
-      .get("http://localhost:5000/api/vendors")
+      .get("http://72.62.227.63:5001/api/vendors")
       .then((res) => setVendors(res.data))
       .catch(() => setVendors([]));
 
     // Fetch products
-    fetch("http://localhost:5000/api/products")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setProducts(data);
+    axios
+      .get("http://72.62.227.63:5001/api/products")
+      .then((res) => {
+        const data = res.data;
+        setProducts(Array.isArray(data) ? data : data.data || []);
       })
       .catch((error) => {
         console.error("Error fetching products:", error);
@@ -81,7 +78,7 @@ const PurchaseOrderForm = () => {
       
     // Fetch units
     axios
-      .get("http://localhost:5000/api/product_units")
+      .get("http://72.62.227.63:5001/api/product_units")
       .then((res) => setUnits(res.data))
       .catch((error) => {
         console.error("Error fetching units:", error);
@@ -90,7 +87,7 @@ const PurchaseOrderForm = () => {
 
     // Fetch purchase order number (assuming a similar endpoint exists)
     axios
-      .get("http://localhost:5000/api/purchase/next-number")
+      .get("http://72.62.227.63:5001/api/purchase/next-number")
       .then((res) => setPurchaseOrderNo(res.data.nextPurchaseOrderNo || ""))
       .catch(() => setPurchaseOrderNo(""));
   }, []);
@@ -106,13 +103,15 @@ const PurchaseOrderForm = () => {
 
   const calculateAmount = (row) => {
     const total = (row.qty || 0) * (row.rate || 0);
-    return total - (row.discount || 0);
+    const discountPerc = parseFloat(row.discount) || 0;
+    const discountAmt = total * (discountPerc / 100);
+    return total - discountAmt;
   };
 
   const addNewRow = () => {
     setRows([
       ...rows,
-      { id: Date.now(), item: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" },
+      { id: Date.now(), item: "", item_detail: "", qty: 0, rate: 0, discount: 0, amount: 0, uom_amount: 0, uom_description: "" },
     ]);
   };
 
@@ -123,6 +122,7 @@ const PurchaseOrderForm = () => {
       updated.push({
         id: Date.now(),
         item: "",
+        item_detail: "",
         qty: 0,
         rate: 0,
         discount: 0,
@@ -158,7 +158,10 @@ const PurchaseOrderForm = () => {
       alert('Please select a purchase order date');
       return;
     }
-    if (rows.length === 0 || rows.every(row => !row.item)) {
+    if (
+      rows.length === 0 ||
+      rows.every((row) => !((row.item_detail && row.item_detail.trim()) || row.item))
+    ) {
       alert('Please add at least one item');
       return;
     }
@@ -185,7 +188,7 @@ const PurchaseOrderForm = () => {
       total: total,
       attachment: attachment ? attachment.name : "",
       items: rows.map((row) => ({
-        item_name: row.item,
+        item_name: (row.item_detail && row.item_detail.trim()) ? row.item_detail : (row.item || ''),
         qty: row.qty,
         rate: row.rate,
         discount: row.discount,
@@ -196,12 +199,28 @@ const PurchaseOrderForm = () => {
     };
 
     try {
-      await axios.post("http://localhost:5000/api/purchase", payload);
+      await axios.post("http://72.62.227.63:5001/api/purchase", payload, { timeout: 30000 });
       navigate("/purchase-order-list");
     } catch (error) {
       console.error('Purchase order creation error:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Unknown error occurred';
-      alert(`Failed to create purchase order: ${errorMessage}`);
+      let msg = 'Failed to create purchase order. ';
+      if (error.code === 'ECONNABORTED') {
+        msg += 'Request timed out (30s).';
+      } else if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data || {};
+        if (status === 400) msg += `Invalid data: ${data.error || data.message || 'Please review fields.'}`;
+        else if (status === 401) msg += 'Unauthorized. Please login again.';
+        else if (status === 403) msg += 'Forbidden. You lack permission.';
+        else if (status === 404) msg += 'Endpoint not found.';
+        else if (status === 500) msg += `Server error: ${data.error || data.message || 'Try again later.'}`;
+        else msg += `Server error (${status}).`;
+      } else if (error.request) {
+        msg += 'Cannot reach server. Check internet or backend.';
+      } else {
+        msg += error.message || 'Unknown error.';
+      }
+      alert(msg);
     }
   };
 
@@ -469,7 +488,7 @@ const PurchaseOrderForm = () => {
                       <TableCell>Quantity</TableCell>
                       <TableCell>UOM</TableCell>
                       <TableCell>Rate</TableCell>
-                      <TableCell>Discount</TableCell>
+            <TableCell>Discount (%)</TableCell>
                       <TableCell>Amount</TableCell>
                       <TableCell></TableCell>
                     </TableRow>
@@ -478,52 +497,46 @@ const PurchaseOrderForm = () => {
                     {rows.map((row, index) => (
                       <TableRow key={row.id}>
                         <TableCell>
-                          <Select
-                            fullWidth
-                            value={row.item}
-                            onChange={(e) => {
-                              const selectedProductName = e.target.value;
-                              const selectedProduct = products.find(p => p.product_name === selectedProductName);
-                              updateRow(index, "item", selectedProductName);
+                          <Autocomplete
+                            freeSolo
+                            options={products.map((p) => p.product_name)}
+                            value={row.item_detail || ""}
+                            onChange={(event, newValue) => {
+                              if (!newValue) {
+                                updateRow(index, "item", "");
+                                updateRow(index, "item_detail", "");
+                                return;
+                              }
+                              const selectedProduct = products.find((p) => p.product_name === newValue);
                               if (selectedProduct) {
-                                fetch(
-                                  `http://localhost:5000/api/products/${selectedProduct.id}`
-                                )
+                                updateRow(index, "item", selectedProduct.product_name);
+                                updateRow(index, "item_detail", selectedProduct.product_name);
+                                fetch(`http://72.62.227.63:5001/api/products/${selectedProduct.id}`)
                                   .then((res) => res.json())
                                   .then((product) => {
-                                    updateRow(
-                                      index,
-                                      "rate",
-                                      product.sale_price || 0
-                                    );
-                                    updateRow(
-                                      index,
-                                      "uom_description",
-                                      product.unit || ""
-                                    );
+                                    updateRow(index, "rate", product.sale_price || 0);
+                                    updateRow(index, "uom_description", product.unit || "");
                                   })
                                   .catch((err) => {
-                                    console.error(
-                                      "Error fetching product details:",
-                                      err
-                                    );
+                                    console.error("Error fetching product details:", err);
                                   });
+                              } else {
+                                // Free text entry
+                                updateRow(index, "item", "");
+                                updateRow(index, "item_detail", newValue);
                               }
                             }}
-                            size="small"
-                            displayEmpty
-                            sx={{ width: "100%" }}
-                          >
-                            <MenuItem value="">
-                              <em>Select Item</em>
-                            </MenuItem>
-                            {products.map((product) => (
-                              <MenuItem key={product.id} 
-                                   value={product.product_name}>
-                                {product.product_name}
-                              </MenuItem>
-                            ))}
-                          </Select>
+                            onInputChange={(event, newInputValue) => {
+                              updateRow(index, "item_detail", newInputValue || "");
+                              const matched = products.find((p) => p.product_name === newInputValue);
+                              if (!matched) {
+                                updateRow(index, "item", "");
+                              }
+                            }}
+                            renderInput={(params) => (
+                              <TextField {...params} size="small" placeholder="Type or select an item" sx={{ width: "10cm" }}/>
+                            )}
+                          />
                         </TableCell>
                         <TableCell>
                           <TextField
@@ -569,18 +582,22 @@ const PurchaseOrderForm = () => {
                         </TableCell>
 
                         <TableCell>
-                          <FormControl fullWidth>
-                            <Select
-                              value={row.discount}
-                              onChange={(e) =>
-                                updateRow(index, "discount", e.target.value)
-                              }
-                            >
-                              <MenuItem value={0}>0%</MenuItem>
-                              <MenuItem value={5}>5%</MenuItem>
-                              <MenuItem value={10}>10%</MenuItem>
-                            </Select>
-                          </FormControl>
+                          <Autocomplete
+                            freeSolo
+                            options={["0", "3", "10"]}
+                            value={String(row.discount ?? "")}
+                            onChange={(event, newValue) => {
+                              const val = parseFloat(newValue);
+                              updateRow(index, "discount", isNaN(val) ? 0 : val);
+                            }}
+                            onInputChange={(event, newInputValue) => {
+                              const val = parseFloat(newInputValue);
+                              updateRow(index, "discount", isNaN(val) ? 0 : val);
+                            }}
+                            renderInput={(params) => (
+                              <TextField {...params} size="small" placeholder="Discount %" />
+                            )}
+                          />
                         </TableCell>
                         <TableCell>
                           <TextField
@@ -935,9 +952,7 @@ const PurchaseOrderForm = () => {
                   }}
                 >
                   <Box width="40%">
-                    {products.find((p) => p.id === row.item)?.product_name ||
-                      row.item ||
-                      "-"}
+                    {row.item_detail || products.find((p) => p.id === row.item)?.product_name || row.item || "-"}
                   </Box>
                   <Box width="15%">{row.qty}</Box>
                   <Box width="20%">₹{row.rate.toFixed(2)}</Box>

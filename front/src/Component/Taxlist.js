@@ -11,7 +11,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Sidebar from './Sidebar';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 import UserMenu from './UserMenu';
 
 const Taxlist = () => {
@@ -38,8 +38,15 @@ const Taxlist = () => {
 
   const fetchTaxes = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/taxes');
-      setTaxes(res.data);
+  const res = await axios.get('http://72.62.227.63:5001/api/taxes');
+      const data = Array.isArray(res.data) ? res.data : [];
+      const sorted = [...data].sort((a, b) => {
+        const ad = new Date(a.created_at || a.updated_at || 0).getTime();
+        const bd = new Date(b.created_at || b.updated_at || 0).getTime();
+        if (ad && bd && ad !== bd) return bd - ad;
+        return Number(b.id || 0) - Number(a.id || 0);
+      });
+      setTaxes(sorted);
     } catch (err) {
       console.error("Error fetching taxes:", err);
     }
@@ -55,7 +62,7 @@ const Taxlist = () => {
     const newStatus = selectedRowData.status === 'Active' ? 'Inactive' : 'Active';
 
     try {
-      await axios.patch(`http://localhost:5000/api/taxes/${selectedRowData.id}/status`, {
+  await axios.patch(`http://72.62.227.63:5001/api/taxes/${selectedRowData.id}/status`, {
         status: newStatus
       });
       fetchTaxes();

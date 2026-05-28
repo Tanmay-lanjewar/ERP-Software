@@ -25,6 +25,7 @@ import {
   Breadcrumbs,
   CircularProgress,
   Alert,
+  Autocomplete,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -36,7 +37,8 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import axios from "axios";
+import { openHtmlPreview } from '../utils/printPreview';
+import axios from "../services/offlineAxios";
 import UserMenu from './UserMenu';
 const NewInvoicePage = () => {
   const navigate = useNavigate();
@@ -70,10 +72,10 @@ const NewInvoicePage = () => {
       try {
         // Fetch all data in parallel
         const [customersRes, invoiceNumberRes, productsRes, unitsRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/customers", { timeout: 10000 }),
-          axios.get("http://localhost:5000/api/invoice/next-number", { timeout: 10000 }),
-          axios.get("http://localhost:5000/api/products", { timeout: 10000 }),
-          axios.get("http://localhost:5000/api/units", { timeout: 10000 })
+          axios.get("http://72.62.227.63:5001/api/customers", { timeout: 10000 }),
+          axios.get("http://72.62.227.63:5001/api/invoice/next-number", { timeout: 10000 }),
+          axios.get("http://72.62.227.63:5001/api/products", { timeout: 10000 }),
+          axios.get("http://72.62.227.63:5001/api/units", { timeout: 10000 })
         ]);
       
         console.log('Customers response:', customersRes.data);
@@ -130,16 +132,17 @@ const handlePreview = () => {
         alert("Please select a customer before previewing.");
         return;
       }
-      const invoiceData = {
-        invoice_number: invoiceNumber,
-        invoice_date: invoiceDate,
-        expiry_date: expiryDate,
-        subject: subject,
+    const invoiceData = {
+      invoice_number: invoiceNumber,
+      invoice_number: invoiceNumber,
+      invoice_date: invoiceDate,
+      expiry_date: expiryDate,
+      subject: subject,
       };
       const items = rows
-        .filter(row => row.item && row.qty > 0 && row.rate > 0) // Filter out empty rows
+        .filter(row => (row.item_name?.trim() || row.item) && row.qty > 0 && row.rate > 0) // Allow free-text items
         .map(row => ({
-          item_detail: products.find(p => p.id === row.item)?.product_name || row.item || 'N/A',
+          item_detail: row.item_name || products.find(p => p.id === row.item)?.product_name || 'N/A',
           hsn_sac: products.find(p => p.id === row.item)?.hsn_code || '39259010',
           quantity: row.qty,
           rate: row.rate,
@@ -157,32 +160,46 @@ const handlePreview = () => {
       }
       // Helper function to convert number to words (Indian Rupees)
       const numberToWords = (num) => {
+        if (num === 0) return "Zero Rupees Only";
+
         const units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
         const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
         const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
-        const thousands = ["", "Thousand", "Lakh", "Crore"];
-        const convertLessThanThousand = (num) => {
-          if (num === 0) return "";
-          if (num < 10) return units[num];
-          if (num < 20) return teens[num - 10];
-          if (num < 100) return `${tens[Math.floor(num / 10)]} ${units[num % 10]}`.trim();
-          return `${units[Math.floor(num / 100)]} Hundred ${convertLessThanThousand(num % 100)}`.trim();
-        };
-        const convert = (num) => {
-          if (num === 0) return "Zero";
-          let result = "";
-          let thousandIndex = 0;
-          while (num > 0) {
-            const chunk = num % 1000;
-            if (chunk > 0) {
-              result = `${convertLessThanThousand(chunk)} ${thousands[thousandIndex]} ${result}`.trim();
-            }
-            num = Math.floor(num / 1000);
-            thousandIndex++;
+
+        const convertLessThanThousand = (n) => {
+          if (n === 0) return "";
+          let str = "";
+          if (n >= 100) {
+            str += units[Math.floor(n / 100)] + " Hundred ";
+            n %= 100;
           }
-          return result;
+          if (n >= 20) {
+            str += tens[Math.floor(n / 10)] + " ";
+            n %= 10;
+          } else if (n >= 10) {
+            str += teens[n - 10] + " ";
+            return str.trim();
+          }
+          if (n > 0) {
+            str += units[n] + " ";
+          }
+          return str.trim();
         };
-        return `${convert(Math.floor(num))} Rupees Only`;
+
+        let result = "";
+        const divisors = [10000000, 100000, 1000, 1];
+        const scaleNames = ["Crore", "Lakh", "Thousand", ""];
+
+        for (let i = 0; i < divisors.length; i++) {
+          const divisor = divisors[i];
+          const chunk = Math.floor(num / divisor);
+          if (chunk > 0) {
+            result += convertLessThanThousand(chunk) + " " + scaleNames[i] + " ";
+          }
+          num %= divisor;
+        }
+
+        return result.trim() + " Rupees Only";
       };
       // Generate items table rows
       const itemsRows = items
@@ -224,9 +241,8 @@ const handlePreview = () => {
         <b>State Code :</b> ${customerObj.shipping_state ? "27" : "N/A"}<br>
         <b>GSTIN :</b> ${customerObj.gst || "N/A"}
       `;
-      // Open print window with dynamic data
-      const printWindow = window.open("", "_blank");
-      printWindow.document.write(`
+      // Build external HTML for printing
+      const htmlContent = `
      <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -502,7 +518,7 @@ const handlePreview = () => {
             font-weight: bold;
         }
         .items-table .col-desc {
-            width: 18%;
+            width: 7cm;
         }
         .items-table .col-hsn {
             width: 5%;
@@ -539,6 +555,11 @@ const handlePreview = () => {
         }
         .items-table .item-description {
             font-size: 7.5pt;
+        }
+        /* Allow wrapping for long descriptions */
+        .items-table td:nth-child(2) {
+            white-space: normal;
+            word-break: break-word;
         }
         .total-row td {
             font-weight: bold;
@@ -593,13 +614,15 @@ const handlePreview = () => {
             min-height: 95px;
             font-size: 8pt;
         }
-        .signature-box .auth-sign {
+        .signature-box .auth-sign 
+        {
             font-weight: bold;
             padding-top: 4px;
             display: block;
             margin-top: 50px;
         }
-        .reg-address {
+        .reg-address 
+        {
             position: absolute;
             bottom: 5px;
             left: 5px;
@@ -1014,10 +1037,11 @@ const handlePreview = () => {
         </div>
     </div>
 </body>
-</html>
-      `);
-      printWindow.document.close();
-      printWindow.print();
+</html>`;
+      openHtmlPreview(
+        htmlContent,
+        'invoice-new.html'
+      );
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("Failed to generate PDF. Please try again.");
@@ -1025,7 +1049,7 @@ const handlePreview = () => {
   };
   const fetchCustomerBillingStateCode = async (customerId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/customers/${customerId}`);
+      const response = await axios.get(`http://72.62.227.63:5001/api/customers/${customerId}`);
       const customer = response.data;
       setCustomerBillingStateCode(customer.billing_state_code || "");
     } catch (error) {
@@ -1043,7 +1067,9 @@ const handlePreview = () => {
   };
   const calculateAmount = (row) => {
     const total = (row.qty || 0) * (row.rate || 0);
-    return total - (row.discount || 0);
+    const discountPerc = parseFloat(row.discount) || 0;
+    const discountAmt = total * (discountPerc / 100);
+    return total - discountAmt;
   };
   const addNewRow = () => {
     setRows([
@@ -1089,10 +1115,11 @@ const handlePreview = () => {
       alert("Please add at least one item to the invoice");
       return;
     }
-    // Validate that all rows have required fields
+    // Validate that all rows have required fields (allow free-text item lines)
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      if (!row.item || !row.qty || !row.rate) {
+      const hasItem = (row.item_name && row.item_name.trim().length > 0) || !!row.item;
+      if (!hasItem || !row.qty || !row.rate) {
         alert(`Please fill in all required fields for item ${i + 1}`);
         return;
       }
@@ -1102,6 +1129,7 @@ const handlePreview = () => {
     const invoiceData = {
       customer_id: selectedCustomer,
       customer_name: customerObj.customer_name,
+      invoice_number: invoiceNumber,
       invoice_date: invoiceDate,
       expiry_date: expiryDate,
       subject: subject,
@@ -1115,7 +1143,7 @@ const handlePreview = () => {
       igst: igst,
       grand_total: total,
       items: rows.map((row) => ({
-        item_detail: row.item_name || row.item,
+        item_detail: row.item_name || (products.find(p => p.id === row.item)?.product_name || ''),
         quantity: row.qty,
         rate: row.rate,
         discount: row.discount,
@@ -1127,7 +1155,7 @@ const handlePreview = () => {
     console.log("Submitting invoice data:", invoiceData);
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/invoice",
+        "http://72.62.227.63:5001/api/invoice",
         {
           invoice: invoiceData,
           items: invoiceData.items,
@@ -1155,7 +1183,7 @@ const handlePreview = () => {
         const data = err.response.data;
       
         if (status === 400) {
-          errorMessage += `Invalid data: ${data.message || 'Please check your input fields.'}`;
+          errorMessage += `Invalid data: ${data.error || data.message || 'Please check your input fields.'}`;
         } else if (status === 401) {
           errorMessage += "Authentication failed. Please login again.";
         } else if (status === 403) {
@@ -1163,9 +1191,9 @@ const handlePreview = () => {
         } else if (status === 404) {
           errorMessage += "Invoice endpoint not found. Please contact support.";
         } else if (status === 500) {
-          errorMessage += "Server error. Please try again later or contact support.";
+          errorMessage += `Server error: ${data.error || data.message || 'Please try again later or contact support.'}`;
         } else {
-          errorMessage += `Server error (${status}): ${data.message || 'Unknown error'}`;
+          errorMessage += `Server error (${status}): ${data.error || data.message || 'Unknown error'}`;
         }
       } else if (err.request) {
         // Network error
@@ -1386,7 +1414,7 @@ const handlePreview = () => {
                 <TextField
                   fullWidth
                   required
-                  label="Due Date"
+                  label="PO Date"
                   type="date"
                   value={expiryDate}
                   onChange={(e) => setExpiryDate(e.target.value)}
@@ -1405,8 +1433,8 @@ const handlePreview = () => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Subject"
-                  placeholder="Write what this invoice is about"
+                  label="PO Number"
+                  placeholder="Write po number here"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   InputProps={{
@@ -1449,7 +1477,7 @@ const handlePreview = () => {
                     <TableCell>Quantity</TableCell>
                     <TableCell>UOM</TableCell>
                     <TableCell>Rate</TableCell>
-                    <TableCell>Discount</TableCell>
+            <TableCell>Discount (%)</TableCell>
                     <TableCell>Amount</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
@@ -1458,37 +1486,46 @@ const handlePreview = () => {
                   {rows.map((row, index) => (
                     <TableRow key={row.id}>
                       <TableCell>
-                        <Select
-                          fullWidth
-                          value={row.item}
-                          onChange={(e) => {
-                            const selectedProductId = e.target.value;
-                            const selectedProduct = products.find(p => p.id === selectedProductId);
-                            updateRow(index, "item", selectedProductId);
-                            updateRow(index, "item_name", selectedProduct ? selectedProduct.product_name : "");
-                            fetch(`http://localhost:5000/api/products/${selectedProductId}`)
-                              .then((res) => res.json())
-                              .then((product) => {
-                                updateRow(index, "rate", product.sale_price || 0);
-                                updateRow(index, "uom_description", product.unit || "");
-                              })
-                              .catch((err) => {
-                                console.error("Error fetching product details:", err);
-                              });
+                        <Autocomplete
+                          freeSolo
+                          options={products.map((p) => p.product_name)}
+                          value={row.item_name || ""}
+                          onChange={(event, newValue) => {
+                            if (!newValue) {
+                              updateRow(index, "item", "");
+                              updateRow(index, "item_name", "");
+                              return;
+                            }
+                            const selectedProduct = products.find((p) => p.product_name === newValue);
+                            if (selectedProduct) {
+                              updateRow(index, "item", selectedProduct.id);
+                              updateRow(index, "item_name", selectedProduct.product_name);
+                              fetch(`http://72.62.227.63:5001/api/products/${selectedProduct.id}`)
+                                .then((res) => res.json())
+                                .then((product) => {
+                                  updateRow(index, "rate", product.sale_price || 0);
+                                  updateRow(index, "uom_description", product.unit || "");
+                                })
+                                .catch((err) => {
+                                  console.error("Error fetching product details:", err);
+                                });
+                            } else {
+                              // Free text entry
+                              updateRow(index, "item", "");
+                              updateRow(index, "item_name", newValue);
+                            }
                           }}
-                          size="small"
-                          displayEmpty
-                          sx={{ width: "100%" }}
-                        >
-                          <MenuItem value="">
-                            <em>Select Item</em>
-                          </MenuItem>
-                          {products.map((product) => (
-                            <MenuItem key={product.id} value={product.id}>
-                              {product.product_name}
-                            </MenuItem>
-                          ))}
-                        </Select>
+                          onInputChange={(event, newInputValue) => {
+                            updateRow(index, "item_name", newInputValue || "");
+                            const matched = products.find((p) => p.product_name === newInputValue);
+                            if (!matched) {
+                              updateRow(index, "item", "");
+                            }
+                          }}
+                          renderInput={(params) => (
+                            <TextField {...params} size="small" placeholder="Type or select an item"  sx={{ width: "10cm" }}/>
+                          )}
+                        />
                       </TableCell>
                       <TableCell>
                         <TextField
@@ -1527,16 +1564,22 @@ const handlePreview = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <FormControl fullWidth>
-                          <Select
-                            value={row.discount}
-                            onChange={(e) => updateRow(index, "discount", e.target.value)}
-                          >
-                            <MenuItem value={0}>0%</MenuItem>
-                            <MenuItem value={5}>5%</MenuItem>
-                            <MenuItem value={10}>10%</MenuItem>
-                          </Select>
-                        </FormControl>
+                        <Autocomplete
+                          freeSolo
+                          options={["0", "3", "10"]}
+                          value={String(row.discount ?? "")}
+                          onChange={(event, newValue) => {
+                            const val = parseFloat(newValue);
+                            updateRow(index, "discount", isNaN(val) ? 0 : val);
+                          }}
+                          onInputChange={(event, newInputValue) => {
+                            const val = parseFloat(newInputValue);
+                            updateRow(index, "discount", isNaN(val) ? 0 : val);
+                          }}
+                          renderInput={(params) => (
+                            <TextField {...params} size="small" placeholder="Discount %" />
+                          )}
+                        />
                       </TableCell>
                       <TableCell>
                         <TextField
@@ -1838,7 +1881,7 @@ const handlePreview = () => {
                     }}
                   >
                     <Box width="40%">
-                      {products.find((p) => p.id === row.item)?.product_name || row.item || "-"}
+                      {products.find((p) => p.id === row.item)?.product_name || row.item_name || row.item || "-"}
                     </Box>
                     <Box width="15%">{row.qty}</Box>
                     <Box width="20%">₹{row.rate.toFixed(2)}</Box>

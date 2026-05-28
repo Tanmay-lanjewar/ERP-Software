@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, TextField, Button, Paper, Typography, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import Sidebar from "./Sidebar";
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 
 export default function EditWorkOrderPage() {
   const { id } = useParams();
@@ -25,7 +25,7 @@ export default function EditWorkOrderPage() {
       setLoading(true);
       setError('');
       try {
-        const res = await axios.get(`http://localhost:5000/api/work-orders/${id}`);
+    const res = await axios.get(`http://72.62.227.63:5001/api/work-orders/${id}`);
         if (!res.data) {
           throw new Error('No data returned from server');
         }
@@ -52,7 +52,7 @@ export default function EditWorkOrderPage() {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/customers');
+      const res = await axios.get('http://72.62.227.63:5001/api/customers');
         console.log("📦 Customers from backend:", res.data);
         setCustomers(Array.isArray(res.data) ? res.data : res.data.data || []);
       } catch (err) {
@@ -73,16 +73,18 @@ export default function EditWorkOrderPage() {
     setLoading(true);
     setError('');
     try {
-      await axios.put(`http://localhost:5000/api/work-orders/${id}`, {
+    await axios.put(`http://72.62.227.63:5001/api/work-orders/${id}`, {
         customer_name: formData.customer_name,
         work_order_number: formData.work_order_number,
+        // Ensure date formatting consistent with backend expectations
         work_order_date: formData.work_order_date,
-        expiry_date: formData.expiry_date,
+        // Send due_date (alias of expiry date in UI)
+        due_date: formData.expiry_date,
         status: formData.status,
         grand_total: formData.grand_total,
       });
       alert('Work order updated successfully!');
-      navigate('/Work-Order-List');
+      navigate('/Work-Order-list');
     } catch (err) {
       setError(`Failed to update work order: ${err.message}`);
       console.error('Error updating work order:', err);
@@ -91,13 +93,13 @@ export default function EditWorkOrderPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ p: 4 }}>
-        <Typography>Loading work order...</Typography>
-      </Box>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <Box sx={{ p: 4 }}>
+  //       <Typography>Loading work order...</Typography>
+  //     </Box>
+  //   );
+  // }
 
   if (error) {
     return (

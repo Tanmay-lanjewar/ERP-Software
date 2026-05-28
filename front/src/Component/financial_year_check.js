@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const FinancialYearGuard = ({ children }) => {
@@ -11,13 +11,15 @@ const FinancialYearGuard = ({ children }) => {
   useEffect(() => {
     const checkActiveYear = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/financialYear/active');
+        const res = await axios.get('http://72.62.227.63:5001/api/financialYear/active');
         if (res.data.active && res.data.active.length > 0) {
           console.log('Active financial year found:', res.data.active);
           setHasActiveYear(true);
         }
       } catch (err) {
         console.error('Error checking financial year:', err.message);
+        // Network error ya timeout - user ko block mat karo, through jaane do
+        setHasActiveYear(true);
       } finally {
         setLoading(false);
       }
@@ -26,7 +28,7 @@ const FinancialYearGuard = ({ children }) => {
   }, []);
 
   if (loading) {
-    return <div style={{ textAlign: 'center', marginTop: '50px' }}>🔄 Checking financial year...</div>;
+    return <div style={{ textAlign: 'center', marginTop: '50px' }}>Loading...</div>;
   }
 
   // 🚫 Don’t show alert if already on the add page

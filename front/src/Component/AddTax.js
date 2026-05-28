@@ -16,7 +16,7 @@ import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import axios from "axios";
+import axios from "../services/offlineAxios";
 import UserMenu from './UserMenu';
 
 const AddTax = () => {
@@ -44,7 +44,7 @@ const AddTax = () => {
 
 
     try {
-      await axios.post("http://localhost:5000/api/taxes", payload);
+      await axios.post("http://72.62.227.63:5001/api/taxes", payload);
       alert("Tax added successfully!");
       navigate("/tax"); // Go back to tax list
     } catch (err) {

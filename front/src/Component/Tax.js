@@ -9,7 +9,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Taxlist from './Taxlist';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 import UserMenu from './UserMenu';
 
 export default function Tax() {
@@ -18,7 +18,7 @@ export default function Tax() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/taxes')
+  axios.get('http://72.62.227.63:5001/api/taxes')
       .then(res => {
         setTaxes(res.data);
         console.log('Fetched taxes:', res.data);

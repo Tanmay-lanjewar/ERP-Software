@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { grey } from '@mui/material/colors';
 import UserMenu from './UserMenu';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import axios from '../services/offlineAxios';
 
 export default function VendorListPage() {
   const navigate = useNavigate();
@@ -37,9 +38,8 @@ export default function VendorListPage() {
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/vendors');
-      if (!response.ok) throw new Error('Failed to fetch vendors');
-      const data = await response.json();
+      const response = await axios.get('http://72.62.227.63:5001/api/vendors');
+      const data = response.data;
       console.log('Backend vendor list:', data); // Debug: Log raw backend data
       // Transform flat data to nested structure for frontend
       const transformedData = data.map(vendor => ({
@@ -83,10 +83,21 @@ export default function VendorListPage() {
         remark: vendor.remark || ''
       }));
       console.log('Transformed vendor list:', transformedData); // Debug: Log transformed data
-      setVendorList(transformedData);
+      // Sort newest first by date or fallback to ID
+      const sorted = [...transformedData].sort((a, b) => {
+        const ad = new Date(
+          (data.find(d => d.id === a.vendor_id)?.created_at) || 0
+        ).getTime();
+        const bd = new Date(
+          (data.find(d => d.id === b.vendor_id)?.created_at) || 0
+        ).getTime();
+        if (ad && bd && ad !== bd) return bd - ad;
+        return Number(b.vendor_id || 0) - Number(a.vendor_id || 0);
+      });
+      setVendorList(sorted);
     } catch (error) {
       console.error('Error fetching vendors:', error);
-      alert('Failed to load vendors.');
+      alert('Failed to load vendors: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -102,12 +113,8 @@ export default function VendorListPage() {
   const handleEditVendor = async (vendor) => {
     try {
       setEditLoading(true);
-      const response = await fetch(`http://localhost:5000/api/vendors/${vendor.vendor_id}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch vendor details');
-      }
-      const vendorData = await response.json();
+      const response = await axios.get(`http://72.62.227.63:5001/api/vendors/${vendor.vendor_id}`);
+      const vendorData = response.data;
       console.log('Fetched vendor data for edit:', vendorData); // Debug: Log fetched data
       const vendorCopy = {
         vendor_id: vendorData.id,
@@ -178,7 +185,7 @@ export default function VendorListPage() {
 
   const confirmDelete = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/vendors/${selectedVendor.vendor_id}`, {
+    const response = await fetch(`http://72.62.227.63:5001/api/vendors/${selectedVendor.vendor_id}`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete vendor');
@@ -306,21 +313,14 @@ export default function VendorListPage() {
                   }
                   try {
                     setUpdateLoading(true);
-                    const response = await fetch(`http://localhost:5000/api/vendors/${editingVendor.vendor_id}`, {
-                      method: 'PUT',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(flatVendor),
-                    });
-                    if (!response.ok) {
-                      const errorData = await response.json();
-                      throw new Error(errorData.error || 'Update failed');
-                    }
-                    alert('Vendor updated successfully!');
+                    const response = await axios.put(`http://72.62.227.63:5001/api/vendors/${editingVendor.vendor_id}`, flatVendor);
+                    const queued = response?.data?.queued || response?.status === 202;
+                    alert(queued ? 'Vendor update saved locally; will sync when online.' : 'Vendor updated successfully!');
                     handleEditClose();
                     fetchVendors();
                   } catch (error) {
                     console.error('Error updating vendor:', error);
-                    alert(`Update failed: ${error.message}`);
+                    alert(`Update failed: ${error.response?.data?.message || error.message}`);
                   } finally {
                     setUpdateLoading(false);
                   }

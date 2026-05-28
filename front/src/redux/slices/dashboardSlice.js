@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import axios from '../../services/offlineAxios';
 
 const initialState = {
   totalInvoices: 0,
@@ -16,11 +16,11 @@ export const fetchDashboardData = createAsyncThunk(
   'dashboard/fetchDashboardData',
   async (_, { rejectWithValue }) => {
     try {
-        
-      const summaryResponse = await axios.get('http://localhost:5000/api/invoice/summary');
-      const recentInvoicesResponse = await axios.get('http://localhost:5000/api/invoice/recent');
-      const invoicesOverTimeResponse = await axios.get('http://localhost:5000/api/invoice/over-time');
-
+      const [summaryResponse, recentInvoicesResponse, invoicesOverTimeResponse] = await Promise.all([
+        axios.get('http://72.62.227.63:5001/api/invoice/summary'),
+        axios.get('http://72.62.227.63:5001/api/invoice/recent'),
+        axios.get('http://72.62.227.63:5001/api/invoice/over-time'),
+      ]);
       return {
         summary: summaryResponse.data,
         recentInvoices: recentInvoicesResponse.data,

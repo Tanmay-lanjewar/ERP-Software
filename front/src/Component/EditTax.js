@@ -6,7 +6,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -24,7 +24,7 @@ const EditTax = () => {
   });
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/taxes/${id}`)
+  axios.get(`http://72.62.227.63:5001/api/taxes/${id}`)
       .then((res) => {
         const tax = res.data;
         setForm({
@@ -48,7 +48,7 @@ const EditTax = () => {
 
   const handleUpdate = async () => {
     try {
-      await axios.put(`http://localhost:5000/api/taxes/${id}`, {
+    await axios.put(`http://72.62.227.63:5001/api/taxes/${id}`, {
         ...form,
         effective_date: form.effective_date.toISOString().split("T")[0]
       });

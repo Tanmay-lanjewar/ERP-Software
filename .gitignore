@@ -3,3 +3,9 @@ node_modules/
 build/
 .env
 *.log
+desktop/dist/
+
+desktop/dist2/
+
+front/build.zip
+

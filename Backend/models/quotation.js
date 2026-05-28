@@ -47,6 +47,7 @@ const quotation = {
   },
 
   getNextQuoteNumber: (callback) => {
+    // Peek at the next quote number without incrementing the counter.
     db.query('START TRANSACTION', (err) => {
       if (err) return callback(err);
 
@@ -69,26 +70,26 @@ const quotation = {
             return db.query('ROLLBACK', () => callback(err));
           }
 
-          let nextSeq;
+          let currentSeq = 0;
           if (counter.length === 0) {
-            db.query('INSERT INTO counters (id, seq) VALUES (?, 1)', [counterId], (err) => {
+            // Initialize counter at 0 so the first suggested number is 1
+            db.query('INSERT INTO counters (id, seq) VALUES (?, 0)', [counterId], (err) => {
               if (err) return db.query('ROLLBACK', () => callback(err));
-              nextSeq = 1;
+              currentSeq = 0;
               db.query('COMMIT', (err) => {
                 if (err) return callback(err);
+                const nextSeq = currentSeq + 1;
                 const quoteNumber = `ME/BESPL/${String(nextSeq).padStart(3, '0')}/${financialYear}`;
                 callback(null, { nextQuoteNumber: quoteNumber });
               });
             });
           } else {
-            nextSeq = counter[0].seq + 1;
-            db.query('UPDATE counters SET seq = seq + 1 WHERE id = ?', [counterId], (err) => {
-              if (err) return db.query('ROLLBACK', () => callback(err));
-              db.query('COMMIT', (err) => {
-                if (err) return callback(err);
-                const quoteNumber = `ME/BESPL/${String(nextSeq).padStart(3, '0')}/${financialYear}`;
-                callback(null, { nextQuoteNumber: quoteNumber });
-              });
+            currentSeq = counter[0].seq;
+            db.query('COMMIT', (err) => {
+              if (err) return callback(err);
+              const nextSeq = currentSeq + 1;
+              const quoteNumber = `ME/BESPL/${String(nextSeq).padStart(3, '0')}/${financialYear}`;
+              callback(null, { nextQuoteNumber: quoteNumber });
             });
           }
         });
@@ -138,10 +139,36 @@ const quotation = {
       
       const grand_total = parseFloat((subtotalWithFreight + cgst + sgst + igst).toFixed(2));
 
-      quotation.getNextQuoteNumber((err, result) => {
-        if (err) return callback(err);
-        const quoteNumber = result.nextQuoteNumber;
+      // Determine the quote number: prefer manual provided by client, otherwise peek the next.
+      const pickManualQuoteNumber = () => {
+        return (
+          data.quoteNumber ||
+          data.quote_number ||
+          data.quotation_number ||
+          data.quotationNo ||
+          data.quote_no ||
+          null
+        );
+      };
 
+      const extractSeqFromQuoteNumber = (qn) => {
+        if (!qn || typeof qn !== 'string') return null;
+        // Expected format: PREFIX/NNN/FINYEAR or similar. We'll take the numeric segment in the middle.
+        const parts = qn.split('/');
+        for (let p of parts) {
+          const m = p.match(/^\d+$/);
+          if (m) {
+            const parsed = parseInt(m[0], 10);
+            if (!isNaN(parsed)) return parsed;
+          }
+        }
+        return null;
+      };
+
+      const manualQN = pickManualQuoteNumber();
+
+      const proceedWithInsert = (quoteNumber, financialYearForCounter) => {
+        
         const quotationSql = `
           INSERT INTO quotation (
             customer_name, quote_number, quotation_date, expiry_date, subject,
@@ -192,6 +219,23 @@ const quotation = {
 
           db.query(itemSql, [itemValues], (itemErr, itemResult) => {
             if (itemErr) return callback(itemErr);
+
+            // After successful insert, advance the counter to the sequence we used (if applicable)
+            const usedSeq = extractSeqFromQuoteNumber(quoteNumber);
+            if (usedSeq && usedSeq > 0) {
+              db.query('SELECT start_date FROM financial_years WHERE is_active = TRUE', (fyErr, fyRows) => {
+                if (fyErr) {
+                  // Don't fail the request due to counter sync; just log and continue
+                  console.error('Failed to fetch financial year for counter sync', fyErr);
+                } else if (fyRows.length > 0) {
+                  const startYear = new Date(fyRows[0].start_date).getFullYear();
+                  const endYear = startYear + 1;
+                  const finYear = `${startYear}-${endYear.toString().slice(-2)}`;
+                  const counterId = `quotation_${finYear}`;
+                  db.query('UPDATE counters SET seq = GREATEST(seq, ?) WHERE id = ?', [usedSeq, counterId]);
+                }
+              });
+            }
             callback(null, {
               quotationId,
               quoteNumber,
@@ -205,7 +249,19 @@ const quotation = {
             });
           });
         });
-      });
+      };
+
+      if (manualQN) {
+        // Use the manual quote number as-is
+        proceedWithInsert(manualQN);
+      } else {
+        // Peek next and use that for actual insert
+        quotation.getNextQuoteNumber((err, result) => {
+          if (err) return callback(err);
+          const quoteNumber = result.nextQuoteNumber;
+          proceedWithInsert(quoteNumber);
+        });
+      }
     });
   },
 

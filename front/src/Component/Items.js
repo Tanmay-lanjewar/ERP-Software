@@ -8,7 +8,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ItemList from './Itemlist';
-import axios from 'axios';
+import axios from '../services/offlineAxios';
 import UserMenu from './UserMenu';
 
 export default function ItemsPage() {
@@ -18,7 +18,7 @@ export default function ItemsPage() {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/products');
+  const res = await axios.get('http://72.62.227.63:5001/api/products');
         console.log('Full response:', res.data);
         setItems(res.data); // Adjust based on your API response structure
       } catch (error) {
